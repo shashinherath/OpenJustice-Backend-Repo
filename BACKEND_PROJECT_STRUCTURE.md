@@ -1,0 +1,851 @@
+# OpenJustice Backend - Project Structure & Guidelines
+
+## 📋 Overview
+
+A comprehensive **FastAPI** backend for an AI-powered legal assistance platform with **RAG (Retrieval-Augmented Generation)**, **multilingual support**, **voice interface**, and **WhatsApp integration**. Built following **Clean Architecture**, **SOLID Principles**, **DRY**, **KISS**, and **YAGNI** with PostgreSQL + pgvector for vector storage.
+
+---
+
+## 🚀 Tech Stack
+
+| Category                 | Technology                                                             |
+| ------------------------ | ---------------------------------------------------------------------- |
+| **Backend Framework**    | FastAPI (Python 3.10+)                                                 |
+| **Database**             | PostgreSQL 15+                                                         |
+| **Vector Store**         | pgvector extension                                                     |
+| **ORM**                  | SQLAlchemy (Async)                                                     |
+| **Validation**           | Pydantic                                                               |
+| **Authentication**       | JWT (python-jose)                                                      |
+| **Password Hashing**     | bcrypt (passlib)                                                       |
+| **AI/LLM**               | OpenAI GPT-4o / GPT-4.1                                                |
+| **RAG Framework**        | LangChain                                                              |
+| **Embeddings**           | OpenAI Embeddings (text-embedding-3-small/large), SentenceTransformers |
+| **NLP Framework**        | Hugging Face Transformers                                              |
+| **Speech-to-Text**       | OpenAI Whisper                                                         |
+| **Text-to-Speech**       | OpenAI TTS, Google TTS, Amazon Polly                                   |
+| **WhatsApp Integration** | Meta WhatsApp Cloud API, Twilio WhatsApp API                           |
+| **Object Storage**       | AWS S3, MinIO (local)                                                  |
+| **Testing**              | Pytest, pytest-asyncio, pytest-cov                                     |
+| **Mocking**              | pytest-mock                                                            |
+| **Code Quality**         | Black, Flake8, mypy, isort                                             |
+| **Logging**              | Python logging module                                                  |
+| **Server**               | Uvicorn (ASGI)                                                         |
+| **API Documentation**    | OpenAPI (Swagger), ReDoc                                               |
+
+---
+
+## 🏗️ Project Structure
+
+```
+openjustice-backend/
+├── app/
+│   ├── __init__.py
+│   ├── main.py                    # FastAPI app initialization
+│   ├── config.py                  # Configuration settings
+│   │
+│   ├── api/                       # API Layer (Controllers)
+│   │   ├── __init__.py
+│   │   ├── v1/
+│   │   │   ├── __init__.py
+│   │   │   ├── endpoints/
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── chat.py       # Chat endpoints
+│   │   │   │   ├── documents.py  # Document management
+│   │   │   │   ├── auth.py       # Authentication
+│   │   │   │   └── voice.py      # Voice processing
+│   │   │   └── router.py         # API v1 router
+│   │   └── dependencies.py       # Shared dependencies
+│   │
+│   ├── services/                  # Business Logic Layer
+│   │   ├── __init__.py
+│   │   ├── chat_service.py
+│   │   ├── rag_service.py
+│   │   ├── llm_service.py
+│   │   ├── voice_service.py
+│   │   ├── translation_service.py
+│   │   └── whatsapp_service.py
+│   │
+│   ├── repositories/              # Data Access Layer
+│   │   ├── __init__.py
+│   │   ├── user_repository.py
+│   │   ├── chat_repository.py
+│   │   └── document_repository.py
+│   │
+│   ├── models/                    # SQLAlchemy ORM Models
+│   │   ├── __init__.py
+│   │   ├── user.py
+│   │   ├── chat.py
+│   │   ├── document.py
+│   │   └── message.py
+│   │
+│   ├── schemas/                   # Pydantic Schemas (DTOs)
+│   │   ├── __init__.py
+│   │   ├── user.py
+│   │   ├── chat.py
+│   │   ├── document.py
+│   │   └── response.py
+│   │
+│   ├── db/                        # Database Configuration
+│   │   ├── __init__.py
+│   │   ├── base.py               # Base model & session
+│   │   └── init_db.py            # Database initialization
+│   │
+│   ├── core/                      # Core Utilities
+│   │   ├── __init__.py
+│   │   ├── security.py           # JWT, password hashing
+│   │   ├── logging.py            # Logging configuration
+│   │   └── exceptions.py         # Custom exceptions
+│   │
+│   └── utils/                     # Helper Functions
+│       ├── __init__.py
+│       ├── file_utils.py
+│       ├── text_utils.py
+│       └── validators.py
+│
+├── tests/                         # Test Suite
+│   ├── __init__.py
+│   ├── conftest.py               # Pytest fixtures
+│   ├── unit/
+│   │   ├── __init__.py
+│   │   ├── test_services.py
+│   │   └── test_repositories.py
+│   └── integration/
+│       ├── __init__.py
+│       └── test_api.py
+│
+├── scripts/                       # Utility Scripts
+│   ├── seed_db.py
+│   └── index_documents.py
+│
+├── .env.example                   # Environment variables template
+├── .gitignore
+├── requirements.txt               # Python dependencies
+├── Dockerfile
+├── docker-compose.yml
+└── README.md
+```
+
+---
+
+## 📝 Naming Conventions
+
+| Element               | Convention           | Example                                        |
+| --------------------- | -------------------- | ---------------------------------------------- |
+| **Files**             | snake_case           | `chat_service.py`, `user_repository.py`        |
+| **Directories**       | lowercase            | `services`, `repositories`, `api`              |
+| **Test Files**        | test\_\*.py          | `test_chat_service.py`, `test_user_service.py` |
+| **Classes**           | PascalCase           | `UserService`, `ChatRepository`                |
+| **Functions/Methods** | snake_case           | `get_user_by_id()`, `process_audio()`          |
+| **Constants**         | UPPER_SNAKE_CASE     | `MAX_FILE_SIZE`, `API_VERSION`                 |
+| **Private Methods**   | \_leading_underscore | `_validate_token()`, `_process_data()`         |
+| **Variables**         | snake_case           | `user_id`, `chat_history`                      |
+| **Database Tables**   | snake_case, plural   | `users`, `chat_messages`, `documents`          |
+| **Database Columns**  | snake_case           | `created_at`, `user_id`, `full_name`           |
+| **Foreign Keys**      | {table}\_id          | `user_id`, `document_id`, `chat_id`            |
+| **API Endpoints**     | plural nouns         | `/api/v1/users`, `/api/v1/documents`           |
+| **Nested Resources**  | hierarchical         | `/api/v1/users/{user_id}/chats`                |
+| **Pydantic Schemas**  | PascalCase + suffix  | `UserCreate`, `UserResponse`, `ChatDto`        |
+
+---
+
+## 🌐 RESTful API Standards
+
+### HTTP Methods
+
+| Method     | Endpoint             | Description       | Status Code    |
+| ---------- | -------------------- | ----------------- | -------------- |
+| **GET**    | `/api/v1/users`      | List all users    | 200 OK         |
+| **GET**    | `/api/v1/users/{id}` | Get specific user | 200 OK         |
+| **POST**   | `/api/v1/users`      | Create new user   | 201 Created    |
+| **PUT**    | `/api/v1/users/{id}` | Full update       | 200 OK         |
+| **PATCH**  | `/api/v1/users/{id}` | Partial update    | 200 OK         |
+| **DELETE** | `/api/v1/users/{id}` | Delete user       | 204 No Content |
+
+### API Standards
+
+| Concept              | Standard Practice                                          |
+| -------------------- | ---------------------------------------------------------- |
+| **URL Naming**       | Use plural nouns → `/api/users`, `/api/chats`              |
+| **Filtering**        | Query parameters → `/api/users?status=active`              |
+| **Sorting**          | Query parameters → `/api/users?sort=created_at&order=desc` |
+| **Pagination**       | Query parameters → `/api/users?skip=0&limit=50`            |
+| **Nested Resources** | Hierarchical → `/api/v1/users/{user_id}/chats`             |
+| **Versioning**       | URL versioning → `/api/v1/...`                             |
+| **Input Validation** | Pydantic schemas with validators                           |
+| **Response Type**    | JSON with consistent structure                             |
+| **Documentation**    | Auto-generated via Swagger/OpenAPI                         |
+
+### HTTP Status Codes
+
+| Status Code                   | Description             | Use Case                              |
+| ----------------------------- | ----------------------- | ------------------------------------- |
+| **200 OK**                    | Success                 | Successful GET, PUT, PATCH            |
+| **201 Created**               | Resource created        | Successful POST                       |
+| **204 No Content**            | Success, no body        | Successful DELETE                     |
+| **400 Bad Request**           | Invalid input           | Malformed request                     |
+| **401 Unauthorized**          | Authentication required | Missing/invalid token                 |
+| **403 Forbidden**             | Permission denied       | Valid token, insufficient permissions |
+| **404 Not Found**             | Resource not found      | Resource doesn't exist                |
+| **422 Unprocessable Entity**  | Validation error        | Input validation failed               |
+| **500 Internal Server Error** | Server error            | Unexpected server error               |
+| **503 Service Unavailable**   | Service down            | External service failure              |
+
+### Response Format
+
+**Success Response:**
+
+```json
+{
+  "success": true,
+  "data": { ... },
+  "message": "Operation successful",
+  "timestamp": "2025-12-14T10:30:00Z"
+}
+```
+
+**Error Response:**
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "INVALID_INPUT",
+    "message": "User validation failed",
+    "details": {
+      "field": "email",
+      "reason": "Invalid email format"
+    }
+  },
+  "timestamp": "2025-12-14T10:30:00Z"
+}
+```
+
+---
+
+## 🗄️ Database Layer - SQLAlchemy ORM
+
+### Base Configuration
+
+```python
+# app/db/base.py
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import sessionmaker, declarative_base
+from app.config import settings
+
+engine = create_async_engine(settings.DATABASE_URL, echo=True)
+async_session = sessionmaker(
+    engine, class_=AsyncSession, expire_on_commit=False
+)
+Base = declarative_base()
+
+async def get_db() -> AsyncSession:
+    async with async_session() as session:
+        try:
+            yield session
+        finally:
+            await session.close()
+```
+
+### Model Definition
+
+```python
+# app/models/user.py
+from sqlalchemy import Column, Integer, String, DateTime, Boolean
+from sqlalchemy.orm import relationship
+from datetime import datetime
+from app.db.base import Base
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String(255), unique=True, index=True, nullable=False)
+    hashed_password = Column(String(255), nullable=False)
+    full_name = Column(String(255))
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    chats = relationship("Chat", back_populates="user", cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return f"<User(id={self.id}, email={self.email})>"
+```
+
+### Repository Pattern
+
+```python
+# app/repositories/user_repository.py
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from app.models.user import User
+from typing import Optional, List
+
+class UserRepository:
+    def __init__(self, db: AsyncSession):
+        self.db = db
+
+    async def get_by_id(self, user_id: int) -> Optional[User]:
+        result = await self.db.execute(
+            select(User).where(User.id == user_id)
+        )
+        return result.scalars().first()
+
+    async def get_by_email(self, email: str) -> Optional[User]:
+        result = await self.db.execute(
+            select(User).where(User.email == email)
+        )
+        return result.scalars().first()
+
+    async def create(self, user: User) -> User:
+        self.db.add(user)
+        await self.db.commit()
+        await self.db.refresh(user)
+        return user
+
+    async def update(self, user: User) -> User:
+        await self.db.commit()
+        await self.db.refresh(user)
+        return user
+
+    async def delete(self, user: User) -> None:
+        await self.db.delete(user)
+        await self.db.commit()
+
+    async def list_all(self, skip: int = 0, limit: int = 100) -> List[User]:
+        result = await self.db.execute(
+            select(User).offset(skip).limit(limit)
+        )
+        return result.scalars().all()
+```
+
+### Pydantic Schemas (DTOs)
+
+```python
+# app/schemas/user.py
+from pydantic import BaseModel, EmailStr, Field
+from datetime import datetime
+from typing import Optional
+
+class UserBase(BaseModel):
+    email: EmailStr
+    full_name: Optional[str] = None
+
+class UserCreate(UserBase):
+    password: str = Field(..., min_length=8)
+
+class UserUpdate(BaseModel):
+    full_name: Optional[str] = None
+    email: Optional[EmailStr] = None
+
+class UserResponse(UserBase):
+    id: int
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+```
+
+---
+
+## 🏛️ Three-Layer Architecture Example
+
+### 1️⃣ Repository Layer (Data Access)
+
+```python
+# app/repositories/user_repository.py
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from app.models.user import User
+from typing import Optional
+
+class UserRepository:
+    """Data access layer for User operations"""
+
+    def __init__(self, db: AsyncSession):
+        self.db = db
+
+    async def get_by_id(self, user_id: int) -> Optional[User]:
+        """Fetch user by ID"""
+        result = await self.db.execute(
+            select(User).where(User.id == user_id)
+        )
+        return result.scalars().first()
+
+    async def create(self, user: User) -> User:
+        """Create new user"""
+        self.db.add(user)
+        await self.db.commit()
+        await self.db.refresh(user)
+        return user
+```
+
+### 2️⃣ Service Layer (Business Logic)
+
+```python
+# app/services/user_service.py
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.repositories.user_repository import UserRepository
+from app.models.user import User
+from app.schemas.user import UserCreate
+from app.core.security import get_password_hash
+from app.core.exceptions import NotFoundException, ValidationException
+
+class UserService:
+    """Business logic layer for User operations"""
+
+    def __init__(self, db: AsyncSession):
+        self.repository = UserRepository(db)
+
+    async def get_user(self, user_id: int) -> User:
+        """Get user with validation"""
+        user = await self.repository.get_by_id(user_id)
+        if not user:
+            raise NotFoundException("User", user_id)
+        return user
+
+    async def create_user(self, user_data: UserCreate) -> User:
+        """Create user with business logic"""
+        # Business validation
+        existing = await self.repository.get_by_email(user_data.email)
+        if existing:
+            raise ValidationException(f"Email {user_data.email} already exists")
+
+        # Create user entity
+        user = User(
+            email=user_data.email,
+            full_name=user_data.full_name,
+            hashed_password=get_password_hash(user_data.password)
+        )
+
+        return await self.repository.create(user)
+```
+
+### 3️⃣ Controller Layer (API Endpoints)
+
+```python
+# app/api/v1/endpoints/users.py
+from fastapi import APIRouter, Depends, status
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.db.base import get_db
+from app.schemas.user import UserCreate, UserResponse
+from app.services.user_service import UserService
+from app.core.security import get_current_user_id
+
+router = APIRouter()
+
+@router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+async def create_user(
+    user_data: UserCreate,
+    db: AsyncSession = Depends(get_db)
+):
+    """Create a new user"""
+    service = UserService(db)
+    user = await service.create_user(user_data)
+    return user
+
+@router.get("/{user_id}", response_model=UserResponse)
+async def get_user(
+    user_id: int,
+    current_user_id: int = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db)
+):
+    """Get user by ID"""
+    service = UserService(db)
+    user = await service.get_user(user_id)
+    return user
+```
+
+---
+
+## 🧪 Example Unit Test
+
+```python
+# tests/unit/test_user_service.py
+import pytest
+from unittest.mock import AsyncMock, MagicMock
+from app.services.user_service import UserService
+from app.models.user import User
+from app.schemas.user import UserCreate
+from app.core.exceptions import NotFoundException
+
+@pytest.fixture
+def mock_user_repository():
+    return AsyncMock()
+
+@pytest.fixture
+def user_service(mock_user_repository):
+    return UserService(mock_user_repository)
+
+@pytest.mark.asyncio
+async def test_create_user_success(user_service, mock_user_repository):
+    # Arrange
+    user_data = UserCreate(
+        email="test@example.com",
+        full_name="Test User",
+        password="securepass123"
+    )
+    expected_user = User(
+        id=1,
+        email=user_data.email,
+        full_name=user_data.full_name,
+        hashed_password="hashed_password"
+    )
+    mock_user_repository.get_by_email.return_value = None
+    mock_user_repository.create.return_value = expected_user
+
+    # Act
+    result = await user_service.create_user(user_data)
+
+    # Assert
+    assert result.id == 1
+    assert result.email == user_data.email
+    mock_user_repository.create.assert_called_once()
+
+@pytest.mark.asyncio
+async def test_get_user_not_found(user_service, mock_user_repository):
+    # Arrange
+    mock_user_repository.get_by_id.return_value = None
+
+    # Act & Assert
+    with pytest.raises(NotFoundException):
+        await user_service.get_user(999)
+
+@pytest.mark.asyncio
+async def test_get_user_by_id_success(user_service, mock_user_repository):
+    # Arrange
+    expected_user = User(id=1, email="test@example.com")
+    mock_user_repository.get_by_id.return_value = expected_user
+
+    # Act
+    result = await user_service.get_user(1)
+
+    # Assert
+    assert result.id == 1
+    assert result.email == "test@example.com"
+    mock_user_repository.get_by_id.assert_called_once_with(1)
+```
+
+### Test Configuration
+
+```python
+# tests/conftest.py
+import pytest
+from typing import AsyncGenerator
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import sessionmaker
+from app.db.base import Base, get_db
+from app.main import app
+
+TEST_DATABASE_URL = "postgresql+asyncpg://user:pass@localhost/test_db"
+
+@pytest.fixture(scope="session")
+def event_loop():
+    import asyncio
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
+
+@pytest.fixture(scope="function")
+async def db_session() -> AsyncGenerator[AsyncSession, None]:
+    engine = create_async_engine(TEST_DATABASE_URL)
+    async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+    async with async_session() as session:
+        yield session
+
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+
+@pytest.fixture
+def override_get_db(db_session: AsyncSession):
+    async def _override_get_db():
+        yield db_session
+    app.dependency_overrides[get_db] = _override_get_db
+    yield
+    app.dependency_overrides.clear()
+```
+
+---
+
+## ✨ Code Quality Practices
+
+### SOLID Principles
+
+#### Single Responsibility
+
+```python
+# Good: Each class has one responsibility
+class UserService:
+    """Handles user business logic"""
+    pass
+
+class UserRepository:
+    """Handles user data access"""
+    pass
+
+class PasswordHasher:
+    """Handles password hashing"""
+    pass
+```
+
+#### Dependency Inversion
+
+```python
+# Good: Depend on abstractions
+from abc import ABC, abstractmethod
+
+class LLMProvider(ABC):
+    @abstractmethod
+    async def generate_response(self, prompt: str) -> str:
+        pass
+
+class OpenAIProvider(LLMProvider):
+    async def generate_response(self, prompt: str) -> str:
+        # OpenAI implementation
+        pass
+
+class ChatService:
+    def __init__(self, llm_provider: LLMProvider):
+        self.llm = llm_provider  # Depends on abstraction
+```
+
+### DRY (Don't Repeat Yourself)
+
+```python
+# Bad: Repeated code
+def create_user_response(user):
+    return {"id": user.id, "email": user.email, "created_at": str(user.created_at)}
+
+def create_admin_response(admin):
+    return {"id": admin.id, "email": admin.email, "created_at": str(admin.created_at)}
+
+# Good: Reusable function
+def create_user_response(user):
+    return {"id": user.id, "email": user.email, "created_at": str(user.created_at)}
+```
+
+### KISS (Keep It Simple, Stupid)
+
+```python
+# Bad: Over-engineered
+def is_valid_email(email: str) -> bool:
+    pattern = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+    return bool(pattern.match(email))
+
+# Good: Use Pydantic's EmailStr
+from pydantic import EmailStr
+
+class UserCreate(BaseModel):
+    email: EmailStr  # Built-in validation
+```
+
+### YAGNI (You Aren't Gonna Need It)
+
+```python
+# Bad: Building features not needed now
+class User:
+    id: int
+    email: str
+    preferences: dict  # Not needed yet
+    settings: dict     # Not needed yet
+    metadata: dict     # Not needed yet
+
+# Good: Add only what's needed
+class User:
+    id: int
+    email: str
+    full_name: str
+```
+
+### Code Documentation
+
+```python
+def process_legal_query(query: str, user_id: int) -> dict:
+    """
+    Process a legal query using RAG pipeline.
+
+    Args:
+        query: The user's legal question
+        user_id: ID of the user making the query
+
+    Returns:
+        dict: Contains 'answer', 'sources', and 'confidence_score'
+
+    Raises:
+        ValidationException: If query is invalid
+        LLMException: If LLM service fails
+    """
+    pass
+```
+
+### Type Hints
+
+```python
+# Always use type hints
+from typing import List, Optional, Dict
+
+async def get_user_chats(
+    user_id: int,
+    limit: int = 10
+) -> List[Dict[str, str]]:
+    pass
+```
+
+### Async/Await Best Practices
+
+```python
+# Good: Use async for I/O operations
+async def fetch_embeddings(text: str) -> List[float]:
+    async with httpx.AsyncClient() as client:
+        response = await client.post(EMBEDDING_URL, json={"text": text})
+        return response.json()["embeddings"]
+
+# Good: Gather multiple async operations
+async def process_multiple_queries(queries: List[str]) -> List[str]:
+    tasks = [self.llm.generate(q) for q in queries]
+    return await asyncio.gather(*tasks)
+```
+
+---
+
+## 🔧 Environment Configuration
+
+```python
+# app/config.py
+from pydantic_settings import BaseSettings
+from typing import Optional
+
+class Settings(BaseSettings):
+    # App
+    APP_NAME: str = "OpenJustice Backend"
+    APP_VERSION: str = "1.0.0"
+    DEBUG: bool = False
+
+    # Database
+    DATABASE_URL: str
+
+    # Security
+    SECRET_KEY: str
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+
+    # OpenAI
+    OPENAI_API_KEY: str
+    OPENAI_MODEL: str = "gpt-4o"
+
+    # WhatsApp
+    WHATSAPP_API_KEY: Optional[str] = None
+    WHATSAPP_PHONE_NUMBER: Optional[str] = None
+
+    # AWS S3 / MinIO
+    S3_BUCKET_NAME: Optional[str] = None
+    S3_ACCESS_KEY: Optional[str] = None
+    S3_SECRET_KEY: Optional[str] = None
+
+    class Config:
+        env_file = ".env"
+        case_sensitive = True
+
+settings = Settings()
+```
+
+---
+
+## 📦 Dependency Management
+
+### Core Dependencies
+
+```
+# requirements.txt
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+sqlalchemy==2.0.25
+asyncpg==0.29.0
+alembic==1.13.1
+pydantic==2.5.3
+pydantic-settings==2.1.0
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.6
+httpx==0.26.0
+
+# AI/ML
+openai==1.10.0
+langchain==0.1.4
+langchain-openai==0.0.5
+sentence-transformers==2.3.1
+pgvector==0.2.4
+
+# Testing
+pytest==7.4.4
+pytest-asyncio==0.23.3
+pytest-cov==4.1.0
+httpx==0.26.0
+
+# Development
+black==23.12.1
+flake8==7.0.0
+mypy==1.8.0
+```
+
+---
+
+## 🚀 Quick Start Commands
+
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Run database migrations
+alembic upgrade head
+
+# Start development server
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# Run tests
+pytest tests/ -v
+
+# Run tests with coverage
+pytest tests/ --cov=app --cov-report=html
+
+# Format code
+black app/ tests/
+
+# Lint code
+flake8 app/ tests/
+
+# Type checking
+mypy app/
+```
+
+---
+
+## 📚 Additional Resources
+
+- **FastAPI Documentation**: https://fastapi.tiangolo.com/
+- **SQLAlchemy ORM**: https://docs.sqlalchemy.org/
+- **Pydantic**: https://docs.pydantic.dev/
+- **LangChain**: https://python.langchain.com/
+- **OpenAI API**: https://platform.openai.com/docs/
+
+---
+
+## 🎯 Remember
+
+1. **Keep it simple** - This is a research project, not a production system
+2. **Write tests** - Especially for critical business logic
+3. **Document your code** - Your future self will thank you
+4. **Use async/await** - FastAPI is built for async operations
+5. **Follow the guidelines** - Consistency matters more than perfection
+6. **Ask for help** - Don't waste time being stuck
+
+---
+
+_Last updated: December 14, 2025_
