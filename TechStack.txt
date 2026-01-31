@@ -1,0 +1,117 @@
+🧠 1. Core AI & NLP Layer	
+These handle legal Q&A, translation, summarization, and reasoning.
+Primary LLM
+•	OpenAI GPT-4.1 / GPT-4o
+(for high-accuracy legal reasoning & multilingual support)
+NLP & AI Framework
+•	LangChain – RAG pipeline orchestration
+•	Hugging Face Transformers – additional NLP tasks
+•	SentenceTransformers – for embeddings
+•	OpenAI Embeddings (text-embedding-3-small or large)
+________________________________________
+📚 2. RAG (Retrieval-Augmented Generation) Stack
+Used to reduce hallucinations & ensure legally grounded answers.
+Vector Store
+•	PostgreSQL + pgvector extension / Pinecone
+(best for research, simple, robust, no extra systems needed)
+Document Indexing
+•	Chunking: LangChain RecursiveCharacterTextSplitter
+•	Embeddings: SentenceTransformers or OpenAI
+•	Search: Cosine similarity using pgvector
+Document Storage
+•	Legal PDFs stored in AWS S3 (or Azure Blob) / MiniO - local storage
+________________________________________
+🔉 3. Speech & Voice Interface
+For voice input/output in web app + WhatsApp.
+Speech-to-Text
+•	OpenAI Whisper (local or API)
+•	Optional alternative: Google Speech-to-Text API
+Text-to-Speech
+•	OpenAI TTS
+or
+•	Google TTS / Amazon Polly (natural multilingual voices)
+________________________________________
+💬 4. Messaging & Communication Layer
+WhatsApp Integration
+•	Meta WhatsApp Cloud API (recommended for production)
+or
+•	Twilio WhatsApp API (easiest for prototyping)
+Web Chat Interface
+•	Real-time chat using WebSockets
+•	Voice message support using browser MediaRecorder API
+________________________________________
+🌐 5. Backend & API Layer
+Backend Framework
+•	FastAPI (Python)
+o	async
+o	perfect for AI workloads
+o	clean, research-friendly
+Core Backend Responsibilities
+•	Authentication (JWT)
+•	RAG pipeline
+•	LLM orchestration
+•	Whisper audio processing
+•	WhatsApp webhook handling
+•	Database I/O
+________________________________________
+🖥️ 6. Frontend Technologies
+Web Application
+•	React.js
+•	Tailwind CSS for UI
+•	i18next for multilingual UX
+•	WaveSurfer.js for voice UI (optional)
+________________________________________
+🗄️ 7. Databases & Storage
+Primary Database
+•	PostgreSQL
+o	user data
+o	chat history
+o	legal documents
+o	vector embeddings (via pgvector)
+Object Storage
+•	AWS S3 (or local MinIO)
+o	PDFs
+o	audio files
+o	logs
+________________________________________
+🔐 8. Security Stack
+•	JWT authentication
+•	OAuth (optional)
+•	HTTPS everywhere
+•	OWASP Top 10 protections
+•	Escape + sanitize every LLM prompt input
+•	Database encryption (optional)
+________________________________________
+🛠️ 9. DevOps, Deployment & Scaling
+Containerization
+•	Docker
+Deployment Options
+•	Single VM cloud deployment (perfect for research)
+o	AWS EC2
+o	Azure VM
+o	Render
+o	Railway
+Scaling (future)
+•	Kubernetes (K8s) for microservices
+(NOT needed for university project)
+CI/CD
+•	GitHub Actions
+________________________________________
+📊 10. Research Tools & Evaluation
+•	Python Jupyter Notebook – experiments
+•	BLEU/ROUGE scores – translation & summarization evaluation
+•	RAGAS – RAG quality evaluation
+•	LlamaIndex evaluations – retrieval & grounding
+________________________________________
+🏛️ System Architecture Summary (High-Level)
+User (Web / WhatsApp / Voice)
+        ↓
+FastAPI Backend (Core Brain)
+        ↓
+RAG Engine (LangChain + pgvector)
+        ↓
+LLM (GPT-4.1 / GPT-4o)
+        ↓
+Database (PostgreSQL + pgvector)
+        ↓
+Storage (S3)
