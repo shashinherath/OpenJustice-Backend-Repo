@@ -19,7 +19,7 @@ async def init_db() -> None:
         # Create all tables
         await conn.run_sync(Base.metadata.create_all)
         
-    print("✅ Database initialized successfully")
+    print("Database initialized successfully")
 
 
 async def drop_db() -> None:
@@ -30,7 +30,7 @@ async def drop_db() -> None:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
     
-    print("⚠️  All tables dropped")
+    print("WARNING: All tables dropped")
 
 
 async def reset_db() -> None:
@@ -40,7 +40,7 @@ async def reset_db() -> None:
     """
     await drop_db()
     await init_db()
-    print("🔄 Database reset complete")
+    print("Database reset complete")
 
 
 async def check_db_connection() -> bool:
@@ -53,10 +53,10 @@ async def check_db_connection() -> bool:
     try:
         async with engine.connect() as conn:
             await conn.execute(text("SELECT 1"))
-        print("✅ Database connection successful")
+        print("Database connection successful")
         return True
     except Exception as e:
-        print(f"❌ Database connection failed: {e}")
+        print(f"Database connection failed: {e}")
         return False
 
 
