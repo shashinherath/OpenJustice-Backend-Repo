@@ -14,7 +14,7 @@ def setup_error_handlers(app: FastAPI) -> None:
     async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
         content = ErrorResponse(
             error=ErrorDetail(code=exc.error_code, message=exc.message)
-        ).model_dump()
+        ).model_dump(mode="json")
         return JSONResponse(status_code=exc.status_code, content=content)
 
     @app.exception_handler(AuthenticationFailure)
@@ -23,7 +23,7 @@ def setup_error_handlers(app: FastAPI) -> None:
     ) -> JSONResponse:
         content = ErrorResponse(
             error=ErrorDetail(code="AUTHENTICATION_ERROR", message=exc.message)
-        ).model_dump()
+        ).model_dump(mode="json")
         return JSONResponse(status_code=401, content=content)
 
     @app.exception_handler(Exception)
@@ -35,5 +35,5 @@ def setup_error_handlers(app: FastAPI) -> None:
                 code="INTERNAL_SERVER_ERROR",
                 message="An unexpected error occurred. Please try again.",
             )
-        ).model_dump()
+        ).model_dump(mode="json")
         return JSONResponse(status_code=500, content=content)

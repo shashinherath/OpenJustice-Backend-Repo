@@ -48,7 +48,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
                     code="UNAUTHORIZED",
                     message="Authentication credentials were not provided.",
                 )
-            ).model_dump()
+            ).model_dump(mode="json")
             return JSONResponse(status_code=401, content=content)
 
         # Validate token and inject payload
@@ -61,7 +61,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
                     code="INVALID_TOKEN",
                     message=f"Token validation failed: {str(e)}",
                 )
-            ).model_dump()
+            ).model_dump(mode="json")
             return JSONResponse(status_code=401, content=content)
 
         # Proceed to route
