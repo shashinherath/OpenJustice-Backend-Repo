@@ -17,3 +17,19 @@ class LoginResultDto:
     uuid: UUID
     role: str
     preferred_language: str
+
+
+@dataclass(frozen=True)
+class RegisterDto:
+    email: Optional[str]
+    phone_number: Optional[str]
+    password: str
+    preferred_language: str = "en"
+
+
+@dataclass(frozen=True)
+class RegisterResultDto:
+    access_token: str
+    uuid: UUID
+    role: str
+    preferred_language: str
