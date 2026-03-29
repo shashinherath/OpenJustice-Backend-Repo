@@ -3,7 +3,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from app.application.exceptions import AppError
-from app.domain.exceptions import AuthenticationFailure
+from app.domain.exceptions import AuthenticationFailure, UserAlreadyExistsError
 from app.presentation.schemas.response_schema import ErrorDetail, ErrorResponse
 
 
@@ -16,6 +16,15 @@ def setup_error_handlers(app: FastAPI) -> None:
             error=ErrorDetail(code=exc.error_code, message=exc.message)
         ).model_dump(mode="json")
         return JSONResponse(status_code=exc.status_code, content=content)
+
+    @app.exception_handler(UserAlreadyExistsError)
+    async def user_already_exists_handler(
+        request: Request, exc: UserAlreadyExistsError
+    ) -> JSONResponse:
+        content = ErrorResponse(
+            error=ErrorDetail(code="USER_ALREADY_EXISTS", message=exc.message)
+        ).model_dump(mode="json")
+        return JSONResponse(status_code=409, content=content)
 
     @app.exception_handler(AuthenticationFailure)
     async def authentication_failure_handler(

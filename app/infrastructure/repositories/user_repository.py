@@ -28,3 +28,9 @@ class UserRepository(IUserRepository):
     async def get_by_uuid(self, user_uuid: UUID) -> Optional[User]:
         result = await self.db.execute(select(User).where(User.uuid == user_uuid))
         return result.scalars().first()
+
+    async def create(self, user: User) -> User:
+        self.db.add(user)
+        await self.db.flush()
+        await self.db.refresh(user)
+        return user

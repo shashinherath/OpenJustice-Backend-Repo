@@ -29,3 +29,11 @@ class InvalidTokenError(AuthenticationFailure):
     def __init__(self, message: str = "Could not validate credentials") -> None:
         self.message = message
         super().__init__(message)
+
+
+class UserAlreadyExistsError(DomainError):
+    """Raised when attempting to register with an email or phone already in use."""
+
+    def __init__(self, message: str = "A user with this identifier already exists") -> None:
+        self.message = message
+        super().__init__(message)

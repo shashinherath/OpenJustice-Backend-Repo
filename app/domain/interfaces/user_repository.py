@@ -20,3 +20,7 @@ class IUserRepository(ABC):
     @abstractmethod
     async def get_by_uuid(self, user_uuid: UUID) -> Optional[User]:
         raise NotImplementedError
+
+    @abstractmethod
+    async def create(self, user: User) -> User:
+        raise NotImplementedError

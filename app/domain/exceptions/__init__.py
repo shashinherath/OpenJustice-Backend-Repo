@@ -5,6 +5,7 @@ from app.domain.exceptions.auth import (
     InvalidCredentialsError,
     InvalidTokenError,
     TokenExpiredError,
+    UserAlreadyExistsError,
 )
 from app.domain.exceptions.base import DomainError
 
@@ -14,4 +15,5 @@ __all__ = [
     "InvalidCredentialsError",
     "InvalidTokenError",
     "TokenExpiredError",
+    "UserAlreadyExistsError",
 ]

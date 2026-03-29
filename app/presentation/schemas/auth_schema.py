@@ -44,3 +44,41 @@ class LoginResponseData(BaseModel):
     preferred_language: str
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class RegisterRequest(BaseModel):
+    """Register request payload."""
+
+    email: Optional[EmailStr] = None
+    phone_number: Optional[str] = None
+    password: str = Field(min_length=8, max_length=128)
+    preferred_language: str = Field(default="en", max_length=10)
+
+    model_config = ConfigDict(extra="forbid")
+
+    @field_validator("phone_number")
+    @classmethod
+    def validate_phone_number(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return value
+        if not _PHONE_E164.match(value):
+            raise ValueError("phone_number must be in E.164 format, e.g. +15551234567")
+        return value
+
+    @model_validator(mode="after")
+    def validate_contact_method(self) -> "RegisterRequest":
+        has_email = self.email is not None
+        has_phone = self.phone_number is not None
+        if has_email == has_phone:
+            raise ValueError("Provide exactly one of email or phone_number")
+        return self
+
+
+class RegisterResponseData(BaseModel):
+    """Register response data."""
+
+    uuid: UUID
+    role: str
+    preferred_language: str
+
+    model_config = ConfigDict(from_attributes=True)

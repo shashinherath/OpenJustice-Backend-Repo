@@ -55,7 +55,6 @@ htmlcov/
 .tox/
 
 # AI/ML Models
-models/
 *.pt
 *.pth
 *.onnx
