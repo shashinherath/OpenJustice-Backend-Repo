@@ -63,4 +63,8 @@ async def check_db_connection() -> bool:
 
 if __name__ == "__main__":
     # Run initialization when script is executed directly
-    asyncio.run(init_db())
+    async def main() -> None:
+        await init_db()
+        await engine.dispose()
+    
+    asyncio.run(main())
