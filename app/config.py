@@ -21,6 +21,11 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "your-secret-key-change-this-in-production"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    JWT_ISSUER: str = "openjustice"
+    JWT_AUDIENCE: str = "openjustice-api"
+    AUTH_COOKIE_NAME: str = "access_token"
+    AUTH_COOKIE_SAMESITE: str = "strict"
+    AUTH_COOKIE_SECURE: Optional[bool] = None
     
     # OpenAI
     OPENAI_API_KEY: str
@@ -79,6 +84,7 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=True,
+        env_ignore_empty=True,
         extra="ignore"
     )
 

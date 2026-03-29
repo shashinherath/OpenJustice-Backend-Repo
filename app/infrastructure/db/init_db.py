@@ -2,6 +2,7 @@
 import asyncio
 from sqlalchemy import text
 from app.infrastructure.db.base import engine, Base
+from app.infrastructure import models  # noqa: F401
 from app.config import settings
 
 
