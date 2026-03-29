@@ -1,14 +1,9 @@
 """Authentication service."""
-from typing import Optional
-
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.application.dtos.auth_dto import LoginDto, LoginResultDto
-from app.core.exceptions import AuthenticationError
-from app.core.security.jwt_handler import jwt_handler
-from app.core.security.password_hasher import verify_password
+from app.domain.exceptions import InvalidCredentialsError
+from app.domain.interfaces.password_hasher import PasswordHasher
+from app.domain.interfaces.token_issuer import AccessTokenIssuer
 from app.domain.interfaces.user_repository import IUserRepository
-from app.infrastructure.repositories.user_repository import UserRepository
 
 
 class AuthService:
@@ -16,15 +11,13 @@ class AuthService:
 
     def __init__(
         self,
-        db: Optional[AsyncSession] = None,
-        repository: Optional[IUserRepository] = None,
+        repository: IUserRepository,
+        password_hasher: PasswordHasher,
+        token_issuer: AccessTokenIssuer,
     ) -> None:
-        if repository is None:
-            if db is None:
-                raise ValueError("Either db or repository must be provided")
-            self.repository = UserRepository(db)
-        else:
-            self.repository = repository
+        self.repository = repository
+        self.password_hasher = password_hasher
+        self.token_issuer = token_issuer
 
     async def login(self, dto: LoginDto) -> LoginResultDto:
         """Authenticate a user and return a login result."""
@@ -35,12 +28,12 @@ class AuthService:
             user = await self.repository.get_by_phone(dto.phone_number)
 
         if not user or not user.hashed_password:
-            raise AuthenticationError()
+            raise InvalidCredentialsError()
 
-        if not verify_password(dto.password, user.hashed_password):
-            raise AuthenticationError()
+        if not self.password_hasher.verify_password(dto.password, user.hashed_password):
+            raise InvalidCredentialsError()
 
-        token = jwt_handler.create_access_token(
+        token = self.token_issuer.create_access_token(
             data={
                 "sub": str(user.uuid),
                 "role": user.role,

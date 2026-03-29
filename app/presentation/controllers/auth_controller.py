@@ -6,6 +6,9 @@ from app.application.dtos.auth_dto import LoginDto
 from app.application.services.auth_service import AuthService
 from app.config import settings
 from app.infrastructure.db.base import get_db
+from app.infrastructure.repositories.user_repository import UserRepository
+from app.infrastructure.security.jwt_handler import jwt_handler
+from app.infrastructure.security.password_hasher import BcryptPasswordHasher
 from app.presentation.schemas.auth_schema import LoginRequest, LoginResponseData
 from app.presentation.schemas.response_schema import SuccessResponse
 
@@ -24,7 +27,11 @@ async def login(
     db: AsyncSession = Depends(get_db),
 ) -> SuccessResponse[LoginResponseData]:
     """Authenticate a user and set an access token cookie."""
-    service = AuthService(db=db)
+    service = AuthService(
+        repository=UserRepository(db),
+        password_hasher=BcryptPasswordHasher(),
+        token_issuer=jwt_handler,
+    )
     result = await service.login(
         LoginDto(
             email=payload.email,

@@ -1,11 +1,12 @@
 """JWT creation and validation utilities."""
 from datetime import datetime, timedelta, timezone
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
-from jose import jwt, JWTError, ExpiredSignatureError, JWTClaimsError
+from jose import jwt
+from jose.exceptions import ExpiredSignatureError, JWTClaimsError, JWTError
 
 from app.config import settings
-from app.core.exceptions import AuthenticationError
+from app.domain.exceptions import InvalidTokenError, TokenExpiredError
 
 
 class JWTHandler:
@@ -59,11 +60,11 @@ class JWTHandler:
             )
             return payload
         except ExpiredSignatureError as exc:
-            raise AuthenticationError("Token has expired") from exc
+            raise TokenExpiredError("Token has expired") from exc
         except JWTClaimsError as exc:
-            raise AuthenticationError("Invalid token claims") from exc
+            raise InvalidTokenError("Invalid token claims") from exc
         except JWTError as exc:
-            raise AuthenticationError("Could not validate credentials") from exc
+            raise InvalidTokenError("Could not validate credentials") from exc
 
 
 jwt_handler = JWTHandler()
