@@ -3,8 +3,12 @@ from fastapi import APIRouter
 
 from app.presentation.controllers.auth_controller import router as auth_router
 from app.presentation.controllers.whatsapp_controller import router as whatsapp_router
+from app.presentation.controllers.chat_controller import router as chat_router
+from app.presentation.controllers.websocket_controller import router as websocket_router
 
 
 api_router = APIRouter(prefix="/api")
 api_router.include_router(auth_router)
 api_router.include_router(whatsapp_router)
+api_router.include_router(chat_router)
+api_router.include_router(websocket_router)
