@@ -1,8 +1,9 @@
 {
   "info": {
-    "_postman_id": "3d52e45e-7ecd-45b6-8b93-39faeb97b8d3",
+    "_postman_id": "c0f50de8-ff57-4a58-a7ae-49405e74e36b",
     "name": "OpenJustice",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "34234598"
   },
   "item": [
     {
@@ -109,7 +110,7 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer <YOUR_ACCESS_TOKEN>",
+                "value": "Bearer {{accessToken}}",
                 "type": "text"
               }
             ],
@@ -143,7 +144,7 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer <YOUR_ACCESS_TOKEN>",
+                "value": "Bearer {{accessToken}}",
                 "type": "text"
               }
             ],
@@ -168,7 +169,7 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer <YOUR_ACCESS_TOKEN>",
+                "value": "Bearer {{accessToken}}",
                 "type": "text"
               }
             ],
@@ -218,6 +219,12 @@
                   "key": "Body",
                   "value": "Testing incoming message",
                   "type": "text"
+                },
+                {
+                  "key": "To",
+                  "value": "",
+                  "type": "text",
+                  "uuid": "b22d6ed4-7c70-4849-b155-9412e5744e06"
                 }
               ]
             },
@@ -236,18 +243,173 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "Documents",
+      "item": [
+        {
+          "name": "Upload Document",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "title",
+                  "value": "Sample Document",
+                  "type": "text"
+                },
+                {
+                  "key": "document_type",
+                  "value": "pdf",
+                  "type": "text"
+                },
+                {
+                  "key": "language",
+                  "value": "en",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{webUrl}}/api/documents",
+              "host": [
+                "{{webUrl}}"
+              ],
+              "path": [
+                "api",
+                "documents"
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Documents",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{webUrl}}/api/documents",
+              "host": [
+                "{{webUrl}}"
+              ],
+              "path": [
+                "api",
+                "documents"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Document",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{webUrl}}/api/documents/{{document_id}}",
+              "host": [
+                "{{webUrl}}"
+              ],
+              "path": [
+                "api",
+                "documents",
+                "{{document_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Document",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{webUrl}}/api/documents/{{document_id}}",
+              "host": [
+                "{{webUrl}}"
+              ],
+              "path": [
+                "api",
+                "documents",
+                "{{document_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Process Document (RAG)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{webUrl}}/api/documents/{{document_id}}/process",
+              "host": [
+                "{{webUrl}}"
+              ],
+              "path": [
+                "api",
+                "documents",
+                "{{document_id}}",
+                "process"
+              ]
+            }
+          }
+        }
+      ]
     }
   ],
   "variable": [
     {
       "key": "webUrl",
-      "value": "http://127.0.0.1:8000",
-      "type": "default"
+      "value": "http://127.0.0.1:8000"
     },
     {
       "key": "conversation_id",
-      "value": "00000000-0000-0000-0000-000000000000",
-      "type": "default"
+      "value": "00000000-0000-0000-0000-000000000000"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "document_id",
+      "value": "00000000-0000-0000-0000-000000000000"
     }
   ]
 }
