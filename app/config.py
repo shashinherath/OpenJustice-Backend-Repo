@@ -30,15 +30,15 @@ class Settings(BaseSettings):
     # OpenAI
     OPENAI_API_KEY: str
     OPENAI_MODEL: str = "gpt-4o"
-    OPENAI_EMBEDDING_MODEL: str = "text-embedding-3-small"
-    OPENAI_MAX_TOKENS: int = 4096
-    OPENAI_TEMPERATURE: float = 0.7
+    OPENAI_EMBEDDING_MODEL: str = "text-embedding-3-large"
+    OPENAI_MAX_TOKENS: int = 1200
+    OPENAI_TEMPERATURE: float = 0.2
     
     # Whisper (Speech-to-Text)
     WHISPER_MODEL: str = "whisper-1"
     
     # TTS (Text-to-Speech)
-    TTS_MODEL: str = "tts-1"
+    TTS_MODEL: str = "tts-1-hd"
     TTS_VOICE: str = "alloy"
     
     # AWS S3

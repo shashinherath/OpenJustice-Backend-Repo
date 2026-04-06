@@ -4,6 +4,8 @@ from typing import Optional
 
 from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
+import uuid as uuid_module
 
 from app.infrastructure.db.base import Base
 
@@ -13,10 +15,8 @@ class AudioRequest(Base):
 
     __tablename__ = "audio_requests"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    user_id: Mapped[Optional[int]] = mapped_column(
-        Integer, ForeignKey("users.id"), nullable=True
-    )
+    id: Mapped[uuid_module.UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid_module.uuid4)
+    user_id: Mapped[Optional[uuid_module.UUID]] = mapped_column(PGUUID(as_uuid=True), ForeignKey("users.id"), index=True)
     audio_type: Mapped[Optional[str]] = mapped_column(
         String(20), nullable=True  # stt / tts
     )

@@ -24,6 +24,7 @@ dependencies = [
     "langchain>=0.2.5",
     "langchain-openai>=0.1.8",
     "langchain-community>=0.2.5",
+    "pypdf>=4.2.0",
     "transformers>=4.41.0",
     "sentence-transformers>=3.0.0",
     "torch>=2.3.0",
@@ -54,7 +55,7 @@ dependencies = [
     "flake8>=7.0.0",
     "mypy>=1.10.0",
     "isort>=5.13.0",
-    "bcrypt>=4.0,<5.0",
+    "bcrypt>=3.2.0,<4.0.0",
 ]
 
 [project.optional-dependencies]

@@ -19,25 +19,23 @@ class LLMRequest(Base):
         Index("idx_llm_requests_user", "user_id"),
     )
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    id: Mapped[uuid_module.UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid_module.uuid4)
     correlation_id: Mapped[Optional[uuid_module.UUID]] = mapped_column(
         PGUUID(as_uuid=True), nullable=True
     )
-    user_id: Mapped[Optional[int]] = mapped_column(
-        Integer, ForeignKey("users.id"), nullable=True
-    )
+    user_id: Mapped[Optional[uuid_module.UUID]] = mapped_column(PGUUID(as_uuid=True), ForeignKey("users.id"), index=True)
 
     model_name: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     prompt_version: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
 
     temperature: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    max_tokens: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    max_tokens: Mapped[Optional[uuid_module.UUID]] = mapped_column(Integer, nullable=True)
 
-    prompt_tokens: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    completion_tokens: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    total_tokens: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    prompt_tokens: Mapped[Optional[uuid_module.UUID]] = mapped_column(Integer, nullable=True)
+    completion_tokens: Mapped[Optional[uuid_module.UUID]] = mapped_column(Integer, nullable=True)
+    total_tokens: Mapped[Optional[uuid_module.UUID]] = mapped_column(Integer, nullable=True)
 
-    latency_ms: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    latency_ms: Mapped[Optional[uuid_module.UUID]] = mapped_column(Integer, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

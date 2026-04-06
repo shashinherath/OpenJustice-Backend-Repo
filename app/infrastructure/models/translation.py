@@ -4,6 +4,8 @@ from typing import Optional
 
 from sqlalchemy import DateTime, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
+import uuid as uuid_module
 
 from app.infrastructure.db.base import Base
 
@@ -13,7 +15,7 @@ class Translation(Base):
 
     __tablename__ = "translations"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    id: Mapped[uuid_module.UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid_module.uuid4)
     source_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     source_language: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
     target_language: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)

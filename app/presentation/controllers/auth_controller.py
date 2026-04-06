@@ -65,6 +65,7 @@ async def login(
         uuid=result.uuid,
         role=result.role,
         preferred_language=result.preferred_language,
+        access_token=result.access_token,
     )
 
     return SuccessResponse(data=data, message="Login successful")
@@ -93,22 +94,6 @@ async def register(
             password=payload.password,
             preferred_language=payload.preferred_language,
         )
-    )
-
-    cookie_secure = (
-        settings.AUTH_COOKIE_SECURE
-        if settings.AUTH_COOKIE_SECURE is not None
-        else not settings.DEBUG
-    )
-
-    response.set_cookie(
-        key=settings.AUTH_COOKIE_NAME,
-        value=result.access_token,
-        httponly=True,
-        secure=cookie_secure,
-        samesite=settings.AUTH_COOKIE_SAMESITE,
-        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-        path="/",
     )
 
     data = RegisterResponseData(

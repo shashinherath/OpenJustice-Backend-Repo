@@ -3,6 +3,8 @@ from typing import Optional
 
 from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
+import uuid as uuid_module
 
 from app.infrastructure.db.base import Base
 
@@ -12,17 +14,9 @@ class Citation(Base):
 
     __tablename__ = "citations"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    message_id: Mapped[Optional[int]] = mapped_column(
-        Integer,
-        ForeignKey("messages.id", ondelete="CASCADE"),
-        nullable=True,
-    )
-    document_id: Mapped[Optional[int]] = mapped_column(
-        Integer,
-        ForeignKey("documents.id"),
-        nullable=True,
-    )
+    id: Mapped[uuid_module.UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid_module.uuid4)
+    message_id: Mapped[Optional[uuid_module.UUID]] = mapped_column(PGUUID(as_uuid=True), ForeignKey("messages.id", ondelete="CASCADE"), index=True)
+    document_id: Mapped[Optional[uuid_module.UUID]] = mapped_column(PGUUID(as_uuid=True), ForeignKey("documents.id"), index=True)
     section_reference: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
 
     # Relationships

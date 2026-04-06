@@ -31,8 +31,8 @@ class LoginRequest(BaseModel):
     def validate_contact_method(self) -> "LoginRequest":
         has_email = self.email is not None
         has_phone = self.phone_number is not None
-        if has_email == has_phone:
-            raise ValueError("Provide exactly one of email or phone_number")
+        if not has_email and not has_phone:
+            raise ValueError("Provide at least one of email or phone_number")
         return self
 
 
@@ -42,6 +42,7 @@ class LoginResponseData(BaseModel):
     uuid: UUID
     role: str
     preferred_language: str
+    access_token: str
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -69,8 +70,8 @@ class RegisterRequest(BaseModel):
     def validate_contact_method(self) -> "RegisterRequest":
         has_email = self.email is not None
         has_phone = self.phone_number is not None
-        if has_email == has_phone:
-            raise ValueError("Provide exactly one of email or phone_number")
+        if not has_email and not has_phone:
+            raise ValueError("Provide at least one of email or phone_number")
         return self
 
 

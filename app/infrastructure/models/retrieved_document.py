@@ -3,6 +3,8 @@ from typing import Optional
 
 from sqlalchemy import Float, ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
+import uuid as uuid_module
 
 from app.infrastructure.db.base import Base
 
@@ -12,17 +14,9 @@ class RetrievedDocument(Base):
 
     __tablename__ = "retrieved_documents"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    retrieval_log_id: Mapped[Optional[int]] = mapped_column(
-        Integer,
-        ForeignKey("retrieval_logs.id", ondelete="CASCADE"),
-        nullable=True,
-    )
-    document_chunk_id: Mapped[Optional[int]] = mapped_column(
-        Integer,
-        ForeignKey("document_chunks.id", ondelete="CASCADE"),
-        nullable=True,
-    )
+    id: Mapped[uuid_module.UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid_module.uuid4)
+    retrieval_log_id: Mapped[Optional[uuid_module.UUID]] = mapped_column(PGUUID(as_uuid=True), ForeignKey("retrieval_logs.id", ondelete="CASCADE"), index=True)
+    document_chunk_id: Mapped[Optional[uuid_module.UUID]] = mapped_column(PGUUID(as_uuid=True), ForeignKey("document_chunks.id", ondelete="CASCADE"), index=True)
     similarity_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
 
     # Relationships
