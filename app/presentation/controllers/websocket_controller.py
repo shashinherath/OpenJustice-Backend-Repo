@@ -36,7 +36,7 @@ async def authenticate_websocket(websocket: WebSocket) -> UUID:
         user_id = payload.get("sub")
         if user_id is None:
             raise JWTError("Invalid token payload")
-        return int(user_id)
+        return UUID(user_id)
     except JWTError as e:
         logger.warning(f"WebSocket auth failed: {e}")
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
