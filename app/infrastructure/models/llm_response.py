@@ -3,6 +3,8 @@ from typing import Optional
 
 from sqlalchemy import ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
+import uuid as uuid_module
 
 from app.infrastructure.db.base import Base
 
@@ -12,12 +14,8 @@ class LLMResponse(Base):
 
     __tablename__ = "llm_responses"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    llm_request_id: Mapped[Optional[int]] = mapped_column(
-        Integer,
-        ForeignKey("llm_requests.id", ondelete="CASCADE"),
-        nullable=True,
-    )
+    id: Mapped[uuid_module.UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid_module.uuid4)
+    llm_request_id: Mapped[Optional[uuid_module.UUID]] = mapped_column(PGUUID(as_uuid=True), ForeignKey("llm_requests.id", ondelete="CASCADE"), index=True)
     response_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     confidence_level: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
 

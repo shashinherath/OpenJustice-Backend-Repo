@@ -22,14 +22,8 @@ class User(Base):
 
     __tablename__ = "users"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    uuid: Mapped[uuid_module.UUID] = mapped_column(
-        PGUUID(as_uuid=True),
-        unique=True,
-        nullable=False,
-        default=uuid_module.uuid4,
-        index=True,
-    )
+    id: Mapped[uuid_module.UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid_module.uuid4)
+    
     email: Mapped[Optional[str]] = mapped_column(
         String(255), unique=True, nullable=True, index=True
     )
@@ -69,4 +63,4 @@ class User(Base):
     )
 
     def __repr__(self) -> str:
-        return f"<User id={self.id} uuid={self.uuid}>"
+        return f"<User id={self.id}>"

@@ -1,3 +1,4 @@
+from uuid import UUID
 from datetime import datetime
 from typing import Optional
 
@@ -15,8 +16,8 @@ class MessageCreate(MessageBase):
 
 
 class MessageResponse(MessageBase):
-    id: int
-    conversation_id: int
+    id: UUID
+    conversation_id: UUID
     created_at: datetime
 
     class Config:
@@ -33,8 +34,8 @@ class ConversationCreate(ConversationBase):
 
 
 class ConversationResponse(ConversationBase):
-    id: int
-    user_id: int
+    id: UUID
+    user_id: UUID
     created_at: datetime
 
     class Config:

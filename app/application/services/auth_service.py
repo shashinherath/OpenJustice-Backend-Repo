@@ -41,7 +41,7 @@ class AuthService:
 
         token = self.token_issuer.create_access_token(
             data={
-                "sub": str(user.uuid),
+                "sub": str(user.id),
                 "role": user.role,
                 "preferred_language": user.preferred_language,
             }
@@ -49,7 +49,7 @@ class AuthService:
 
         return LoginResultDto(
             access_token=token,
-            uuid=user.uuid,
+            uuid=user.id,
             role=user.role,
             preferred_language=user.preferred_language,
         )
@@ -81,7 +81,7 @@ class AuthService:
         # Issue token (auto-login)
         token = self.token_issuer.create_access_token(
             data={
-                "sub": str(user.uuid),
+                "sub": str(user.id),
                 "role": user.role,
                 "preferred_language": user.preferred_language,
             }
@@ -89,7 +89,7 @@ class AuthService:
 
         return RegisterResultDto(
             access_token=token,
-            uuid=user.uuid,
+            uuid=user.id,
             role=user.role,
             preferred_language=user.preferred_language,
         )

@@ -1,3 +1,4 @@
+from uuid import UUID
 from typing import List
 
 from fastapi import APIRouter, Depends, Request, status
@@ -21,11 +22,11 @@ def get_chat_service(db: AsyncSession = Depends(get_db)) -> ChatService:
     return ChatService(db)
 
 
-def get_current_user_id(request: Request) -> int:
+def get_current_user_id(request: Request) -> UUID:
     """Extract user ID from request state injected by auth_middleware."""
     user = getattr(request.state, "user", None)
     if user and "sub" in user:
-        return int(user["sub"])
+        return UUID(user["sub"])
     return -1
 
 
@@ -57,7 +58,7 @@ async def get_conversations(
 
 @router.get("/{conversation_id}", response_model=ConversationDetailResponse)
 async def get_conversation(
-    conversation_id: int,
+    conversation_id: UUID,
     request: Request,
     service: ChatService = Depends(get_chat_service),
 ):
@@ -77,7 +78,7 @@ async def get_conversation(
     status_code=status.HTTP_201_CREATED,
 )
 async def create_message(
-    conversation_id: int,
+    conversation_id: UUID,
     data: MessageCreate,
     request: Request,
     service: ChatService = Depends(get_chat_service),

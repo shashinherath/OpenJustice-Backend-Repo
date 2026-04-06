@@ -15,6 +15,8 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
+import uuid as uuid_module
 
 from app.infrastructure.db.base import Base
 
@@ -32,10 +34,8 @@ class DocumentChunk(Base):
         Index("idx_doc_chunks_embedding_model", "embedding_model"),
     )
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    document_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("documents.id", ondelete="CASCADE"), nullable=False
-    )
+    id: Mapped[uuid_module.UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid_module.uuid4)
+    document_id: Mapped[uuid_module.UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("documents.id", ondelete="CASCADE"), index=True)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     language: Mapped[str] = mapped_column(String(20), nullable=False, default="English")
 
@@ -46,9 +46,9 @@ class DocumentChunk(Base):
         "metadata", JSONB, nullable=True, default=dict
     )
 
-    chunk_index: Mapped[int] = mapped_column(Integer, nullable=False)
-    chunk_total: Mapped[int] = mapped_column(Integer, nullable=False)
-    chunk_size: Mapped[int] = mapped_column(Integer, nullable=False)
+    chunk_index: Mapped[uuid_module.UUID] = mapped_column(Integer, nullable=False)
+    chunk_total: Mapped[uuid_module.UUID] = mapped_column(Integer, nullable=False)
+    chunk_size: Mapped[uuid_module.UUID] = mapped_column(Integer, nullable=False)
 
     embedding_model: Mapped[str] = mapped_column(String(100), nullable=False)
     embedding_version: Mapped[str] = mapped_column(String(20), nullable=False)

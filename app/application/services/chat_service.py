@@ -1,3 +1,4 @@
+from uuid import UUID
 from typing import List
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,7 +18,7 @@ class ChatService:
         self.repository: IChatRepository = ChatRepository(db)
 
     async def create_conversation(
-        self, user_id: int, data: ConversationCreateDto
+        self, user_id: UUID, data: ConversationCreateDto
     ) -> Conversation:
         """Create a new conversation."""
         return await self.repository.create_conversation(
@@ -25,12 +26,12 @@ class ChatService:
         )
 
     async def get_user_conversations(
-        self, user_id: int, skip: int = 0, limit: int = 100
+        self, user_id: UUID, skip: int = 0, limit: int = 100
     ) -> List[Conversation]:
         """Get all conversations for a specific user."""
         return await self.repository.get_conversations_by_user(user_id, skip, limit)
 
-    async def get_conversation(self, conversation_id: int, user_id: int) -> Conversation:
+    async def get_conversation(self, conversation_id: UUID, user_id: UUID) -> Conversation:
         """Get a specific conversation, ensuring the user owns it."""
         conversation = await self.repository.get_conversation(conversation_id)
         if not conversation:
@@ -48,7 +49,7 @@ class ChatService:
         return conversation
 
     async def add_message(
-        self, conversation_id: int, user_id: int, data: MessageCreateDto
+        self, conversation_id: UUID, user_id: UUID, data: MessageCreateDto
     ) -> Message:
         """Add a message to a conversation."""
         # Ensure conversation exists and user owns it
@@ -62,7 +63,7 @@ class ChatService:
         )
 
     async def get_messages(
-        self, conversation_id: int, user_id: int, skip: int = 0, limit: int = 100
+        self, conversation_id: UUID, user_id: UUID, skip: int = 0, limit: int = 100
     ) -> List[Message]:
         """Fetch messages for a conversation."""
         # Ensure conversation exists and user owns it

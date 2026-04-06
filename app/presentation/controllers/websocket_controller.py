@@ -1,3 +1,4 @@
+from uuid import UUID
 import logging
 from datetime import datetime
 
@@ -17,7 +18,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/ws", tags=["WebSocket"])
 
 
-async def authenticate_websocket(websocket: WebSocket) -> int:
+async def authenticate_websocket(websocket: WebSocket) -> UUID:
     """Authenticate WebSocket connection using JWT passed in query string."""
     token = websocket.query_params.get("token")
 
@@ -44,7 +45,7 @@ async def authenticate_websocket(websocket: WebSocket) -> int:
 
 @router.websocket("/chat/{conversation_id}")
 async def websocket_chat_endpoint(
-    websocket: WebSocket, conversation_id: int, db=Depends(get_db)
+    websocket: WebSocket, conversation_id: UUID, db=Depends(get_db)
 ):
     """
     WebSocket endpoint for real-time chat.

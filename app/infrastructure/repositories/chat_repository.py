@@ -1,3 +1,4 @@
+from uuid import UUID
 from typing import Optional
 
 from sqlalchemy import desc, select
@@ -15,7 +16,7 @@ class ChatRepository(IChatRepository):
         self.db = db
 
     async def create_conversation(
-        self, user_id: int, title: str, channel: str = "web"
+        self, user_id: UUID, title: str, channel: str = "web"
     ) -> Conversation:
         conversation = Conversation(user_id=user_id, title=title, channel=channel)
         self.db.add(conversation)
@@ -24,7 +25,7 @@ class ChatRepository(IChatRepository):
         return conversation
 
     async def get_conversations_by_user(
-        self, user_id: int, skip: int = 0, limit: int = 100
+        self, user_id: UUID, skip: int = 0, limit: int = 100
     ) -> list[Conversation]:
         result = await self.db.execute(
             select(Conversation)
@@ -35,14 +36,14 @@ class ChatRepository(IChatRepository):
         )
         return list(result.scalars().all())
 
-    async def get_conversation(self, conversation_id: int) -> Optional[Conversation]:
+    async def get_conversation(self, conversation_id: UUID) -> Optional[Conversation]:
         result = await self.db.execute(
             select(Conversation).where(Conversation.id == conversation_id)
         )
         return result.scalars().first()
 
     async def add_message(
-        self, conversation_id: int, sender: str, content: str, message_type: str = "text"
+        self, conversation_id: UUID, sender: str, content: str, message_type: str = "text"
     ) -> Message:
         message = Message(
             conversation_id=conversation_id,
@@ -56,7 +57,7 @@ class ChatRepository(IChatRepository):
         return message
 
     async def get_messages(
-        self, conversation_id: int, skip: int = 0, limit: int = 100
+        self, conversation_id: UUID, skip: int = 0, limit: int = 100
     ) -> list[Message]:
         result = await self.db.execute(
             select(Message)

@@ -15,14 +15,14 @@ class RetrievalLog(Base):
 
     __tablename__ = "retrieval_logs"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    id: Mapped[uuid_module.UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid_module.uuid4)
     correlation_id: Mapped[Optional[uuid_module.UUID]] = mapped_column(
         PGUUID(as_uuid=True), nullable=True
     )
-    conversation_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    conversation_id: Mapped[Optional[uuid_module.UUID]] = mapped_column(Integer, nullable=True)
     query: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     language: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
-    top_k: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    top_k: Mapped[Optional[uuid_module.UUID]] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
