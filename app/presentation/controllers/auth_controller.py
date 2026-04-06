@@ -65,6 +65,7 @@ async def login(
         uuid=result.uuid,
         role=result.role,
         preferred_language=result.preferred_language,
+        access_token=result.access_token,
     )
 
     return SuccessResponse(data=data, message="Login successful")
@@ -115,6 +116,7 @@ async def register(
         uuid=result.uuid,
         role=result.role,
         preferred_language=result.preferred_language,
+        access_token=result.access_token,
     )
 
     return SuccessResponse(data=data, message="Registration successful")
