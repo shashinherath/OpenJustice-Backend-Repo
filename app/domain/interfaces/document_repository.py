@@ -3,6 +3,7 @@ from typing import List, Optional
 from uuid import UUID
 
 from app.infrastructure.models.document import Document
+from app.infrastructure.models.document_chunk import DocumentChunk
 
 
 class IDocumentRepository(ABC):
@@ -26,4 +27,14 @@ class IDocumentRepository(ABC):
     @abstractmethod
     async def delete(self, document_id: UUID) -> bool:
         """Delete a document by its ID."""
+        pass
+
+    @abstractmethod
+    async def save_chunks(self, chunks: List[DocumentChunk]) -> None:
+        """Save vector chunks."""
+        pass
+
+    @abstractmethod
+    async def search_similar_chunks(self, query_embedding: list[float], limit: int = 5) -> List[DocumentChunk]:
+        """Retrieve the most semantically relevant chunks."""
         pass

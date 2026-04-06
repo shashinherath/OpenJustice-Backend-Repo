@@ -39,16 +39,15 @@ class DocumentChunk(Base):
     content: Mapped[str] = mapped_column(Text, nullable=False)
     language: Mapped[str] = mapped_column(String(20), nullable=False, default="English")
 
-    # Vector embedding (1536 dims — text-embedding-3-small)
-    embedding: Mapped[list] = mapped_column(Vector(1536), nullable=False)
+    embedding: Mapped[list] = mapped_column(Vector(3072), nullable=False)
 
     metadata_: Mapped[Optional[dict]] = mapped_column(
         "metadata", JSONB, nullable=True, default=dict
     )
 
-    chunk_index: Mapped[uuid_module.UUID] = mapped_column(Integer, nullable=False)
-    chunk_total: Mapped[uuid_module.UUID] = mapped_column(Integer, nullable=False)
-    chunk_size: Mapped[uuid_module.UUID] = mapped_column(Integer, nullable=False)
+    chunk_index: Mapped[int] = mapped_column(Integer, nullable=False)
+    chunk_total: Mapped[int] = mapped_column(Integer, nullable=False)
+    chunk_size: Mapped[int] = mapped_column(Integer, nullable=False)
 
     embedding_model: Mapped[str] = mapped_column(String(100), nullable=False)
     embedding_version: Mapped[str] = mapped_column(String(20), nullable=False)

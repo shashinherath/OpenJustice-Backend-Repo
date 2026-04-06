@@ -22,6 +22,43 @@ def get_document_service(db: AsyncSession = Depends(get_db)) -> DocumentService:
     return DocumentService(repository=repository, storage=storage)
 
 
+from app.application.services.rag_service import RAGService
+from app.application.exceptions.app_errors import AppError
+from fastapi import BackgroundTasks
+
+def get_rag_service(db: AsyncSession = Depends(get_db)) -> RAGService:
+    repository = DocumentRepository(db)
+    return RAGService(repository=repository)
+
+@router.post(
+    "/{document_id}/process",
+    response_model=SuccessResponse[dict],
+    status_code=status.HTTP_202_ACCEPTED
+)
+async def process_document(
+    document_id: UUID,
+    background_tasks: BackgroundTasks,
+    doc_service: DocumentService = Depends(get_document_service),
+    rag_service: RAGService = Depends(get_rag_service)
+):
+    """
+    Manually trigger LangChain chunking and OpenAI pgvector embedding loop.
+    Runs asynchronously in the background.
+    """
+    doc = await doc_service.get_document(document_id)
+    if not doc.storage_path:
+        raise AppError("Document has no physical storage path", status_code=400)
+        
+    background_tasks.add_task(
+        rag_service.process_and_store_document,
+        document_id=document_id,
+        storage_path=doc.storage_path,
+        language=doc.language
+    )
+    
+    return SuccessResponse(data={"job_status": "queued"}, message="Document is queued for LangChain decomposition and OpenAI pgvector embedding.")
+
+
 @router.post(
     "",
     response_model=SuccessResponse[DocumentResponse],

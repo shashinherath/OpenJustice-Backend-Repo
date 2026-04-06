@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.interfaces.document_repository import IDocumentRepository
 from app.infrastructure.models.document import Document
+from app.infrastructure.models.document_chunk import DocumentChunk
 
 
 class DocumentRepository(IDocumentRepository):
@@ -39,3 +40,20 @@ class DocumentRepository(IDocumentRepository):
             await self.session.commit()
             return True
         return False
+
+    async def save_chunks(self, chunks: List[DocumentChunk]) -> None:
+        self.session.add_all(chunks)
+        await self.session.commit()
+
+    async def search_similar_chunks(self, query_embedding: list[float], limit: int = 5) -> List[DocumentChunk]:
+        """
+        Uses pgvector's cosine_distance mapper to return the closest chunks.
+        Lower distance means more similar for cosine distance natively in pgvector.
+        """
+        stmt = (
+            select(DocumentChunk)
+            .order_by(DocumentChunk.embedding.cosine_distance(query_embedding))
+            .limit(limit)
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
