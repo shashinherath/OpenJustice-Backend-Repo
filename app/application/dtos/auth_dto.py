@@ -29,7 +29,6 @@ class RegisterDto:
 
 @dataclass(frozen=True)
 class RegisterResultDto:
-    access_token: str
     uuid: UUID
     role: str
     preferred_language: str

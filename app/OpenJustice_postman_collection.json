@@ -1,0 +1,253 @@
+{
+  "info": {
+    "_postman_id": "3d52e45e-7ecd-45b6-8b93-39faeb97b8d3",
+    "name": "OpenJustice",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"email\": \"user@gmail.com\",\r\n  \"phone_number\": \"+15551234567\",\r\n  \"password\": \"Test1234\",\r\n  \"preferred_language\": \"en\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{webUrl}}/api/auth/register",
+              "host": [
+                "{{webUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"email\": \"user@gmail.com\",\r\n  \"password\": \"Test1234\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{webUrl}}/api/auth/login",
+              "host": [
+                "{{webUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Chat",
+      "item": [
+        {
+          "name": "Create Conversation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer <YOUR_ACCESS_TOKEN>",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"title\": \"New Case Inquiry\",\r\n  \"channel\": \"web\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{webUrl}}/api/chats",
+              "host": [
+                "{{webUrl}}"
+              ],
+              "path": [
+                "api",
+                "chats"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Conversations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer <YOUR_ACCESS_TOKEN>",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{webUrl}}/api/chats?skip=0&limit=100",
+              "host": [
+                "{{webUrl}}"
+              ],
+              "path": [
+                "api",
+                "chats"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "0"
+                },
+                {
+                  "key": "limit",
+                  "value": "100"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Conversation Detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer <YOUR_ACCESS_TOKEN>",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{webUrl}}/api/chats/{{conversation_id}}",
+              "host": [
+                "{{webUrl}}"
+              ],
+              "path": [
+                "api",
+                "chats",
+                "{{conversation_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer <YOUR_ACCESS_TOKEN>",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"content\": \"Hello, I need legal help.\",\r\n  \"sender\": \"user\",\r\n  \"message_type\": \"text\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{webUrl}}/api/chats/{{conversation_id}}/messages",
+              "host": [
+                "{{webUrl}}"
+              ],
+              "path": [
+                "api",
+                "chats",
+                "{{conversation_id}}",
+                "messages"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "WhatsApp Integration",
+      "item": [
+        {
+          "name": "Webhook Callback",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "From",
+                  "value": "whatsapp:+14155238886",
+                  "type": "text"
+                },
+                {
+                  "key": "Body",
+                  "value": "Testing incoming message",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{webUrl}}/api/whatsapp/webhook",
+              "host": [
+                "{{webUrl}}"
+              ],
+              "path": [
+                "api",
+                "whatsapp",
+                "webhook"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "webUrl",
+      "value": "http://127.0.0.1:8000",
+      "type": "default"
+    },
+    {
+      "key": "conversation_id",
+      "value": "00000000-0000-0000-0000-000000000000",
+      "type": "default"
+    }
+  ]
+}

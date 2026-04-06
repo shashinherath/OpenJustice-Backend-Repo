@@ -78,17 +78,7 @@ class AuthService:
         # Persist
         user = await self.repository.create(user)
 
-        # Issue token (auto-login)
-        token = self.token_issuer.create_access_token(
-            data={
-                "sub": str(user.id),
-                "role": user.role,
-                "preferred_language": user.preferred_language,
-            }
-        )
-
         return RegisterResultDto(
-            access_token=token,
             uuid=user.id,
             role=user.role,
             preferred_language=user.preferred_language,

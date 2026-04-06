@@ -81,6 +81,5 @@ class RegisterResponseData(BaseModel):
     uuid: UUID
     role: str
     preferred_language: str
-    access_token: str
 
     model_config = ConfigDict(from_attributes=True)
