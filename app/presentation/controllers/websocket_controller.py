@@ -12,6 +12,10 @@ from app.infrastructure.websocket.connection_manager import (
     connection_manager,
     rate_limiter,
 )
+from app.infrastructure.external.openai_client import OpenAIClient
+from app.application.services.llm_service import LLMService
+from app.application.services.rag_service import RAGService
+from app.infrastructure.repositories.document_repository import DocumentRepository
 
 logger = logging.getLogger(__name__)
 
@@ -96,18 +100,35 @@ async def websocket_chat_endpoint(
             if message_type == "ping":
                 await websocket.send_json({"type": "pong"})
 
-            # In typical architecture, this sends message to LLM / RAG service to stream response back.
+            # Route message to intelligence logic
             elif message_type == "chat_message":
                 msg_content = data.get("message", "")
                 
-                # Mock a streaming or instant response
-                await websocket.send_json(
-                    {
-                        "type": "chat_response",
-                        "response": f"Message received: {msg_content}",
-                        "timestamp": datetime.utcnow().isoformat(),
-                    }
-                )
+                doc_repo = DocumentRepository(db)
+                rag_service = RAGService(doc_repo)
+                llm_service = LLMService(chat_service, rag_service, OpenAIClient())
+                
+                try:
+                    async for chunk in llm_service.stream_response(conversation_id, user_id, msg_content):
+                        await websocket.send_json(
+                            {
+                                "type": "chat_chunk",
+                                "chunk": chunk,
+                                "timestamp": datetime.utcnow().isoformat(),
+                            }
+                        )
+                    
+                    # Notify frontend that AI has finished typing
+                    await websocket.send_json(
+                        {
+                            "type": "chat_completion",
+                            "status": "complete",
+                            "timestamp": datetime.utcnow().isoformat(),
+                        }
+                    )
+                except Exception as e:
+                    logger.error(f"WS LLM Error: {e}", exc_info=True)
+                    await websocket.send_json({"type": "error", "message": "AI module encountered an error."})
 
     except WebSocketDisconnect:
         logger.info(f"WebSocket disconnected")

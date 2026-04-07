@@ -83,3 +83,26 @@ class RAGService:
 
         except Exception as e:
             logger.error(f"Failed to process and embed document {document_id}: {str(e)}", exc_info=True)
+
+    async def retrieve_context(self, query: str, limit: int = None) -> str:
+        """
+        Embeds a raw string query and retrieves the mathematically closest local data chunks.
+        Returns them as a concatenated string to be injected securely into the LLM logic layer.
+        """
+        limit = limit or settings.VECTOR_SEARCH_TOP_K
+        try:
+            # Generate vectors for query using native langchain aembed_query
+            query_vector = await self.embeddings.aembed_query(query)
+            
+            # Extract pgvector neighbors
+            chunks = await self.repository.search_similar_chunks(query_vector, limit=limit)
+            
+            if not chunks:
+                return ""
+            
+            # Combine content seamlessly
+            context_text = "\n\n---\n\n".join([f"REFERENCE TEXT:\n{c.content}" for c in chunks])
+            return context_text
+        except Exception as e:
+            logger.error(f"RAG Retrieval failed during similarity extraction: {str(e)}", exc_info=True)
+            return ""

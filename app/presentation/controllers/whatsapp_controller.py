@@ -4,16 +4,29 @@ from fastapi import APIRouter, Form, Depends, Response, BackgroundTasks
 from app.application.services.whatsapp_service import WhatsAppService
 from app.infrastructure.external.twilio_client import TwilioWhatsAppClient
 
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.infrastructure.db.base import get_db
+from app.application.services.llm_service import LLMService
+from app.application.services.chat_service import ChatService
+from app.application.services.rag_service import RAGService
+from app.infrastructure.external.openai_client import OpenAIClient
+from app.infrastructure.repositories.document_repository import DocumentRepository
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/whatsapp", tags=["WhatsApp"])
 
 
-def get_whatsapp_service() -> WhatsAppService:
+def get_whatsapp_service(db: AsyncSession = Depends(get_db)) -> WhatsAppService:
     """Dependency injection for WhatsAppService."""
-    # In a larger application with a DI framework, this would be managed there.
     client = TwilioWhatsAppClient()
-    return WhatsAppService(whatsapp_client=client)
+    
+    chat_svc = ChatService(db)
+    doc_repo = DocumentRepository(db)
+    rag_svc = RAGService(doc_repo)
+    
+    llm_service = LLMService(chat_svc, rag_svc, OpenAIClient())
+    return WhatsAppService(whatsapp_client=client, llm_service=llm_service, db=db)
 
 
 @router.post("/webhook")
