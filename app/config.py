@@ -38,8 +38,14 @@ class Settings(BaseSettings):
     WHISPER_MODEL: str = "whisper-1"
     
     # TTS (Text-to-Speech)
-    TTS_MODEL: str = "tts-1-hd"
+    TTS_MODEL: str = "tts-1"
     TTS_VOICE: str = "alloy"
+    
+    # Audio Processing & Storage Limits
+    MAX_AUDIO_DURATION_SECONDS: int = 300
+    MAX_AUDIO_FILE_SIZE_MB: int = 25
+    AUDIO_TEMP_DIR: str = "temp/audio"
+    AUDIO_RETENTION_MINUTES: int = 60
     
     # AWS S3
     AWS_ACCESS_KEY_ID: Optional[str] = None
@@ -58,6 +64,9 @@ class Settings(BaseSettings):
     TWILIO_ACCOUNT_SID: Optional[str] = None
     TWILIO_AUTH_TOKEN: Optional[str] = None
     TWILIO_WHATSAPP_NUMBER: Optional[str] = None
+    
+    # Public URL (your ngrok / production domain — Twilio needs this to fetch audio files)
+    PUBLIC_BASE_URL: str = "http://localhost:8000"
     
     # WhatsApp (Meta Cloud API)
     META_WHATSAPP_TOKEN: Optional[str] = None

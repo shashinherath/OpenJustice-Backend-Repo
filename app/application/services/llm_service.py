@@ -6,6 +6,7 @@ from app.application.dtos.chat_dto import MessageCreateDto
 from app.application.services.chat_service import ChatService
 from app.application.services.rag_service import RAGService
 from app.domain.interfaces.llm_client import ILLMClient
+from app.application.services.language_detection_service import LanguageDetectionService
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +25,10 @@ class LLMService:
     async def _build_messages(self, conversation_id: UUID, user_id: UUID, query: str) -> List[Dict[str, Any]]:
         """Constructs the full system-history-context message array for LLMs."""
         
-        messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+        detected_lang = LanguageDetectionService.detect_language(query)
+        language_instruction = f"\nCRITICAL: You must write your final answer predominantly and structurally in {detected_lang}."
+        
+        messages = [{"role": "system", "content": SYSTEM_PROMPT + language_instruction}]
         
         # 1. Fetch recent conversation history limit to last 15 messages to save context windows
         history = await self.chat_service.get_messages(conversation_id, user_id, skip=0, limit=15)

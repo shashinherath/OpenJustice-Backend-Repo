@@ -32,9 +32,10 @@ def get_whatsapp_service(db: AsyncSession = Depends(get_db)) -> WhatsAppService:
 @router.post("/webhook")
 async def twilio_webhook(
     background_tasks: BackgroundTasks,
-    Body: str = Form(...),
     From: str = Form(...),
     To: str = Form(...),
+    Body: str = Form(""),
+    MediaUrl0: str = Form(None),
     whatsapp_service: WhatsAppService = Depends(get_whatsapp_service)
 ):
     """
@@ -54,7 +55,8 @@ async def twilio_webhook(
     background_tasks.add_task(
         whatsapp_service.handle_incoming_message,
         from_number=From,
-        body=Body
+        body=Body,
+        media_url=MediaUrl0
     )
     
     # Return empty TwiML response. Twilio interprets this as "Received OK, no immediate reply".
