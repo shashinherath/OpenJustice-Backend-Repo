@@ -2,11 +2,13 @@ import logging
 
 from app.config import settings
 from app.domain.interfaces.whatsapp_client import IWhatsAppClient
+from app.application.services.language_detection_service import LanguageDetectionService
+from app.application.services.temp_file_manager import TempFileManager
+from app.application.services.speech_to_text_service import SpeechToTextService
+from app.application.services.text_to_speech_service import TextToSpeechService
 from sqlalchemy import select
 from app.infrastructure.models.user import User
 from app.infrastructure.models.conversation import Conversation
-from app.application.services.temp_file_manager import TempFileManager
-from app.application.services.speech_to_text_service import SpeechToTextService
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +82,6 @@ class WhatsAppService:
             
             # 4. Synthesize Audio back out if user spoke
             if has_voiced:
-                from app.application.services.text_to_speech_service import TextToSpeechService
                 try:
                     tts_service = TextToSpeechService()
                     out_audio_path = await tts_service.synthesize_speech(reply_message)

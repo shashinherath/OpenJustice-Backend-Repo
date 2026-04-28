@@ -35,10 +35,10 @@ class Settings(BaseSettings):
     OPENAI_TEMPERATURE: float = 0.2
     
     # Whisper (Speech-to-Text)
-    WHISPER_MODEL: str = "whisper-1"
+    WHISPER_MODEL: str = "gpt-4o-mini-transcribe"
     
     # TTS (Text-to-Speech)
-    TTS_MODEL: str = "tts-1"
+    TTS_MODEL: str = "gpt-4o-mini-tts"
     TTS_VOICE: str = "alloy"
     
     # Audio Processing & Storage Limits

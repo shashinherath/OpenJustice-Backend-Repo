@@ -10,7 +10,8 @@ from app.application.services.language_detection_service import LanguageDetectio
 
 logger = logging.getLogger(__name__)
 
-SYSTEM_PROMPT = """You are OpenJustice, a highly capable and intelligent AI legal assistant specializing in providing precise, helpful, and highly accurate answers regarding the legal system.
+SYSTEM_PROMPT = """You are OpenJustice, a highly capable and intelligent AI legal assistant specializing in providing precise, helpful, and highly accurate answers regarding the legal system in Sri Lanka.
+You natively support English, Sinhala, and Tamil. The user might speak to you in English, or in native Sinhala/Tamil script, or using Romanized/Transliterated characters (Singlish/Tanglish). You MUST gracefully understand and translate these seamlessly.
 Use the provided local legal context to answer the user's question securely. Provide clear, well-structured, and easily readable answers. If you don't know the answer or if the context doesn't exist, admit that you don't know instead of making things up.
 """
 
@@ -26,7 +27,7 @@ class LLMService:
         """Constructs the full system-history-context message array for LLMs."""
         
         detected_lang = LanguageDetectionService.detect_language(query)
-        language_instruction = f"\nCRITICAL: You must write your final answer predominantly and structurally in {detected_lang}."
+        language_instruction = f"\nCRITICAL: The user's query predominantly matched structural signs of the '{detected_lang}' language. If the text appears to be transliterated from another native language (e.g. Singlish), safely parse it natively and answer directly in their native script. Do NOT say you do not understand the language."
         
         messages = [{"role": "system", "content": SYSTEM_PROMPT + language_instruction}]
         
