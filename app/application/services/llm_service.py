@@ -8,12 +8,10 @@ from app.application.services.rag_service import RAGService
 from app.domain.interfaces.llm_client import ILLMClient
 from app.application.services.language_detection_service import LanguageDetectionService
 
-logger = logging.getLogger(__name__)
+from app.infrastructure.security.prompt_security import PromptSecurityValidator
+from app.application.prompts.multilingual import MultilingualPromptBuilder
 
-SYSTEM_PROMPT = """You are OpenJustice, a highly capable and intelligent AI legal assistant specializing in providing precise, helpful, and highly accurate answers regarding the legal system in Sri Lanka.
-You natively support English, Sinhala, and Tamil. The user might speak to you in English, or in native Sinhala/Tamil script, or using Romanized/Transliterated characters (Singlish/Tanglish). You MUST gracefully understand and translate these seamlessly.
-Use the provided local legal context to answer the user's question securely. Provide clear, well-structured, and easily readable answers. If you don't know the answer or if the context doesn't exist, admit that you don't know instead of making things up.
-"""
+logger = logging.getLogger(__name__)
 
 class LLMService:
     """Orchestrates interactions between the Chat history, RAG vectors, and Language Models."""
@@ -26,10 +24,24 @@ class LLMService:
     async def _build_messages(self, conversation_id: UUID, user_id: UUID, query: str) -> List[Dict[str, Any]]:
         """Constructs the full system-history-context message array for LLMs."""
         
-        detected_lang = LanguageDetectionService.detect_language(query)
-        language_instruction = f"\nCRITICAL: The user's query predominantly matched structural signs of the '{detected_lang}' language. If the text appears to be transliterated from another native language (e.g. Singlish), safely parse it natively and answer directly in their native script. Do NOT say you do not understand the language."
+        # Security Check & Sanitize
+        is_safe, violations = PromptSecurityValidator.is_safe(query)
+        if not is_safe:
+            logger.warning(f"Prompt injection detected on query '{query}': {violations}")
+        safe_query = PromptSecurityValidator.sanitize(query)
         
-        messages = [{"role": "system", "content": SYSTEM_PROMPT + language_instruction}]
+        detected_lang = LanguageDetectionService.detect_language(safe_query)
+        
+        # 2. Extract RAG Context for this new query
+        context = await self.rag_service.retrieve_context(safe_query)
+        
+        # Fetch dynamic Multilingual Template from Registry
+        system_prompt = MultilingualPromptBuilder.build_system_prompt(detected_lang, context)
+        
+        # Security Marker added to prevent system instruction leakage
+        system_prompt += "\n\n[SECURITY_MARKER: OpenJustice_2025]"
+        
+        messages = [{"role": "system", "content": system_prompt}]
         
         # 1. Fetch recent conversation history limit to last 15 messages to save context windows
         history = await self.chat_service.get_messages(conversation_id, user_id, skip=0, limit=15)
@@ -41,13 +53,9 @@ class LLMService:
             role = "user" if msg.sender == "user" else "assistant"
             messages.append({"role": role, "content": msg.content})
 
-        # 2. Extract RAG Context for this new query
-        context = await self.rag_service.retrieve_context(query)
-        
-        # 3. Add Context and Final prompt
-        final_prompt = query
+        final_prompt = safe_query
         if context:
-            final_prompt = f"LOCAL LEGAL CONTEXT:\n{context}\n\nUSER QUERY:\n{query}"
+            final_prompt = f"USER QUERY:\n{safe_query}"
             
         messages.append({"role": "user", "content": final_prompt})
         
