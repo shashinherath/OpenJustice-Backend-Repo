@@ -63,6 +63,8 @@ async def login(
 
     data = LoginResponseData(
         uuid=result.uuid,
+        first_name=result.first_name,
+        last_name=result.last_name,
         role=result.role,
         preferred_language=result.preferred_language,
         access_token=result.access_token,
@@ -89,6 +91,8 @@ async def register(
     )
     result = await service.register(
         RegisterDto(
+            first_name=payload.first_name,
+            last_name=payload.last_name,
             email=payload.email,
             phone_number=payload.phone_number,
             password=payload.password,
@@ -98,6 +102,8 @@ async def register(
 
     data = RegisterResponseData(
         uuid=result.uuid,
+        first_name=result.first_name,
+        last_name=result.last_name,
         role=result.role,
         preferred_language=result.preferred_language,
     )

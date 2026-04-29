@@ -50,6 +50,8 @@ class AuthService:
         return LoginResultDto(
             access_token=token,
             uuid=user.id,
+            first_name=user.first_name,
+            last_name=user.last_name,
             role=user.role,
             preferred_language=user.preferred_language,
         )
@@ -69,6 +71,8 @@ class AuthService:
         # Hash password and create user model
         hashed_password = self.password_hasher.hash_password(dto.password)
         user = User(
+            first_name=dto.first_name,
+            last_name=dto.last_name,
             email=dto.email,
             phone_number=dto.phone_number,
             hashed_password=hashed_password,
@@ -80,6 +84,8 @@ class AuthService:
 
         return RegisterResultDto(
             uuid=user.id,
+            first_name=user.first_name,
+            last_name=user.last_name,
             role=user.role,
             preferred_language=user.preferred_language,
         )
