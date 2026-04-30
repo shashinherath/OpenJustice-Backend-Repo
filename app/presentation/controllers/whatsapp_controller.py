@@ -22,10 +22,8 @@ def get_whatsapp_service(db: AsyncSession = Depends(get_db)) -> WhatsAppService:
     client = TwilioWhatsAppClient()
     
     chat_svc = ChatService(db)
-    doc_repo = DocumentRepository(db)
-    rag_svc = RAGService(doc_repo)
     
-    llm_service = LLMService(chat_svc, rag_svc, OpenAIClient())
+    llm_service = LLMService(chat_svc, OpenAIClient())
     return WhatsAppService(whatsapp_client=client, llm_service=llm_service, db=db)
 
 

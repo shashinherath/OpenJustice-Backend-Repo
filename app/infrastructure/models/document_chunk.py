@@ -14,7 +14,7 @@ from sqlalchemy import (
     func,
 )
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 import uuid as uuid_module
 
@@ -68,6 +68,15 @@ class DocumentChunk(Base):
     # Relationships
     document: Mapped["Document"] = relationship("Document", back_populates="chunks")  # type: ignore[name-defined]
     retrieved_in: Mapped[list["RetrievedDocument"]] = relationship("RetrievedDocument", back_populates="document_chunk", cascade="all, delete-orphan")  # type: ignore[name-defined]
+
+    @validates('embedding')
+    def validate_embedding_immutable(self, key, value):
+        """Prevent embedding modification after creation to ensure reproducibility."""
+        if self.id is not None and getattr(self, 'embedding', None) is not None:
+            raise ValueError(
+                "Embeddings are immutable. Create a new chunk instead of updating."
+            )
+        return value
 
     def __repr__(self) -> str:
         return f"<DocumentChunk id={self.id} doc_id={self.document_id} idx={self.chunk_index}>"

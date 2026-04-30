@@ -3,7 +3,6 @@ import logging
 from uuid import UUID
 
 from langchain_community.document_loaders import PyPDFLoader, TextLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
 
 from app.config import settings
@@ -21,10 +20,8 @@ class RAGService:
             model=settings.OPENAI_EMBEDDING_MODEL, 
             api_key=settings.OPENAI_API_KEY
         )
-        self.text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=settings.CHUNK_SIZE,
-            chunk_overlap=settings.CHUNK_OVERLAP,
-        )
+        # We will use the LegalDocumentChunker logic internally inside process_and_store_document
+
 
     async def process_and_store_document(self, document_id: UUID, storage_path: str, language: str = "English"):
         """Extracts text depending on extension, chunks it, embeds it, and stores pgvector rows."""
@@ -39,12 +36,30 @@ class RAGService:
             logger.error(f"Unsupported extraction format for Document {document_id}")
             return
         
+        
         try:
             # 2. Extract Document (usually synchronous IO)
             docs = loader.load()
             
-            # 3. Split into manageable chunks
-            splits = self.text_splitter.split_documents(docs)
+            # 3. Split into manageable chunks using Legal Hierarchy
+            from langchain_text_splitters import RecursiveCharacterTextSplitter
+            
+            LEGAL_SEPARATORS = [
+                "\n\n## ",  # Section headers
+                "\n\n### ",  # Subsection headers
+                "\n\n",  # Paragraphs
+                "\n",  # Lines
+                ". ",  # Sentences
+                " "  # Words
+            ]
+            
+            text_splitter = RecursiveCharacterTextSplitter(
+                chunk_size=settings.CHUNK_SIZE,
+                chunk_overlap=settings.CHUNK_OVERLAP,
+                separators=LEGAL_SEPARATORS
+            )
+            
+            splits = text_splitter.split_documents(docs)
             
             if not splits:
                 logger.warning(f"No textual content extracted from Document {document_id}")
@@ -53,7 +68,6 @@ class RAGService:
             texts = [s.page_content for s in splits]
             
             # 4. Generate Embeddings (this hits the network)
-            # Using aembed_documents natively supports async execution
             vectors = await self.embeddings.aembed_documents(texts)
             
             # 5. Assemble to Database Models
@@ -70,9 +84,9 @@ class RAGService:
                     chunk_total=chunk_total,
                     chunk_size=len(split.page_content),
                     embedding_model=settings.OPENAI_EMBEDDING_MODEL,
-                    embedding_version="v3"
+                    embedding_version="v3",
+                    chunking_version="v1"  # Version tracked!
                 )
-                # Add Langchain metadata (like page number, etc.)
                 chunk.metadata_ = split.metadata
                 db_chunks.append(chunk)
 
@@ -84,25 +98,3 @@ class RAGService:
         except Exception as e:
             logger.error(f"Failed to process and embed document {document_id}: {str(e)}", exc_info=True)
 
-    async def retrieve_context(self, query: str, limit: int = None) -> str:
-        """
-        Embeds a raw string query and retrieves the mathematically closest local data chunks.
-        Returns them as a concatenated string to be injected securely into the LLM logic layer.
-        """
-        limit = limit or settings.VECTOR_SEARCH_TOP_K
-        try:
-            # Generate vectors for query using native langchain aembed_query
-            query_vector = await self.embeddings.aembed_query(query)
-            
-            # Extract pgvector neighbors
-            chunks = await self.repository.search_similar_chunks(query_vector, limit=limit)
-            
-            if not chunks:
-                return ""
-            
-            # Combine content seamlessly
-            context_text = "\n\n---\n\n".join([f"REFERENCE TEXT:\n{c.content}" for c in chunks])
-            return context_text
-        except Exception as e:
-            logger.error(f"RAG Retrieval failed during similarity extraction: {str(e)}", exc_info=True)
-            return ""

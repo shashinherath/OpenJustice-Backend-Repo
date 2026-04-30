@@ -45,13 +45,16 @@ class DocumentRepository(IDocumentRepository):
         self.session.add_all(chunks)
         await self.session.commit()
 
-    async def search_similar_chunks(self, query_embedding: list[float], limit: int = 5) -> List[DocumentChunk]:
+    async def search_similar_chunks(self, query_embedding: list[float], limit: int = 5, threshold: float = 0.7) -> List[DocumentChunk]:
         """
         Uses pgvector's cosine_distance mapper to return the closest chunks.
         Lower distance means more similar for cosine distance natively in pgvector.
+        A threshold of 0.7 means cosine distance must be < 0.3.
         """
+        max_distance = 1.0 - threshold
         stmt = (
             select(DocumentChunk)
+            .where(DocumentChunk.embedding.cosine_distance(query_embedding) < max_distance)
             .order_by(DocumentChunk.embedding.cosine_distance(query_embedding))
             .limit(limit)
         )

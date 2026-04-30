@@ -6,6 +6,8 @@ from app.application.services.language_detection_service import LanguageDetectio
 from app.application.services.temp_file_manager import TempFileManager
 from app.application.services.speech_to_text_service import SpeechToTextService
 from app.application.services.text_to_speech_service import TextToSpeechService
+from app.application.services.retrieval_service import RetrievalService
+from app.infrastructure.repositories.document_repository import DocumentRepository
 from sqlalchemy import select
 from app.infrastructure.models.user import User
 from app.infrastructure.models.conversation import Conversation
@@ -20,6 +22,8 @@ class WhatsAppService:
         self.whatsapp_client = whatsapp_client
         self.llm_service = llm_service
         self.db = db
+        # Initialize retrieval service mapping strictly to DB session
+        self.retrieval_service = RetrievalService(DocumentRepository(db))
 
     async def handle_incoming_message(self, from_number: str, body: str = None, media_url: str = None) -> None:
         """
@@ -73,11 +77,16 @@ class WhatsAppService:
             
         # 3. Synchronously Execute Intelligence
         try:
-            # Execute intelligence RAG loop (LanguageDetection automatically translates prompt natively inside)
+            # 3a. Retrieve intelligent Context explicitly to maintain separation of concerns
+            chunks, confidence = await self.retrieval_service.retrieve(query=body)
+            context = "\n\n---\n\n".join([f"REFERENCE TEXT:\n{c.content}" for c in chunks])
+            
+            # 3b. Execute LLM using the extracted Context
             reply_message = await self.llm_service.generate_response(
                 conversation_id=conv.id, 
                 user_id=user.id, 
-                query=body
+                query=body,
+                context=context
             )
             
             # 4. Synthesize Audio back out if user spoke

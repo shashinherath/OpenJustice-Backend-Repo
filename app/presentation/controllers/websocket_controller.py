@@ -14,7 +14,7 @@ from app.infrastructure.websocket.connection_manager import (
 )
 from app.infrastructure.external.openai_client import OpenAIClient
 from app.application.services.llm_service import LLMService
-from app.application.services.rag_service import RAGService
+from app.application.services.retrieval_service import RetrievalService
 from app.infrastructure.repositories.document_repository import DocumentRepository
 
 logger = logging.getLogger(__name__)
@@ -105,11 +105,14 @@ async def websocket_chat_endpoint(
                 msg_content = data.get("message", "")
                 
                 doc_repo = DocumentRepository(db)
-                rag_service = RAGService(doc_repo)
-                llm_service = LLMService(chat_service, rag_service, OpenAIClient())
+                retrieval_service = RetrievalService(doc_repo)
+                llm_service = LLMService(chat_service, OpenAIClient())
                 
                 try:
-                    async for chunk in llm_service.stream_response(conversation_id, user_id, msg_content):
+                    chunks, confidence = await retrieval_service.retrieve(query=msg_content)
+                    context = "\n\n---\n\n".join([f"REFERENCE TEXT:\n{c.content}" for c in chunks])
+                    
+                    async for chunk in llm_service.stream_response(conversation_id, user_id, msg_content, context):
                         await websocket.send_json(
                             {
                                 "type": "chat_chunk",
