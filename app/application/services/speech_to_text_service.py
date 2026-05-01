@@ -22,12 +22,18 @@ class SpeechToTextService:
 
         try:
             # Whisper handles MP3, MP4, MPEG, MPGA, M4A, WAV, and WEBM
-            with open(audio_file_path, 'rb') as audio_file:
-                response = await self.client.audio.transcriptions.create(
-                    model=self.model,
-                    file=audio_file,
-                    response_format="text"
-                )
+            def _read_audio():
+                with open(audio_file_path, 'rb') as f:
+                    return f.read()
+
+            audio_bytes = await asyncio.to_thread(_read_audio)
+            
+            # Send to Whisper
+            response = await self.client.audio.transcriptions.create(
+                model=self.model,
+                file=("audio.ogg", audio_bytes),
+                response_format="text"
+            )
 
             logger.info("WhatsApp transcription successful.")
             return str(response).strip()

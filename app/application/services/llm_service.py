@@ -3,6 +3,7 @@ from typing import AsyncGenerator, Dict, List, Any
 from uuid import UUID
 import time
 import tiktoken
+import re
 
 from app.application.dtos.chat_dto import MessageCreateDto
 from app.application.services.chat_service import ChatService
@@ -14,6 +15,7 @@ from app.infrastructure.security.prompt_security import PromptSecurityValidator
 from app.application.prompts.multilingual import MultilingualPromptBuilder
 from app.domain.interfaces.semantic_cache_repository import ISemanticCacheRepository
 from app.domain.interfaces.llm_log_repository import ILLMLogRepository
+from app.domain.interfaces.citation_repository import ICitationRepository
 from langchain_openai import OpenAIEmbeddings
 from app.config import settings
 
@@ -22,11 +24,14 @@ logger = logging.getLogger(__name__)
 class LLMService:
     """Orchestrates interactions between the Chat history, RAG vectors, and Language Models."""
 
-    def __init__(self, chat_service: ChatService, llm_client: ILLMClient, semantic_cache: ISemanticCacheRepository = None, llm_log_repository: ILLMLogRepository = None):
+    # Disclaimers are now natively handled by the MultilingualPromptBuilder.
+
+    def __init__(self, chat_service: ChatService, llm_client: ILLMClient, semantic_cache: ISemanticCacheRepository = None, llm_log_repository: ILLMLogRepository = None, citation_repository: ICitationRepository = None):
         self.chat_service = chat_service
         self.llm_client = llm_client
         self.semantic_cache = semantic_cache
         self.llm_log_repository = llm_log_repository
+        self.citation_repository = citation_repository
         self.embeddings = OpenAIEmbeddings(
             model=settings.OPENAI_EMBEDDING_MODEL, 
             api_key=settings.OPENAI_API_KEY
@@ -103,6 +108,7 @@ class LLMService:
                 logger.error(f"Semantic Cache check failed: {e}", exc_info=True)
 
         # Build Context Arrays
+        detected_lang = LanguageDetectionService.detect_language(query)
         messages = await self._build_messages(conversation_id, user_id, query, context)
         
         # Execute LLM Call natively
@@ -138,9 +144,7 @@ class LLMService:
             except Exception as e:
                 logger.error(f"LLM telemetry logging failed: {e}", exc_info=True)
                 
-        # Save AI Message
-        ai_msg = MessageCreateDto(sender="ai", content=response, message_type="text")
-        await self.chat_service.add_message(conversation_id, user_id, ai_msg)
+        # Citation UUID logging removed since LLM now returns Act/Section text natively.
         
         # Save to Semantic Cache
         if self.semantic_cache and query_embedding:
@@ -178,6 +182,7 @@ class LLMService:
                 logger.error(f"Semantic Cache check failed: {e}", exc_info=True)
 
         # Build Context Arrays
+        detected_lang = LanguageDetectionService.detect_language(query)
         messages = await self._build_messages(conversation_id, user_id, query, context)
         
         # Stream response back
@@ -193,7 +198,9 @@ class LLMService:
             
             if full_response.strip():
                 ai_msg = MessageCreateDto(sender="ai", content=full_response, message_type="text")
-                await self.chat_service.add_message(conversation_id, user_id, ai_msg)
+                saved_msg = await self.chat_service.add_message(conversation_id, user_id, ai_msg)
+                
+                # Citation UUID logging removed since LLM now returns Act/Section text natively.
                 
                 # Log LLM Telemetry
                 if self.llm_log_repository:

@@ -36,15 +36,18 @@ class TextToSpeechService:
 
             # Store the resulting output audio down memory
             output_dir = settings.AUDIO_TEMP_DIR
-            os.makedirs(output_dir, exist_ok=True)
+            
+            def _ensure_dir_and_write(response_obj, file_path, d_dir):
+                os.makedirs(d_dir, exist_ok=True)
+                with open(file_path, 'wb') as f:
+                    for chunk in response_obj.iter_bytes():
+                        f.write(chunk)
             
             filename = f"tts_out_{uuid.uuid4()}.ogg"
             output_path = os.path.join(output_dir, filename)
 
-            # Write audio bytes to disk — iter_bytes() is a sync generator in openai SDK
-            with open(output_path, 'wb') as f:
-                for chunk in response.iter_bytes():
-                    f.write(chunk)
+            # Write audio bytes to disk in thread to prevent blocking loop
+            await asyncio.to_thread(_ensure_dir_and_write, response, output_path, output_dir)
 
             logger.info(f"Speech synthesized to physical payload memory: {output_path}")
             

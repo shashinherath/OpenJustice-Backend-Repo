@@ -19,6 +19,7 @@ from app.infrastructure.repositories.document_repository import DocumentReposito
 from app.infrastructure.repositories.pgvector_semantic_cache_repository import PgVectorSemanticCacheRepository
 from app.infrastructure.repositories.pg_llm_log_repository import PgLLMLogRepository
 from app.infrastructure.repositories.pg_retrieval_log_repository import PgRetrievalLogRepository
+from app.infrastructure.repositories.pg_citation_repository import PgCitationRepository
 
 logger = logging.getLogger(__name__)
 
@@ -113,7 +114,14 @@ async def websocket_chat_endpoint(
                 
                 semantic_cache = PgVectorSemanticCacheRepository(db)
                 llm_log_repo = PgLLMLogRepository(db)
-                llm_service = LLMService(chat_service, OpenAIClient(), semantic_cache=semantic_cache, llm_log_repository=llm_log_repo)
+                citation_repo = PgCitationRepository(db)
+                llm_service = LLMService(
+                    chat_service, 
+                    OpenAIClient(), 
+                    semantic_cache=semantic_cache, 
+                    llm_log_repository=llm_log_repo,
+                    citation_repository=citation_repo
+                )
                 
                 try:
                     chunks, confidence = await retrieval_service.retrieve(query=msg_content)
