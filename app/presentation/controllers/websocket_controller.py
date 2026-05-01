@@ -16,6 +16,7 @@ from app.infrastructure.external.openai_client import OpenAIClient
 from app.application.services.llm_service import LLMService
 from app.application.services.retrieval_service import RetrievalService
 from app.infrastructure.repositories.document_repository import DocumentRepository
+from app.infrastructure.repositories.pgvector_semantic_cache_repository import PgVectorSemanticCacheRepository
 
 logger = logging.getLogger(__name__)
 
@@ -106,7 +107,8 @@ async def websocket_chat_endpoint(
                 
                 doc_repo = DocumentRepository(db)
                 retrieval_service = RetrievalService(doc_repo)
-                llm_service = LLMService(chat_service, OpenAIClient())
+                semantic_cache = PgVectorSemanticCacheRepository(db)
+                llm_service = LLMService(chat_service, OpenAIClient(), semantic_cache=semantic_cache)
                 
                 try:
                     chunks, confidence = await retrieval_service.retrieve(query=msg_content)

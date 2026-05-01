@@ -18,9 +18,10 @@ from app.infrastructure.models.message import Message  # noqa: F401
 from app.infrastructure.models.document import Document  # noqa: F401
 from app.infrastructure.models.document_chunk import DocumentChunk  # noqa: F401
 
-# RAG Retrieval
+# RAG Retrieval & Cache
 from app.infrastructure.models.retrieval_log import RetrievalLog  # noqa: F401
 from app.infrastructure.models.retrieved_document import RetrievedDocument  # noqa: F401
+from app.infrastructure.models.semantic_cache import SemanticCache  # noqa: F401
 
 # Citations
 from app.infrastructure.models.citation import Citation  # noqa: F401

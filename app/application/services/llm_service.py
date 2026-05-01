@@ -10,15 +10,23 @@ from app.application.services.language_detection_service import LanguageDetectio
 
 from app.infrastructure.security.prompt_security import PromptSecurityValidator
 from app.application.prompts.multilingual import MultilingualPromptBuilder
+from app.domain.interfaces.semantic_cache_repository import ISemanticCacheRepository
+from langchain_openai import OpenAIEmbeddings
+from app.config import settings
 
 logger = logging.getLogger(__name__)
 
 class LLMService:
     """Orchestrates interactions between the Chat history, RAG vectors, and Language Models."""
 
-    def __init__(self, chat_service: ChatService, llm_client: ILLMClient):
+    def __init__(self, chat_service: ChatService, llm_client: ILLMClient, semantic_cache: ISemanticCacheRepository = None):
         self.chat_service = chat_service
         self.llm_client = llm_client
+        self.semantic_cache = semantic_cache
+        self.embeddings = OpenAIEmbeddings(
+            model=settings.OPENAI_EMBEDDING_MODEL, 
+            api_key=settings.OPENAI_API_KEY
+        )
 
     async def _build_messages(self, conversation_id: UUID, user_id: UUID, query: str, context: str) -> List[Dict[str, Any]]:
         """Constructs the full system-history-context message array for LLMs."""
@@ -58,12 +66,30 @@ class LLMService:
         return messages
 
     async def generate_response(self, conversation_id: UUID, user_id: UUID, query: str, context: str, message_type: str = "text") -> str:
-        """Synchronously block, execute LLM, and save response to database."""
+        """Synchronously block, execute LLM, and save response to database. Checks Semantic Cache first."""
         
         # Save User Message First
         user_msg = MessageCreateDto(sender="user", content=query, message_type=message_type)
         await self.chat_service.add_message(conversation_id, user_id, user_msg)
         
+        # Check Semantic Cache
+        query_embedding = None
+        if self.semantic_cache:
+            try:
+                query_embedding = await self.embeddings.aembed_query(query)
+                cached_response = await self.semantic_cache.get_similar_response(
+                    query_embedding, 
+                    similarity_threshold=settings.CACHE_SIMILARITY_THRESHOLD
+                )
+                if cached_response:
+                    logger.info(f"Semantic Cache Hit for query: {query}")
+                    # Save AI Message from cache
+                    ai_msg = MessageCreateDto(sender="ai", content=cached_response, message_type="text")
+                    await self.chat_service.add_message(conversation_id, user_id, ai_msg)
+                    return cached_response
+            except Exception as e:
+                logger.error(f"Semantic Cache check failed: {e}", exc_info=True)
+
         # Build Context Arrays
         messages = await self._build_messages(conversation_id, user_id, query, context)
         
@@ -74,15 +100,41 @@ class LLMService:
         ai_msg = MessageCreateDto(sender="ai", content=response, message_type="text")
         await self.chat_service.add_message(conversation_id, user_id, ai_msg)
         
+        # Save to Semantic Cache
+        if self.semantic_cache and query_embedding:
+            try:
+                await self.semantic_cache.set_response(query, query_embedding, response)
+            except Exception as e:
+                logger.error(f"Semantic Cache save failed: {e}", exc_info=True)
+        
         return response
 
     async def stream_response(self, conversation_id: UUID, user_id: UUID, query: str, context: str, message_type: str = "text") -> AsyncGenerator[str, None]:
-        """Provides an asynchronous Generator directly streaming the underlying LLM's response block."""
+        """Provides an asynchronous Generator directly streaming the underlying LLM's response block. Checks Semantic Cache first."""
         
         # Save User Message First
         user_msg = MessageCreateDto(sender="user", content=query, message_type=message_type)
         await self.chat_service.add_message(conversation_id, user_id, user_msg)
         
+        # Check Semantic Cache
+        query_embedding = None
+        if self.semantic_cache:
+            try:
+                query_embedding = await self.embeddings.aembed_query(query)
+                cached_response = await self.semantic_cache.get_similar_response(
+                    query_embedding, 
+                    similarity_threshold=settings.CACHE_SIMILARITY_THRESHOLD
+                )
+                if cached_response:
+                    logger.info(f"Semantic Cache Hit for stream query: {query}")
+                    ai_msg = MessageCreateDto(sender="ai", content=cached_response, message_type="text")
+                    await self.chat_service.add_message(conversation_id, user_id, ai_msg)
+                    # Yield it as a single chunk to satisfy the streaming interface
+                    yield cached_response
+                    return
+            except Exception as e:
+                logger.error(f"Semantic Cache check failed: {e}", exc_info=True)
+
         # Build Context Arrays
         messages = await self._build_messages(conversation_id, user_id, query, context)
         
@@ -97,3 +149,10 @@ class LLMService:
             if full_response.strip():
                 ai_msg = MessageCreateDto(sender="ai", content=full_response, message_type="text")
                 await self.chat_service.add_message(conversation_id, user_id, ai_msg)
+                
+                # Save to Semantic Cache
+                if self.semantic_cache and query_embedding:
+                    try:
+                        await self.semantic_cache.set_response(query, query_embedding, full_response)
+                    except Exception as e:
+                        logger.error(f"Semantic Cache save failed: {e}", exc_info=True)

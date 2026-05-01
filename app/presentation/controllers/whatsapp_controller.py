@@ -11,6 +11,7 @@ from app.application.services.chat_service import ChatService
 from app.application.services.rag_service import RAGService
 from app.infrastructure.external.openai_client import OpenAIClient
 from app.infrastructure.repositories.document_repository import DocumentRepository
+from app.infrastructure.repositories.pgvector_semantic_cache_repository import PgVectorSemanticCacheRepository
 
 logger = logging.getLogger(__name__)
 
@@ -22,8 +23,9 @@ def get_whatsapp_service(db: AsyncSession = Depends(get_db)) -> WhatsAppService:
     client = TwilioWhatsAppClient()
     
     chat_svc = ChatService(db)
+    semantic_cache = PgVectorSemanticCacheRepository(db)
     
-    llm_service = LLMService(chat_svc, OpenAIClient())
+    llm_service = LLMService(chat_svc, OpenAIClient(), semantic_cache=semantic_cache)
     return WhatsAppService(whatsapp_client=client, llm_service=llm_service, db=db)
 
 

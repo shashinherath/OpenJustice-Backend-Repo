@@ -84,10 +84,11 @@ class Settings(BaseSettings):
     ALLOWED_AUDIO_FORMATS: list[str] = ["mp3", "wav", "ogg", "m4a"]
     ALLOWED_DOCUMENT_FORMATS: list[str] = ["pdf", "txt", "docx"]
     
-    # RAG Settings
+    # RAG & Semantic Cache Settings
     CHUNK_SIZE: int = 1000
     CHUNK_OVERLAP: int = 200
     VECTOR_SEARCH_TOP_K: int = 5
+    CACHE_SIMILARITY_THRESHOLD: float = 0.95
     
     model_config = SettingsConfigDict(
         env_file=".env",
