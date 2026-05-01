@@ -31,7 +31,7 @@ from app.infrastructure.models.llm_request import LLMRequest  # noqa: F401
 from app.infrastructure.models.llm_response import LLMResponse  # noqa: F401
 
 # Multilingual Support
-from app.infrastructure.models.translation import Translation  # noqa: F401
+# (Translations table removed)
 
 # Audio Processing
 from app.infrastructure.models.audio_request import AudioRequest  # noqa: F401

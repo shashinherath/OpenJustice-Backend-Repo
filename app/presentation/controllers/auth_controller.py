@@ -1,5 +1,5 @@
 """Authentication API controller."""
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, Response, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.application.dtos.auth_dto import LoginDto, RegisterDto
@@ -9,6 +9,8 @@ from app.infrastructure.db.base import get_db
 from app.infrastructure.repositories.user_repository import UserRepository
 from app.infrastructure.security.jwt_handler import jwt_handler
 from app.infrastructure.security.password_hasher import BcryptPasswordHasher
+from app.infrastructure.repositories.pg_user_session_repository import PgUserSessionRepository
+from app.infrastructure.repositories.pg_audit_log_repository import PgAuditLogRepository
 from app.presentation.schemas.auth_schema import (
     LoginRequest,
     LoginResponseData,
@@ -28,6 +30,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 )
 async def login(
     payload: LoginRequest,
+    request: Request,
     response: Response,
     db: AsyncSession = Depends(get_db),
 ) -> SuccessResponse[LoginResponseData]:
@@ -36,12 +39,17 @@ async def login(
         repository=UserRepository(db),
         password_hasher=BcryptPasswordHasher(),
         token_issuer=jwt_handler,
+        user_session_repo=PgUserSessionRepository(db),
+        audit_log_repo=PgAuditLogRepository(db),
     )
     result = await service.login(
         LoginDto(
             email=payload.email,
             phone_number=payload.phone_number,
             password=payload.password,
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("user-agent"),
+            channel="web",
         )
     )
 
@@ -88,6 +96,7 @@ async def register(
         repository=UserRepository(db),
         password_hasher=BcryptPasswordHasher(),
         token_issuer=jwt_handler,
+        audit_log_repo=PgAuditLogRepository(db),
     )
     result = await service.register(
         RegisterDto(

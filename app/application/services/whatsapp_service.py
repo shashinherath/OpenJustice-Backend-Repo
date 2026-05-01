@@ -11,6 +11,7 @@ from app.infrastructure.repositories.document_repository import DocumentReposito
 from sqlalchemy import select
 from app.infrastructure.models.user import User
 from app.infrastructure.models.conversation import Conversation
+from app.infrastructure.repositories.pg_retrieval_log_repository import PgRetrievalLogRepository
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +24,8 @@ class WhatsAppService:
         self.llm_service = llm_service
         self.db = db
         # Initialize retrieval service mapping strictly to DB session
-        self.retrieval_service = RetrievalService(DocumentRepository(db))
+        self.retrieval_log_repo = PgRetrievalLogRepository(db)
+        self.retrieval_service = RetrievalService(DocumentRepository(db), log_repository=self.retrieval_log_repo)
 
     async def handle_incoming_message(self, from_number: str, body: str = None, media_url: str = None) -> None:
         """

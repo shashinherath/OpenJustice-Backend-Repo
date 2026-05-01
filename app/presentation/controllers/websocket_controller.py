@@ -17,6 +17,8 @@ from app.application.services.llm_service import LLMService
 from app.application.services.retrieval_service import RetrievalService
 from app.infrastructure.repositories.document_repository import DocumentRepository
 from app.infrastructure.repositories.pgvector_semantic_cache_repository import PgVectorSemanticCacheRepository
+from app.infrastructure.repositories.pg_llm_log_repository import PgLLMLogRepository
+from app.infrastructure.repositories.pg_retrieval_log_repository import PgRetrievalLogRepository
 
 logger = logging.getLogger(__name__)
 
@@ -106,9 +108,12 @@ async def websocket_chat_endpoint(
                 msg_content = data.get("message", "")
                 
                 doc_repo = DocumentRepository(db)
-                retrieval_service = RetrievalService(doc_repo)
+                retrieval_log_repo = PgRetrievalLogRepository(db)
+                retrieval_service = RetrievalService(doc_repo, log_repository=retrieval_log_repo)
+                
                 semantic_cache = PgVectorSemanticCacheRepository(db)
-                llm_service = LLMService(chat_service, OpenAIClient(), semantic_cache=semantic_cache)
+                llm_log_repo = PgLLMLogRepository(db)
+                llm_service = LLMService(chat_service, OpenAIClient(), semantic_cache=semantic_cache, llm_log_repository=llm_log_repo)
                 
                 try:
                     chunks, confidence = await retrieval_service.retrieve(query=msg_content)

@@ -9,6 +9,9 @@ class LoginDto:
     email: Optional[str]
     phone_number: Optional[str]
     password: str
+    ip_address: Optional[str] = None
+    user_agent: Optional[str] = None
+    channel: str = "web"
 
 
 @dataclass(frozen=True)

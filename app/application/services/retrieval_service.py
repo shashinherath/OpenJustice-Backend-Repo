@@ -5,15 +5,18 @@ from langchain_openai import OpenAIEmbeddings
 from app.config import settings
 from app.domain.interfaces.document_repository import IDocumentRepository
 from app.infrastructure.models.document_chunk import DocumentChunk
+from app.domain.interfaces.retrieval_log_repository import IRetrievalLogRepository
+import uuid
 
 logger = logging.getLogger(__name__)
 
 
 class RetrievalService:
-    """Centralized document retrieval service."""
+    """Centralized document retrieval service with telemetry logging."""
 
-    def __init__(self, repository: IDocumentRepository):
+    def __init__(self, repository: IDocumentRepository, log_repository: IRetrievalLogRepository = None):
         self.repository = repository
+        self.log_repository = log_repository
         self.embeddings = OpenAIEmbeddings(
             model=settings.OPENAI_EMBEDDING_MODEL, 
             api_key=settings.OPENAI_API_KEY
@@ -41,6 +44,18 @@ class RetrievalService:
             )
             
             confidence = self._calculate_confidence(chunks, query_vector)
+            
+            if self.log_repository:
+                # Fire and forget log / or await it
+                retrieved_data = [{"chunk_id": c.id, "similarity_score": getattr(c, "similarity", 0.0)} for c in chunks]
+                await self.log_repository.log_retrieval(
+                    conversation_id=None, # Passed from LLMService if we want to track it later, keeping simple for now
+                    query=query,
+                    language=language,
+                    top_k=top_k,
+                    retrieved_chunks=retrieved_data
+                )
+                
             return chunks, confidence
             
         except Exception as e:

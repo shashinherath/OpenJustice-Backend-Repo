@@ -10,6 +10,9 @@ from app.domain.interfaces.password_hasher import PasswordHasher
 from app.domain.interfaces.token_issuer import AccessTokenIssuer
 from app.domain.interfaces.user_repository import IUserRepository
 from app.infrastructure.models.user import User
+from app.domain.interfaces.user_session_repository import IUserSessionRepository
+from app.domain.interfaces.audit_log_repository import IAuditLogRepository
+import uuid
 
 
 class AuthService:
@@ -20,10 +23,14 @@ class AuthService:
         repository: IUserRepository,
         password_hasher: PasswordHasher,
         token_issuer: AccessTokenIssuer,
+        user_session_repo: IUserSessionRepository = None,
+        audit_log_repo: IAuditLogRepository = None,
     ) -> None:
         self.repository = repository
         self.password_hasher = password_hasher
         self.token_issuer = token_issuer
+        self.user_session_repo = user_session_repo
+        self.audit_log_repo = audit_log_repo
 
     async def login(self, dto: LoginDto) -> LoginResultDto:
         """Authenticate a user and return a login result."""
@@ -46,6 +53,23 @@ class AuthService:
                 "preferred_language": user.preferred_language,
             }
         )
+
+        if self.user_session_repo:
+            session_token = uuid.uuid4()
+            await self.user_session_repo.create_session(
+                user_id=user.id,
+                session_token=session_token,
+                channel=dto.channel,
+                ip_address=dto.ip_address,
+                user_agent=dto.user_agent
+            )
+            
+        if self.audit_log_repo:
+            await self.audit_log_repo.log_action(
+                user_id=user.id,
+                action="USER_LOGIN",
+                metadata={"channel": dto.channel, "ip_address": dto.ip_address}
+            )
 
         return LoginResultDto(
             access_token=token,
@@ -81,6 +105,13 @@ class AuthService:
 
         # Persist
         user = await self.repository.create(user)
+        
+        if self.audit_log_repo:
+            await self.audit_log_repo.log_action(
+                user_id=user.id,
+                action="USER_REGISTER",
+                metadata={"email": dto.email}
+            )
 
         return RegisterResultDto(
             uuid=user.id,

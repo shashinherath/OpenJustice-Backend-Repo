@@ -1,6 +1,8 @@
 import logging
 from typing import AsyncGenerator, Dict, List, Any
 from uuid import UUID
+import time
+import tiktoken
 
 from app.application.dtos.chat_dto import MessageCreateDto
 from app.application.services.chat_service import ChatService
@@ -11,6 +13,7 @@ from app.application.services.language_detection_service import LanguageDetectio
 from app.infrastructure.security.prompt_security import PromptSecurityValidator
 from app.application.prompts.multilingual import MultilingualPromptBuilder
 from app.domain.interfaces.semantic_cache_repository import ISemanticCacheRepository
+from app.domain.interfaces.llm_log_repository import ILLMLogRepository
 from langchain_openai import OpenAIEmbeddings
 from app.config import settings
 
@@ -19,14 +22,23 @@ logger = logging.getLogger(__name__)
 class LLMService:
     """Orchestrates interactions between the Chat history, RAG vectors, and Language Models."""
 
-    def __init__(self, chat_service: ChatService, llm_client: ILLMClient, semantic_cache: ISemanticCacheRepository = None):
+    def __init__(self, chat_service: ChatService, llm_client: ILLMClient, semantic_cache: ISemanticCacheRepository = None, llm_log_repository: ILLMLogRepository = None):
         self.chat_service = chat_service
         self.llm_client = llm_client
         self.semantic_cache = semantic_cache
+        self.llm_log_repository = llm_log_repository
         self.embeddings = OpenAIEmbeddings(
             model=settings.OPENAI_EMBEDDING_MODEL, 
             api_key=settings.OPENAI_API_KEY
         )
+
+    def _count_tokens(self, text: str) -> int:
+        """Approximates token count for telemetry."""
+        try:
+            encoding = tiktoken.encoding_for_model(settings.OPENAI_MODEL)
+            return len(encoding.encode(text))
+        except Exception:
+            return int(len(text.split()) * 1.3)
 
     async def _build_messages(self, conversation_id: UUID, user_id: UUID, query: str, context: str) -> List[Dict[str, Any]]:
         """Constructs the full system-history-context message array for LLMs."""
@@ -94,8 +106,38 @@ class LLMService:
         messages = await self._build_messages(conversation_id, user_id, query, context)
         
         # Execute LLM Call natively
+        start_time = time.perf_counter()
         response = await self.llm_client.generate_response(messages)
+        latency_ms = int((time.perf_counter() - start_time) * 1000)
         
+        # Log LLM Telemetry
+        if self.llm_log_repository:
+            try:
+                prompt_text = "".join([m["content"] for m in messages])
+                prompt_tokens = self._count_tokens(prompt_text)
+                completion_tokens = self._count_tokens(response)
+                total_tokens = prompt_tokens + completion_tokens
+                
+                req_id = await self.llm_log_repository.log_request(
+                    user_id=user_id,
+                    model_name=settings.OPENAI_MODEL,
+                    prompt_version="v1",
+                    temperature=settings.OPENAI_TEMPERATURE,
+                    prompt_tokens=prompt_tokens,
+                    completion_tokens=completion_tokens,
+                    total_tokens=total_tokens,
+                    latency_ms=latency_ms,
+                    status="success",
+                    error_message=None
+                )
+                await self.llm_log_repository.log_response(
+                    llm_request_id=req_id,
+                    response_text=response,
+                    confidence_level="High"
+                )
+            except Exception as e:
+                logger.error(f"LLM telemetry logging failed: {e}", exc_info=True)
+                
         # Save AI Message
         ai_msg = MessageCreateDto(sender="ai", content=response, message_type="text")
         await self.chat_service.add_message(conversation_id, user_id, ai_msg)
@@ -140,15 +182,46 @@ class LLMService:
         
         # Stream response back
         full_response = ""
+        start_time = time.perf_counter()
         try:
             async for chunk in self.llm_client.stream_response(messages):
                 full_response += chunk
                 yield chunk
                 
         finally:
+            latency_ms = int((time.perf_counter() - start_time) * 1000)
+            
             if full_response.strip():
                 ai_msg = MessageCreateDto(sender="ai", content=full_response, message_type="text")
                 await self.chat_service.add_message(conversation_id, user_id, ai_msg)
+                
+                # Log LLM Telemetry
+                if self.llm_log_repository:
+                    try:
+                        prompt_text = "".join([m["content"] for m in messages])
+                        prompt_tokens = self._count_tokens(prompt_text)
+                        completion_tokens = self._count_tokens(full_response)
+                        total_tokens = prompt_tokens + completion_tokens
+                        
+                        req_id = await self.llm_log_repository.log_request(
+                            user_id=user_id,
+                            model_name=settings.OPENAI_MODEL,
+                            prompt_version="v1",
+                            temperature=settings.OPENAI_TEMPERATURE,
+                            prompt_tokens=prompt_tokens,
+                            completion_tokens=completion_tokens,
+                            total_tokens=total_tokens,
+                            latency_ms=latency_ms,
+                            status="success",
+                            error_message=None
+                        )
+                        await self.llm_log_repository.log_response(
+                            llm_request_id=req_id,
+                            response_text=full_response,
+                            confidence_level="High"
+                        )
+                    except Exception as e:
+                        logger.error(f"LLM telemetry stream logging failed: {e}", exc_info=True)
                 
                 # Save to Semantic Cache
                 if self.semantic_cache and query_embedding:

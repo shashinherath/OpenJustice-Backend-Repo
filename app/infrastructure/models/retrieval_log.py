@@ -19,7 +19,7 @@ class RetrievalLog(Base):
     correlation_id: Mapped[Optional[uuid_module.UUID]] = mapped_column(
         PGUUID(as_uuid=True), nullable=True
     )
-    conversation_id: Mapped[Optional[uuid_module.UUID]] = mapped_column(Integer, nullable=True)
+    conversation_id: Mapped[Optional[uuid_module.UUID]] = mapped_column(PGUUID(as_uuid=True), nullable=True)
     query: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     language: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
     top_k: Mapped[Optional[uuid_module.UUID]] = mapped_column(Integer, nullable=True)
