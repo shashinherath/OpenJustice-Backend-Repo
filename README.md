@@ -25,6 +25,45 @@ The codebase adheres strictly to **Clean Architecture** patterns, promoting sepa
 3. **Infrastructure**: Database connections, external API adapters, repositories, security handlers.
 4. **Presentation**: FastAPI endpoints (Controllers), Middlewares, Schemas.
 
+### High-Level System Flow
+```mermaid
+graph TD
+    Client[Web/Mobile/WhatsApp Client] --> Presentation
+    
+    subgraph FastAPI Application
+        Presentation[Presentation Layer<br>Endpoints, WebSockets] --> Application
+        Application[Application Layer<br>LLM Service, RAG Service] --> Domain
+        Infrastructure[Infrastructure Layer<br>Repositories, External APIs] --> Domain
+        Application <--> Infrastructure
+    end
+    
+    Infrastructure <--> DB[(PostgreSQL + pgvector)]
+    Infrastructure <--> OpenAI[OpenAI API<br>GPT-4o, Whisper]
+    Infrastructure <--> WhatsApp[Twilio / Meta API]
+```
+
+### Core RAG (Retrieval-Augmented Generation) Pipeline
+```mermaid
+sequenceDiagram
+    participant User
+    participant ChatController
+    participant RetrievalService
+    participant VectorDB as PostgreSQL (pgvector)
+    participant LLMService
+    participant OpenAI
+
+    User->>ChatController: Send legal query
+    ChatController->>RetrievalService: Fetch context (query)
+    RetrievalService->>VectorDB: Semantic Search (Cosine Similarity)
+    VectorDB-->>RetrievalService: Top-K Document Chunks
+    RetrievalService-->>ChatController: Formatted Context Array
+    ChatController->>LLMService: Generate Response (Query + Context)
+    LLMService->>OpenAI: Request with Multilingual System Prompt
+    OpenAI-->>LLMService: Streaming Response
+    LLMService-->>ChatController: Yield stream chunks
+    ChatController-->>User: Real-time Answer with Citations
+```
+
 ## ⚙️ Local Development Setup
 
 ### 1. Prerequisites

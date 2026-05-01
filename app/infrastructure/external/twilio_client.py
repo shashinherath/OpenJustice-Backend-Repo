@@ -25,8 +25,8 @@ class TwilioWhatsAppClient(IWhatsAppClient):
             )
         self.from_number = settings.TWILIO_WHATSAPP_NUMBER or ""
 
-    async def send_message(self, to: str, body: str) -> None:
-        """Sends a WhatsApp message via Twilio async API."""
+    async def send_message(self, to: str, body: str = None, media_url: str = None) -> None:
+        """Sends a WhatsApp message via Twilio async API natively handling media streams."""
         if not self.client:
             logger.error("Twilio client is not initialized. Cannot send message.")
             return
@@ -40,13 +40,16 @@ class TwilioWhatsAppClient(IWhatsAppClient):
             if not from_num.startswith("whatsapp:"):
                 from_num = f"whatsapp:{from_num}"
 
-            await asyncio.to_thread(
-                self.client.messages.create,
-                body=body,
-                from_=from_num,
-                to=to
-            )
-            logger.info(f"WhatsApp message sent to {to}")
+            # Setup kwargs so we can bounce either text or media dynamically
+            kwargs = {"from_": from_num, "to": to}
+            if body:
+                kwargs["body"] = body
+            if media_url:
+                # Twilio native accepts lists of media_urls!
+                kwargs["media_url"] = [media_url]
+
+            await asyncio.to_thread(self.client.messages.create, **kwargs)
+            logger.info(f"WhatsApp message/audio sent to {to}")
         except Exception as e:
             logger.error(f"Failed to send Twilio message to {to}: {e}")
             raise

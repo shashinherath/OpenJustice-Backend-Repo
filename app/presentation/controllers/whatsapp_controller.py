@@ -4,24 +4,51 @@ from fastapi import APIRouter, Form, Depends, Response, BackgroundTasks
 from app.application.services.whatsapp_service import WhatsAppService
 from app.infrastructure.external.twilio_client import TwilioWhatsAppClient
 
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.infrastructure.db.base import get_db
+from app.application.services.llm_service import LLMService
+from app.application.services.chat_service import ChatService
+from app.application.services.rag_service import RAGService
+from app.infrastructure.external.openai_client import OpenAIClient
+from app.infrastructure.repositories.document_repository import DocumentRepository
+from app.infrastructure.repositories.pgvector_semantic_cache_repository import PgVectorSemanticCacheRepository
+from app.infrastructure.repositories.pg_llm_log_repository import PgLLMLogRepository
+from app.infrastructure.repositories.pg_citation_repository import PgCitationRepository
+from app.infrastructure.repositories.pg_audio_log_repository import PgAudioLogRepository
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/whatsapp", tags=["WhatsApp"])
 
 
-def get_whatsapp_service() -> WhatsAppService:
+def get_whatsapp_service(db: AsyncSession = Depends(get_db)) -> WhatsAppService:
     """Dependency injection for WhatsAppService."""
-    # In a larger application with a DI framework, this would be managed there.
     client = TwilioWhatsAppClient()
-    return WhatsAppService(whatsapp_client=client)
+    
+    chat_svc = ChatService(db)
+    semantic_cache = PgVectorSemanticCacheRepository(db)
+    llm_log_repo = PgLLMLogRepository(db)
+    citation_repo = PgCitationRepository(db)
+    
+    llm_service = LLMService(
+        chat_svc, 
+        OpenAIClient(), 
+        semantic_cache=semantic_cache, 
+        llm_log_repository=llm_log_repo,
+        citation_repository=citation_repo
+    )
+    
+    audio_log_repo = PgAudioLogRepository(db)
+    return WhatsAppService(whatsapp_client=client, llm_service=llm_service, db=db, audio_log_repository=audio_log_repo)
 
 
 @router.post("/webhook")
 async def twilio_webhook(
     background_tasks: BackgroundTasks,
-    Body: str = Form(...),
     From: str = Form(...),
     To: str = Form(...),
+    Body: str = Form(""),
+    MediaUrl0: str = Form(None),
     whatsapp_service: WhatsAppService = Depends(get_whatsapp_service)
 ):
     """
@@ -41,7 +68,8 @@ async def twilio_webhook(
     background_tasks.add_task(
         whatsapp_service.handle_incoming_message,
         from_number=From,
-        body=Body
+        body=Body,
+        media_url=MediaUrl0
     )
     
     # Return empty TwiML response. Twilio interprets this as "Received OK, no immediate reply".

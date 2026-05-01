@@ -1,8 +1,11 @@
 from typing import List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, Form, Request, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, Request, UploadFile, status, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.application.exceptions.app_errors import AppError
+from app.application.services.rag_service import RAGService
 
 from app.application.dtos.document_dto import DocumentCreateDto
 from app.application.services.document_service import DocumentService
@@ -22,9 +25,6 @@ def get_document_service(db: AsyncSession = Depends(get_db)) -> DocumentService:
     return DocumentService(repository=repository, storage=storage)
 
 
-from app.application.services.rag_service import RAGService
-from app.application.exceptions.app_errors import AppError
-from fastapi import BackgroundTasks
 
 def get_rag_service(db: AsyncSession = Depends(get_db)) -> RAGService:
     repository = DocumentRepository(db)

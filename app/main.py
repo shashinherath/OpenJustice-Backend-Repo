@@ -1,7 +1,9 @@
 """FastAPI application entrypoint."""
+import os
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.presentation.middleware.auth_middleware import AuthMiddleware
@@ -30,3 +32,7 @@ app.add_middleware(AuthMiddleware)
 setup_error_handlers(app)
 
 app.include_router(api_router)
+
+# Serve temp audio files so Twilio can fetch TTS output via public URL
+os.makedirs(settings.AUDIO_TEMP_DIR, exist_ok=True)
+app.mount("/media", StaticFiles(directory=settings.AUDIO_TEMP_DIR), name="media")

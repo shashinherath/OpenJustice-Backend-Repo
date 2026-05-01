@@ -17,6 +17,7 @@ PUBLIC_PATHS = [
     "/api/auth/login",
     "/api/auth/register",
     "/api/whatsapp/webhook",
+    "/media",
     "/health",
 ]
 

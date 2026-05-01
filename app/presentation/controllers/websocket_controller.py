@@ -12,6 +12,14 @@ from app.infrastructure.websocket.connection_manager import (
     connection_manager,
     rate_limiter,
 )
+from app.infrastructure.external.openai_client import OpenAIClient
+from app.application.services.llm_service import LLMService
+from app.application.services.retrieval_service import RetrievalService
+from app.infrastructure.repositories.document_repository import DocumentRepository
+from app.infrastructure.repositories.pgvector_semantic_cache_repository import PgVectorSemanticCacheRepository
+from app.infrastructure.repositories.pg_llm_log_repository import PgLLMLogRepository
+from app.infrastructure.repositories.pg_retrieval_log_repository import PgRetrievalLogRepository
+from app.infrastructure.repositories.pg_citation_repository import PgCitationRepository
 
 logger = logging.getLogger(__name__)
 
@@ -96,18 +104,49 @@ async def websocket_chat_endpoint(
             if message_type == "ping":
                 await websocket.send_json({"type": "pong"})
 
-            # In typical architecture, this sends message to LLM / RAG service to stream response back.
+            # Route message to intelligence logic
             elif message_type == "chat_message":
                 msg_content = data.get("message", "")
                 
-                # Mock a streaming or instant response
-                await websocket.send_json(
-                    {
-                        "type": "chat_response",
-                        "response": f"Message received: {msg_content}",
-                        "timestamp": datetime.utcnow().isoformat(),
-                    }
+                doc_repo = DocumentRepository(db)
+                retrieval_log_repo = PgRetrievalLogRepository(db)
+                retrieval_service = RetrievalService(doc_repo, log_repository=retrieval_log_repo)
+                
+                semantic_cache = PgVectorSemanticCacheRepository(db)
+                llm_log_repo = PgLLMLogRepository(db)
+                citation_repo = PgCitationRepository(db)
+                llm_service = LLMService(
+                    chat_service, 
+                    OpenAIClient(), 
+                    semantic_cache=semantic_cache, 
+                    llm_log_repository=llm_log_repo,
+                    citation_repository=citation_repo
                 )
+                
+                try:
+                    chunks, confidence = await retrieval_service.retrieve(query=msg_content)
+                    context = "\n\n---\n\n".join([f"REFERENCE TEXT:\n{c.content}" for c in chunks])
+                    
+                    async for chunk in llm_service.stream_response(conversation_id, user_id, msg_content, context):
+                        await websocket.send_json(
+                            {
+                                "type": "chat_chunk",
+                                "chunk": chunk,
+                                "timestamp": datetime.utcnow().isoformat(),
+                            }
+                        )
+                    
+                    # Notify frontend that AI has finished typing
+                    await websocket.send_json(
+                        {
+                            "type": "chat_completion",
+                            "status": "complete",
+                            "timestamp": datetime.utcnow().isoformat(),
+                        }
+                    )
+                except Exception as e:
+                    logger.error(f"WS LLM Error: {e}", exc_info=True)
+                    await websocket.send_json({"type": "error", "message": "AI module encountered an error."})
 
     except WebSocketDisconnect:
         logger.info(f"WebSocket disconnected")

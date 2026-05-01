@@ -40,6 +40,8 @@ class LoginResponseData(BaseModel):
     """Login response data."""
 
     uuid: UUID
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
     role: str
     preferred_language: str
     access_token: str
@@ -50,6 +52,8 @@ class LoginResponseData(BaseModel):
 class RegisterRequest(BaseModel):
     """Register request payload."""
 
+    first_name: Optional[str] = Field(default=None, max_length=50)
+    last_name: Optional[str] = Field(default=None, max_length=50)
     email: Optional[EmailStr] = None
     phone_number: Optional[str] = None
     password: str = Field(min_length=8, max_length=128)
@@ -79,6 +83,8 @@ class RegisterResponseData(BaseModel):
     """Register response data."""
 
     uuid: UUID
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
     role: str
     preferred_language: str
 

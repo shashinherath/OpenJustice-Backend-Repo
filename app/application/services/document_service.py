@@ -36,11 +36,11 @@ class DocumentService:
         """Validate, store physically, and record document metadata."""
         # 1. Validation
         if not file.filename:
-            raise AppError("Missing filename", status_code=400)
+            raise AppError("Missing filename", status_code=400, error_code="MISSING_FILENAME")
             
         ext = file.filename.split('.')[-1].lower()
         if ext not in settings.ALLOWED_DOCUMENT_FORMATS:
-            raise AppError(f"Unsupported file format: {ext}. Allowed: {settings.ALLOWED_DOCUMENT_FORMATS}", status_code=400)
+            raise AppError(f"Unsupported file format: {ext}. Allowed: {settings.ALLOWED_DOCUMENT_FORMATS}", status_code=400, error_code="UNSUPPORTED_FORMAT")
 
         # Optional: In a highly robust environment, we'd check byte size, 
         # but FastAPI limits can also be handled natively via middlewares.
@@ -49,7 +49,7 @@ class DocumentService:
         file_bytes = await file.read()
         
         if len(file_bytes) > settings.MAX_UPLOAD_SIZE:
-            raise AppError(f"File size exceeds limit of {settings.MAX_UPLOAD_SIZE} bytes", status_code=413)
+            raise AppError(f"File size exceeds limit of {settings.MAX_UPLOAD_SIZE} bytes", status_code=413, error_code="FILE_TOO_LARGE")
 
         # 3. Store the file physically
         storage_path = await self.storage.upload_file(
@@ -80,14 +80,14 @@ class DocumentService:
         """Fetch a specific document."""
         doc = await self.repository.get_by_id(document_id)
         if not doc:
-            raise AppError("Document not found", status_code=404)
+            raise AppError("Document not found", status_code=404, error_code="NOT_FOUND")
         return self._map_to_dto(doc)
 
     async def delete_document(self, document_id: UUID) -> bool:
         """Delete document from database and storage."""
         doc = await self.repository.get_by_id(document_id)
         if not doc:
-            raise AppError("Document not found", status_code=404)
+            raise AppError("Document not found", status_code=404, error_code="NOT_FOUND")
         
         # Delete from disk
         if doc.storage_path:
