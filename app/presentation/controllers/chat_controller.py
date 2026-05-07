@@ -1,10 +1,10 @@
 from uuid import UUID
 from typing import List
 
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Depends, Request, status, File, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, FileResponse
 
 from app.application.dtos.chat_dto import ConversationCreateDto, MessageCreateDto, ConversationUpdateDto
 from app.application.services.chat_service import ChatService
@@ -23,6 +23,9 @@ from app.presentation.schemas.chat_schema import (
 from app.infrastructure.external.openai_client import OpenAIClient
 from app.application.services.llm_service import LLMService
 from app.application.services.retrieval_service import RetrievalService
+from app.application.services.speech_to_text_service import SpeechToTextService
+from app.application.services.text_to_speech_service import TextToSpeechService
+from app.application.services.temp_file_manager import TempFileManager
 from app.infrastructure.repositories.document_repository import DocumentRepository
 from app.infrastructure.repositories.pgvector_semantic_cache_repository import PgVectorSemanticCacheRepository
 from app.infrastructure.repositories.pg_llm_log_repository import PgLLMLogRepository
@@ -198,3 +201,58 @@ async def complete_message(
             yield chunk
 
     return StreamingResponse(event_generator(), media_type="text/plain")
+
+
+@router.post("/{conversation_id}/messages/voice")
+async def voice_message(
+    conversation_id: UUID,
+    request: Request,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    service: ChatService = Depends(get_chat_service),
+):
+    """Process an uploaded voice note, generate an AI reply, and return the synthesized audio response."""
+    user_id = get_current_user_id(request)
+    
+    # 1. Save uploaded file
+    in_audio_path = await TempFileManager.save_upload_file(file)
+    
+    # 2. Transcribe
+    stt_service = SpeechToTextService()
+    query = await stt_service.transcribe_audio(in_audio_path)
+    
+    # 3. Retrieve context
+    doc_repo = DocumentRepository(db)
+    retrieval_log_repo = PgRetrievalLogRepository(db)
+    retrieval_service = RetrievalService(doc_repo, log_repository=retrieval_log_repo)
+    
+    chunks, confidence = await retrieval_service.retrieve(query=query)
+    context = ""
+    if chunks:
+        context = "\n\n---\n\n".join([f"REFERENCE TEXT:\n{c.content}" for c in chunks])
+        
+    # 4. Generate LLM Response
+    semantic_cache = PgVectorSemanticCacheRepository(db)
+    llm_log_repo = PgLLMLogRepository(db)
+    citation_repo = PgCitationRepository(db)
+    
+    llm_service = LLMService(
+        service, 
+        OpenAIClient(), 
+        semantic_cache=semantic_cache, 
+        llm_log_repository=llm_log_repo,
+        citation_repository=citation_repo
+    )
+    
+    ai_reply = await llm_service.generate_response(conversation_id, user_id, query, context, message_type="voice")
+    
+    # 5. Synthesize Audio
+    tts_service = TextToSpeechService()
+    out_audio_path = await tts_service.synthesize_speech(ai_reply)
+    
+    # 6. Return audio natively
+    return FileResponse(
+        path=out_audio_path,
+        media_type="audio/ogg",
+        filename="response.ogg"
+    )
