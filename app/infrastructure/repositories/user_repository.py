@@ -26,11 +26,30 @@ class UserRepository(IUserRepository):
         return result.scalars().first()
 
     async def get_by_uuid(self, user_uuid: UUID) -> Optional[User]:
-        result = await self.db.execute(select(User).where(User.uuid == user_uuid))
+        result = await self.db.execute(select(User).where(User.id == user_uuid))
         return result.scalars().first()
 
     async def create(self, user: User) -> User:
         self.db.add(user)
         await self.db.flush()
         await self.db.refresh(user)
+        return user
+
+    async def get_total_count(self) -> int:
+        from sqlalchemy import func
+        result = await self.db.execute(select(func.count(User.id)))
+        return result.scalar_one_or_none() or 0
+
+    async def list_users(self, skip: int = 0, limit: int = 100) -> list[User]:
+        result = await self.db.execute(
+            select(User).order_by(User.created_at.desc()).offset(skip).limit(limit)
+        )
+        return list(result.scalars().all())
+
+    async def update_status(self, user_id: UUID, is_active: bool) -> Optional[User]:
+        user = await self.get_by_uuid(user_id)
+        if user:
+            user.is_active = is_active
+            await self.db.commit()
+            await self.db.refresh(user)
         return user

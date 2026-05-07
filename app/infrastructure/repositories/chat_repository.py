@@ -91,3 +91,10 @@ class ChatRepository(IChatRepository):
             .limit(limit)
         )
         return list(result.scalars().all())
+
+    async def get_user_message_count(self) -> int:
+        from sqlalchemy import func
+        result = await self.db.execute(
+            select(func.count(Message.id)).where(Message.sender == 'user')
+        )
+        return result.scalar_one_or_none() or 0

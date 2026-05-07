@@ -92,9 +92,11 @@ class RAGService:
 
             # 6. Push to repository saving vectors natively to pgvector
             await self.repository.save_chunks(db_chunks)
+            await self.repository.update_status(document_id, "Processed")
             
             logger.info(f"Successfully vectorized and stored {chunk_total} chunks for Document {document_id}.")
 
         except Exception as e:
+            await self.repository.update_status(document_id, "Failed")
             logger.error(f"Failed to process and embed document {document_id}: {str(e)}", exc_info=True)
 

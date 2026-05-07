@@ -24,3 +24,15 @@ class IUserRepository(ABC):
     @abstractmethod
     async def create(self, user: User) -> User:
         raise NotImplementedError
+
+    @abstractmethod
+    async def get_total_count(self) -> int:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def list_users(self, skip: int = 0, limit: int = 100) -> list[User]:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def update_status(self, user_id: UUID, is_active: bool) -> Optional[User]:
+        raise NotImplementedError

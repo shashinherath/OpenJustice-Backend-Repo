@@ -53,3 +53,8 @@ class IChatRepository(ABC):
     ) -> list[Message]:
         """Fetch messages for a given conversation."""
         pass
+
+    @abstractmethod
+    async def get_user_message_count(self) -> int:
+        """Count total messages sent by users."""
+        pass

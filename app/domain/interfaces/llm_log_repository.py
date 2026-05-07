@@ -31,3 +31,8 @@ class ILLMLogRepository(ABC):
     ) -> None:
         """Links the generated text output to the specific LLM request."""
         pass
+
+    @abstractmethod
+    async def get_error_count(self) -> int:
+        """Counts the total number of errors."""
+        pass

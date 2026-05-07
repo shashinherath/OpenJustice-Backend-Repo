@@ -1,7 +1,7 @@
 from typing import List, Optional
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.interfaces.document_repository import IDocumentRepository
@@ -33,6 +33,10 @@ class DocumentRepository(IDocumentRepository):
         )
         return list(result.scalars().all())
 
+    async def get_total_count(self) -> int:
+        result = await self.session.execute(select(func.count(Document.id)))
+        return result.scalar_one_or_none() or 0
+
     async def delete(self, document_id: UUID) -> bool:
         document = await self.get_by_id(document_id)
         if document:
@@ -40,6 +44,14 @@ class DocumentRepository(IDocumentRepository):
             await self.session.commit()
             return True
         return False
+
+    async def update_status(self, document_id: UUID, status: str) -> Optional[Document]:
+        document = await self.get_by_id(document_id)
+        if document:
+            document.status = status
+            await self.session.commit()
+            await self.session.refresh(document)
+        return document
 
     async def save_chunks(self, chunks: List[DocumentChunk]) -> None:
         self.session.add_all(chunks)

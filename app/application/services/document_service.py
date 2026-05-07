@@ -26,6 +26,7 @@ class DocumentService:
             language=doc.language,
             source_url=doc.source_url,
             storage_path=doc.storage_path,
+            status=doc.status,
             published_year=doc.published_year,
             created_at=doc.created_at,
         )
