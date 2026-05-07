@@ -42,6 +42,30 @@ class ChatRepository(IChatRepository):
         )
         return result.scalars().first()
 
+    async def update_conversation(
+        self, conversation_id: UUID, **kwargs
+    ) -> Optional[Conversation]:
+        conversation = await self.get_conversation(conversation_id)
+        if not conversation:
+            return None
+        
+        for key, value in kwargs.items():
+            if hasattr(conversation, key) and value is not None:
+                setattr(conversation, key, value)
+                
+        await self.db.commit()
+        await self.db.refresh(conversation)
+        return conversation
+
+    async def delete_conversation(self, conversation_id: UUID) -> bool:
+        conversation = await self.get_conversation(conversation_id)
+        if not conversation:
+            return False
+            
+        await self.db.delete(conversation)
+        await self.db.commit()
+        return True
+
     async def add_message(
         self, conversation_id: UUID, sender: str, content: str, message_type: str = "text"
     ) -> Message:

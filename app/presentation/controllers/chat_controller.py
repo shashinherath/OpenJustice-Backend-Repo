@@ -4,16 +4,30 @@ from typing import List
 from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.application.dtos.chat_dto import ConversationCreateDto, MessageCreateDto
+from fastapi.responses import StreamingResponse
+
+from app.application.dtos.chat_dto import ConversationCreateDto, MessageCreateDto, ConversationUpdateDto
 from app.application.services.chat_service import ChatService
 from app.infrastructure.db.base import get_db
 from app.presentation.schemas.chat_schema import (
     ConversationCreate,
     ConversationDetailResponse,
     ConversationResponse,
+    ConversationUpdate,
     MessageCreate,
     MessageResponse,
+    MessageCompleteRequest,
 )
+
+# Services for AI Response
+from app.infrastructure.external.openai_client import OpenAIClient
+from app.application.services.llm_service import LLMService
+from app.application.services.retrieval_service import RetrievalService
+from app.infrastructure.repositories.document_repository import DocumentRepository
+from app.infrastructure.repositories.pgvector_semantic_cache_repository import PgVectorSemanticCacheRepository
+from app.infrastructure.repositories.pg_llm_log_repository import PgLLMLogRepository
+from app.infrastructure.repositories.pg_retrieval_log_repository import PgRetrievalLogRepository
+from app.infrastructure.repositories.pg_citation_repository import PgCitationRepository
 
 router = APIRouter(prefix="/chats", tags=["Chats"])
 
@@ -22,12 +36,14 @@ def get_chat_service(db: AsyncSession = Depends(get_db)) -> ChatService:
     return ChatService(db)
 
 
+from fastapi import HTTPException
+
 def get_current_user_id(request: Request) -> UUID:
     """Extract user ID from request state injected by auth_middleware."""
     user = getattr(request.state, "user", None)
     if user and "sub" in user:
         return UUID(user["sub"])
-    return -1
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
 
 
 @router.post(
@@ -89,3 +105,96 @@ async def create_message(
         content=data.content, sender=data.sender, message_type=data.message_type
     )
     return await service.add_message(conversation_id, user_id, dto)
+
+
+@router.patch("/{conversation_id}", response_model=ConversationResponse)
+async def update_conversation(
+    conversation_id: UUID,
+    data: ConversationUpdate,
+    request: Request,
+    service: ChatService = Depends(get_chat_service),
+):
+    """Update conversation details like title, archived status, or pinned status."""
+    user_id = get_current_user_id(request)
+    dto = ConversationUpdateDto(
+        title=data.title,
+        is_archived=data.is_archived,
+        is_pinned=data.is_pinned,
+    )
+    return await service.update_conversation(user_id, conversation_id, dto)
+
+
+@router.delete("/{conversation_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_conversation(
+    conversation_id: UUID,
+    request: Request,
+    service: ChatService = Depends(get_chat_service),
+):
+    """Delete a conversation thread completely."""
+    user_id = get_current_user_id(request)
+    await service.delete_conversation(user_id, conversation_id)
+
+
+@router.patch("/{conversation_id}/archive", response_model=ConversationResponse)
+async def archive_conversation(
+    conversation_id: UUID,
+    request: Request,
+    service: ChatService = Depends(get_chat_service),
+):
+    """Archive a conversation."""
+    user_id = get_current_user_id(request)
+    return await service.archive_conversation(user_id, conversation_id)
+
+
+@router.patch("/{conversation_id}/pin", response_model=ConversationResponse)
+async def pin_conversation(
+    conversation_id: UUID,
+    request: Request,
+    service: ChatService = Depends(get_chat_service),
+):
+    """Pin a conversation."""
+    user_id = get_current_user_id(request)
+    return await service.pin_conversation(user_id, conversation_id)
+
+
+@router.post("/{conversation_id}/messages/complete")
+async def complete_message(
+    conversation_id: UUID,
+    data: MessageCompleteRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    service: ChatService = Depends(get_chat_service),
+):
+    """Generate an AI reply based on user query and conversation context, streaming the response."""
+    user_id = get_current_user_id(request)
+    
+    doc_repo = DocumentRepository(db)
+    retrieval_log_repo = PgRetrievalLogRepository(db)
+    retrieval_service = RetrievalService(doc_repo, log_repository=retrieval_log_repo)
+    
+    semantic_cache = PgVectorSemanticCacheRepository(db)
+    llm_log_repo = PgLLMLogRepository(db)
+    citation_repo = PgCitationRepository(db)
+    
+    llm_service = LLMService(
+        service, 
+        OpenAIClient(), 
+        semantic_cache=semantic_cache, 
+        llm_log_repository=llm_log_repo,
+        citation_repository=citation_repo
+    )
+
+    # Note: Stream response expects to save the user message automatically via query.
+    # However, retrieval service can be used optionally here to supplement context.
+    # We will run retrieval first.
+    chunks, confidence = await retrieval_service.retrieve(query=data.query)
+    context = data.context
+    if chunks:
+        context_add = "\n\n---\n\n".join([f"REFERENCE TEXT:\n{c.content}" for c in chunks])
+        context = f"{context}\n\n{context_add}"
+
+    async def event_generator():
+        async for chunk in llm_service.stream_response(conversation_id, user_id, data.query, context):
+            yield chunk
+
+    return StreamingResponse(event_generator(), media_type="text/plain")

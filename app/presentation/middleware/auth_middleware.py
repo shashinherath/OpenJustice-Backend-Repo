@@ -22,17 +22,28 @@ PUBLIC_PATHS = [
 ]
 
 
-class AuthMiddleware(BaseHTTPMiddleware):
-    """Middleware for decoding JWT tokens and authenticating requests."""
+class AuthMiddleware:
+    """Pure ASGI Middleware for decoding JWT tokens and authenticating requests."""
 
-    async def dispatch(self, request: Request, call_next: Callable):
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] not in ("http", "websocket"):
+            await self.app(scope, receive, send)
+            return
+
+        request = Request(scope, receive)
+
         # Allow CORS preflight requests
         if request.method == "OPTIONS":
-            return await call_next(request)
+            await self.app(scope, receive, send)
+            return
 
         # Allow public paths
         if any(request.url.path.startswith(path) for path in PUBLIC_PATHS):
-            return await call_next(request)
+            await self.app(scope, receive, send)
+            return
 
         # Extract token from header or cookie
         token = None
@@ -45,27 +56,34 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
         # Return 401 if no token found
         if not token:
-            content = ErrorResponse(
-                error=ErrorDetail(
-                    code="UNAUTHORIZED",
-                    message="Authentication credentials were not provided.",
-                )
-            ).model_dump(mode="json")
-            return JSONResponse(status_code=401, content=content)
+            response = JSONResponse(
+                status_code=401,
+                content=ErrorResponse(
+                    error=ErrorDetail(
+                        code="UNAUTHORIZED",
+                        message="Authentication credentials were not provided.",
+                    )
+                ).model_dump(mode="json"),
+            )
+            await response(scope, receive, send)
+            return
 
         # Validate token and inject payload
         try:
             payload = jwt_handler.verify_token(token)
             request.state.user = payload
         except Exception as e:
-            content = ErrorResponse(
-                error=ErrorDetail(
-                    code="INVALID_TOKEN",
-                    message=f"Token validation failed: {str(e)}",
-                )
-            ).model_dump(mode="json")
-            return JSONResponse(status_code=401, content=content)
+            response = JSONResponse(
+                status_code=401,
+                content=ErrorResponse(
+                    error=ErrorDetail(
+                        code="INVALID_TOKEN",
+                        message=f"Token validation failed: {str(e)}",
+                    )
+                ).model_dump(mode="json"),
+            )
+            await response(scope, receive, send)
+            return
 
         # Proceed to route
-        response = await call_next(request)
-        return response
+        await self.app(scope, receive, send)

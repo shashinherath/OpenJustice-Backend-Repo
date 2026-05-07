@@ -29,6 +29,18 @@ class IChatRepository(ABC):
         pass
 
     @abstractmethod
+    async def update_conversation(
+        self, conversation_id: UUID, **kwargs
+    ) -> Optional[Conversation]:
+        """Update a conversation by ID."""
+        pass
+
+    @abstractmethod
+    async def delete_conversation(self, conversation_id: UUID) -> bool:
+        """Delete a conversation by ID."""
+        pass
+
+    @abstractmethod
     async def add_message(
         self, conversation_id: UUID, sender: str, content: str, message_type: str = "text"
     ) -> Message:

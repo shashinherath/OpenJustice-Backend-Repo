@@ -19,6 +19,8 @@ class Conversation(Base):
     user_id: Mapped[Optional[uuid_module.UUID]] = mapped_column(PGUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), index=True)
     title: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     channel: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    is_archived: Mapped[bool] = mapped_column(default=False)
+    is_pinned: Mapped[bool] = mapped_column(default=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
