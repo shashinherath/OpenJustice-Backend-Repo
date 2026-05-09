@@ -4,6 +4,7 @@ from app.application.dtos.auth_dto import (
     LoginResultDto,
     RegisterDto,
     RegisterResultDto,
+    LogoutDto,
 )
 from app.domain.exceptions import InvalidCredentialsError, UserAlreadyExistsError
 from app.domain.interfaces.password_hasher import PasswordHasher
@@ -120,3 +121,12 @@ class AuthService:
             role=user.role,
             preferred_language=user.preferred_language,
         )
+
+    async def logout(self, dto: LogoutDto) -> None:
+        """Log out a user and clean up session data."""
+        if self.audit_log_repo:
+            await self.audit_log_repo.log_action(
+                user_id=dto.user_id,
+                action="USER_LOGOUT",
+                metadata={"channel": dto.channel, "ip_address": dto.ip_address}
+            )

@@ -1,8 +1,9 @@
 """Authentication API controller."""
 from fastapi import APIRouter, Depends, Response, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from uuid import UUID
 
-from app.application.dtos.auth_dto import LoginDto, RegisterDto
+from app.application.dtos.auth_dto import LoginDto, RegisterDto, LogoutDto
 from app.application.services.auth_service import AuthService
 from app.config import settings
 from app.infrastructure.db.base import get_db
@@ -118,3 +119,56 @@ async def register(
     )
 
     return SuccessResponse(data=data, message="Registration successful")
+
+
+@router.post(
+    "/logout",
+    response_model=SuccessResponse[dict],
+    status_code=status.HTTP_200_OK,
+)
+async def logout(
+    request: Request,
+    response: Response,
+    db: AsyncSession = Depends(get_db),
+) -> SuccessResponse[dict]:
+    """Log out a user and clear the authentication cookie."""
+    # Extract user ID from the JWT payload injected by middleware
+    user_data = getattr(request.state, "user", None)
+    if not user_data or "sub" not in user_data:
+        raise Exception("Not authenticated")
+    
+    user_id = UUID(user_data["sub"])
+    ip_address = request.client.host if request.client else None
+    user_agent = request.headers.get("user-agent")
+
+    service = AuthService(
+        repository=UserRepository(db),
+        password_hasher=BcryptPasswordHasher(),
+        token_issuer=jwt_handler,
+        audit_log_repo=PgAuditLogRepository(db),
+    )
+    
+    await service.logout(
+        LogoutDto(
+            user_id=user_id,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            channel="web",
+        )
+    )
+
+    # Clear the authentication cookie
+    cookie_secure = (
+        settings.AUTH_COOKIE_SECURE
+        if settings.AUTH_COOKIE_SECURE is not None
+        else not settings.DEBUG
+    )
+    
+    response.delete_cookie(
+        key=settings.AUTH_COOKIE_NAME,
+        secure=cookie_secure,
+        samesite=settings.AUTH_COOKIE_SAMESITE,
+        path="/",
+    )
+
+    return SuccessResponse(data={}, message="Logout successful")
