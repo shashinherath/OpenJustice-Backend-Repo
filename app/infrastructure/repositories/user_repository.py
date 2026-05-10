@@ -53,3 +53,43 @@ class UserRepository(IUserRepository):
             await self.db.commit()
             await self.db.refresh(user)
         return user
+
+    async def update_profile(
+        self,
+        user_id: UUID,
+        first_name: Optional[str] = None,
+        last_name: Optional[str] = None,
+        email: Optional[str] = None,
+        preferred_language: Optional[str] = None,
+        avatar_url: Optional[str] = None,
+    ) -> Optional[User]:
+        """Update user profile fields."""
+        user = await self.get_by_uuid(user_id)
+        if not user:
+            return None
+
+        if first_name is not None:
+            user.first_name = first_name
+        if last_name is not None:
+            user.last_name = last_name
+        if email is not None:
+            user.email = email
+        if preferred_language is not None:
+            user.preferred_language = preferred_language
+        if avatar_url is not None:
+            user.avatar_url = avatar_url
+
+        await self.db.commit()
+        await self.db.refresh(user)
+        return user
+
+    async def set_password(self, user_id: UUID, hashed_password: str) -> Optional[User]:
+        """Update user password."""
+        user = await self.get_by_uuid(user_id)
+        if not user:
+            return None
+
+        user.hashed_password = hashed_password
+        await self.db.commit()
+        await self.db.refresh(user)
+        return user

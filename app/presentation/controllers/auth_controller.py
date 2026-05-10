@@ -1,10 +1,16 @@
 """Authentication API controller."""
-from fastapi import APIRouter, Depends, Response, Request, status
+from fastapi import APIRouter, Depends, Response, Request, status, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 
 from app.application.dtos.auth_dto import LoginDto, RegisterDto, LogoutDto
+from app.application.dtos.user_dto import (
+    GetProfileDto,
+    UpdateProfileDto,
+    ChangePasswordDto,
+)
 from app.application.services.auth_service import AuthService
+from app.application.services.user_service import UserService
 from app.config import settings
 from app.infrastructure.db.base import get_db
 from app.infrastructure.repositories.user_repository import UserRepository
@@ -18,7 +24,13 @@ from app.presentation.schemas.auth_schema import (
     RegisterRequest,
     RegisterResponseData,
 )
+from app.presentation.schemas.user_schema import (
+    UserProfileResponse,
+    UserProfileUpdateRequest,
+    ChangePasswordRequest,
+)
 from app.presentation.schemas.response_schema import SuccessResponse
+from app.domain.exceptions import InvalidCredentialsError
 
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -172,3 +184,108 @@ async def logout(
     )
 
     return SuccessResponse(data={}, message="Logout successful")
+
+
+@router.get(
+    "/me",
+    response_model=SuccessResponse[UserProfileResponse],
+    status_code=status.HTTP_200_OK,
+)
+async def get_current_user_profile(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> SuccessResponse[UserProfileResponse]:
+    """Get current authenticated user's profile."""
+    user_data = getattr(request.state, "user", None)
+    if not user_data or "sub" not in user_data:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    user_id = UUID(user_data["sub"])
+
+    service = UserService(
+        repository=UserRepository(db),
+        password_hasher=BcryptPasswordHasher(),
+    )
+
+    try:
+        profile = await service.get_profile(GetProfileDto(user_id=user_id))
+        return SuccessResponse(data=profile, message="Profile retrieved successfully")
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.patch(
+    "/users/me",
+    response_model=SuccessResponse[UserProfileResponse],
+    status_code=status.HTTP_200_OK,
+)
+async def update_current_user_profile(
+    payload: UserProfileUpdateRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> SuccessResponse[UserProfileResponse]:
+    """Update current authenticated user's profile."""
+    user_data = getattr(request.state, "user", None)
+    if not user_data or "sub" not in user_data:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    user_id = UUID(user_data["sub"])
+
+    service = UserService(
+        repository=UserRepository(db),
+        password_hasher=BcryptPasswordHasher(),
+    )
+
+    try:
+        updated_profile = await service.update_profile(
+            UpdateProfileDto(
+                user_id=user_id,
+                first_name=payload.first_name,
+                last_name=payload.last_name,
+                email=payload.email,
+                preferred_language=payload.preferred_language,
+                avatar_url=payload.avatar_url,
+            )
+        )
+        return SuccessResponse(
+            data=updated_profile, message="Profile updated successfully"
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.post(
+    "/change-password",
+    response_model=SuccessResponse[dict],
+    status_code=status.HTTP_200_OK,
+)
+async def change_user_password(
+    payload: ChangePasswordRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> SuccessResponse[dict]:
+    """Change current authenticated user's password."""
+    user_data = getattr(request.state, "user", None)
+    if not user_data or "sub" not in user_data:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    user_id = UUID(user_data["sub"])
+
+    service = UserService(
+        repository=UserRepository(db),
+        password_hasher=BcryptPasswordHasher(),
+    )
+
+    try:
+        await service.change_password(
+            ChangePasswordDto(
+                user_id=user_id,
+                current_password=payload.current_password,
+                new_password=payload.new_password,
+            )
+        )
+        return SuccessResponse(data={}, message="Password changed successfully")
+    except InvalidCredentialsError as e:
+        raise HTTPException(status_code=401, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
