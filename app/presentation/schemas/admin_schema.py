@@ -49,3 +49,12 @@ class AdminUserListResponse(BaseModel):
 
 class AdminUserStatusUpdate(BaseModel):
     is_active: bool
+
+class AdminKnowledgeRecord(BaseModel):
+    documentId: str
+    chunkCount: int
+    embeddingModel: str
+    status: str
+
+class AdminKnowledgeResponse(BaseModel):
+    records: List[AdminKnowledgeRecord]

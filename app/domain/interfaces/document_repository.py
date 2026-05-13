@@ -48,3 +48,8 @@ class IDocumentRepository(ABC):
     async def search_similar_chunks(self, query_embedding: list[float], limit: int = 5) -> List[DocumentChunk]:
         """Retrieve the most semantically relevant chunks."""
         pass
+
+    @abstractmethod
+    async def get_knowledge_metrics(self) -> List[dict]:
+        """Fetch aggregated knowledge monitoring metrics for documents."""
+        pass

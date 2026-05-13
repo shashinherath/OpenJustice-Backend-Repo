@@ -54,3 +54,13 @@ async def update_user_status(
         return await service.update_user_status(user_id, status_update.is_active)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+from app.presentation.schemas.admin_schema import AdminKnowledgeResponse
+
+@router.get("/knowledge", response_model=AdminKnowledgeResponse)
+async def get_knowledge(
+    request: Request,
+    service: AdminService = Depends(get_admin_service)
+):
+    """Get knowledge monitoring metrics for the admin dashboard."""
+    return await service.get_knowledge_metrics()

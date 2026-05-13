@@ -72,3 +72,34 @@ class DocumentRepository(IDocumentRepository):
         )
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
+
+    async def get_knowledge_metrics(self) -> List[dict]:
+        """Fetch aggregated knowledge monitoring metrics for documents."""
+        stmt = (
+            select(
+                Document.id.label("document_id"),
+                func.count(DocumentChunk.id).label("chunk_count"),
+                func.max(DocumentChunk.embedding_model).label("embedding_model"),
+                Document.status
+            )
+            .outerjoin(DocumentChunk, Document.id == DocumentChunk.document_id)
+            .group_by(Document.id, Document.status)
+        )
+        result = await self.session.execute(stmt)
+        
+        records = []
+        for row in result:
+            # Map database status to frontend expected status: "Active" | "Failed"
+            # If a document is Processed or has chunks, it's Active.
+            # If it's Failed, it's Failed.
+            # If it's Pending, it might not have an embedding yet, we'll mark as Failed or Active.
+            # To match the frontend semantics perfectly, we check if it's explicitly Failed.
+            status = "Failed" if row.status == "Failed" else "Active"
+            
+            records.append({
+                "documentId": str(row.document_id),
+                "chunkCount": row.chunk_count,
+                "embeddingModel": row.embedding_model or "N/A",
+                "status": status
+            })
+        return records

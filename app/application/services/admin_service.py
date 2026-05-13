@@ -158,3 +158,7 @@ class AdminService:
             "status": "Active" if updated_user.is_active else "Blocked",
             "createdDate": updated_user.created_at.strftime("%Y-%m-%d") if updated_user.created_at else ""
         }
+
+    async def get_knowledge_metrics(self) -> dict:
+        records = await self.document_repo.get_knowledge_metrics()
+        return {"records": records}
