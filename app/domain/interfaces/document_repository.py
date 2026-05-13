@@ -30,6 +30,16 @@ class IDocumentRepository(ABC):
         pass
 
     @abstractmethod
+    async def get_total_count(self) -> int:
+        """Return the total number of documents."""
+        pass
+
+    @abstractmethod
+    async def update_status(self, document_id: UUID, status: str) -> Optional[Document]:
+        """Update the processing status of a document."""
+        pass
+
+    @abstractmethod
     async def save_chunks(self, chunks: List[DocumentChunk]) -> None:
         """Save vector chunks."""
         pass
@@ -37,4 +47,9 @@ class IDocumentRepository(ABC):
     @abstractmethod
     async def search_similar_chunks(self, query_embedding: list[float], limit: int = 5) -> List[DocumentChunk]:
         """Retrieve the most semantically relevant chunks."""
+        pass
+
+    @abstractmethod
+    async def get_knowledge_metrics(self) -> List[dict]:
+        """Fetch aggregated knowledge monitoring metrics for documents."""
         pass

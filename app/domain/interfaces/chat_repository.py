@@ -29,6 +29,18 @@ class IChatRepository(ABC):
         pass
 
     @abstractmethod
+    async def update_conversation(
+        self, conversation_id: UUID, **kwargs
+    ) -> Optional[Conversation]:
+        """Update a conversation by ID."""
+        pass
+
+    @abstractmethod
+    async def delete_conversation(self, conversation_id: UUID) -> bool:
+        """Delete a conversation by ID."""
+        pass
+
+    @abstractmethod
     async def add_message(
         self, conversation_id: UUID, sender: str, content: str, message_type: str = "text"
     ) -> Message:
@@ -40,4 +52,9 @@ class IChatRepository(ABC):
         self, conversation_id: UUID, skip: int = 0, limit: int = 100
     ) -> list[Message]:
         """Fetch messages for a given conversation."""
+        pass
+
+    @abstractmethod
+    async def get_user_message_count(self) -> int:
+        """Count total messages sent by users."""
         pass

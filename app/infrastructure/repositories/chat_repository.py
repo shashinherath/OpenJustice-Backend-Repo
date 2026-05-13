@@ -42,6 +42,30 @@ class ChatRepository(IChatRepository):
         )
         return result.scalars().first()
 
+    async def update_conversation(
+        self, conversation_id: UUID, **kwargs
+    ) -> Optional[Conversation]:
+        conversation = await self.get_conversation(conversation_id)
+        if not conversation:
+            return None
+        
+        for key, value in kwargs.items():
+            if hasattr(conversation, key) and value is not None:
+                setattr(conversation, key, value)
+                
+        await self.db.commit()
+        await self.db.refresh(conversation)
+        return conversation
+
+    async def delete_conversation(self, conversation_id: UUID) -> bool:
+        conversation = await self.get_conversation(conversation_id)
+        if not conversation:
+            return False
+            
+        await self.db.delete(conversation)
+        await self.db.commit()
+        return True
+
     async def add_message(
         self, conversation_id: UUID, sender: str, content: str, message_type: str = "text"
     ) -> Message:
@@ -67,3 +91,10 @@ class ChatRepository(IChatRepository):
             .limit(limit)
         )
         return list(result.scalars().all())
+
+    async def get_user_message_count(self) -> int:
+        from sqlalchemy import func
+        result = await self.db.execute(
+            select(func.count(Message.id)).where(Message.sender == 'user')
+        )
+        return result.scalar_one_or_none() or 0

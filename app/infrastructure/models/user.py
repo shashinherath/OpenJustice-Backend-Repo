@@ -36,6 +36,10 @@ class User(Base):
     preferred_language: Mapped[str] = mapped_column(
         String(10), nullable=False, default="en"
     )
+    is_active: Mapped[bool] = mapped_column(
+        nullable=False, default=True
+    )
+    avatar_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

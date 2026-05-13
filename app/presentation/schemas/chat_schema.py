@@ -33,9 +33,22 @@ class ConversationCreate(ConversationBase):
     pass
 
 
+class ConversationUpdate(BaseModel):
+    title: Optional[str] = None
+    is_archived: Optional[bool] = None
+    is_pinned: Optional[bool] = None
+
+
+class MessageCompleteRequest(BaseModel):
+    query: str
+    context: str = ""
+
+
 class ConversationResponse(ConversationBase):
     id: UUID
     user_id: UUID
+    is_archived: bool
+    is_pinned: bool
     created_at: datetime
 
     class Config:
@@ -44,6 +57,3 @@ class ConversationResponse(ConversationBase):
 
 class ConversationDetailResponse(ConversationResponse):
     messages: list[MessageResponse] = Field(default_factory=list)
-
-    class Config:
-        from_attributes = True

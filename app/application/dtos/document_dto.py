@@ -20,5 +20,6 @@ class DocumentResultDto:
     language: Optional[str]
     source_url: Optional[str]
     storage_path: Optional[str]
+    status: str
     published_year: Optional[int]
     created_at: datetime

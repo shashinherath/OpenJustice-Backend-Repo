@@ -29,7 +29,15 @@ class ConversationResultDto:
     user_id: UUID
     title: Optional[str]
     channel: Optional[str]
+    is_archived: bool
+    is_pinned: bool
     created_at: datetime
+
+@dataclass(frozen=True)
+class ConversationUpdateDto:
+    title: Optional[str] = None
+    is_archived: Optional[bool] = None
+    is_pinned: Optional[bool] = None
 
 @dataclass(frozen=True)
 class ConversationDetailDto(ConversationResultDto):

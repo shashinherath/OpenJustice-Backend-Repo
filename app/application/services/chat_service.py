@@ -8,6 +8,7 @@ from app.application.dtos.chat_dto import (
     MessageCreateDto,
     ConversationResultDto,
     MessageResultDto,
+    ConversationUpdateDto,
 )
 from app.application.exceptions.app_errors import AppError
 from app.domain.interfaces.chat_repository import IChatRepository
@@ -28,6 +29,8 @@ class ChatService:
             user_id=conversation.user_id,
             title=conversation.title,
             channel=conversation.channel,
+            is_archived=conversation.is_archived,
+            is_pinned=conversation.is_pinned,
             created_at=conversation.created_at,
         )
 
@@ -74,6 +77,40 @@ class ChatService:
                 status_code=403,
                 error_code="FORBIDDEN",
             )
+        return self._map_conversation(conversation)
+
+    async def update_conversation(
+        self, user_id: UUID, conversation_id: UUID, data: ConversationUpdateDto
+    ) -> ConversationResultDto:
+        """Update a conversation."""
+        await self.get_conversation(conversation_id, user_id)
+        
+        update_data = {}
+        if data.title is not None:
+            update_data["title"] = data.title
+        if data.is_archived is not None:
+            update_data["is_archived"] = data.is_archived
+        if data.is_pinned is not None:
+            update_data["is_pinned"] = data.is_pinned
+
+        conversation = await self.repository.update_conversation(conversation_id, **update_data)
+        return self._map_conversation(conversation)
+
+    async def delete_conversation(self, user_id: UUID, conversation_id: UUID) -> None:
+        """Delete a conversation."""
+        await self.get_conversation(conversation_id, user_id)
+        await self.repository.delete_conversation(conversation_id)
+
+    async def archive_conversation(self, user_id: UUID, conversation_id: UUID) -> ConversationResultDto:
+        """Archive a conversation."""
+        await self.get_conversation(conversation_id, user_id)
+        conversation = await self.repository.update_conversation(conversation_id, is_archived=True)
+        return self._map_conversation(conversation)
+
+    async def pin_conversation(self, user_id: UUID, conversation_id: UUID) -> ConversationResultDto:
+        """Pin a conversation."""
+        await self.get_conversation(conversation_id, user_id)
+        conversation = await self.repository.update_conversation(conversation_id, is_pinned=True)
         return self._map_conversation(conversation)
 
     async def add_message(

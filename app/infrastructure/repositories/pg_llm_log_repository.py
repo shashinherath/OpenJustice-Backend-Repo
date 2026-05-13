@@ -53,3 +53,10 @@ class PgLLMLogRepository(ILLMLogRepository):
         )
         self.session.add(resp)
         await self.session.commit()
+
+    async def get_error_count(self) -> int:
+        from sqlalchemy import select, func
+        result = await self.session.execute(
+            select(func.count(LLMRequest.id)).where(LLMRequest.status == 'error')
+        )
+        return result.scalar_one_or_none() or 0

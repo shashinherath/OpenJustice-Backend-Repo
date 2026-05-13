@@ -41,3 +41,11 @@ class RegisterResultDto:
     last_name: Optional[str]
     role: str
     preferred_language: str
+
+
+@dataclass(frozen=True)
+class LogoutDto:
+    user_id: UUID
+    ip_address: Optional[str] = None
+    user_agent: Optional[str] = None
+    channel: str = "web"

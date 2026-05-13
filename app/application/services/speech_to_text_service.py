@@ -27,11 +27,13 @@ class SpeechToTextService:
                     return f.read()
 
             audio_bytes = await asyncio.to_thread(_read_audio)
+            import os
+            filename = os.path.basename(audio_file_path)
             
             # Send to Whisper
             response = await self.client.audio.transcriptions.create(
                 model=self.model,
-                file=("audio.ogg", audio_bytes),
+                file=(filename, audio_bytes),
                 response_format="text"
             )
 
