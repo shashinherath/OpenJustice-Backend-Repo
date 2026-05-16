@@ -52,6 +52,7 @@ class AdminUserStatusUpdate(BaseModel):
 
 class AdminKnowledgeRecord(BaseModel):
     documentId: str
+    documentTitle: str
     chunkCount: int
     embeddingModel: str
     status: str
