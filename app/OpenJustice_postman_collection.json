@@ -25,14 +25,8 @@
             },
             "url": {
               "raw": "{{webUrl}}/api/auth/register",
-              "host": [
-                "{{webUrl}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "register"
-              ]
+              "host": ["{{webUrl}}"],
+              "path": ["api", "auth", "register"]
             }
           },
           "response": []
@@ -53,14 +47,102 @@
             },
             "url": {
               "raw": "{{webUrl}}/api/auth/login",
-              "host": [
-                "{{webUrl}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "login"
-              ]
+              "host": ["{{webUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{webUrl}}/api/auth/logout",
+              "host": ["{{webUrl}}"],
+              "path": ["api", "auth", "logout"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{webUrl}}/api/auth/me",
+              "host": ["{{webUrl}}"],
+              "path": ["api", "auth", "me"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"first_name\": \"John\",\r\n  \"last_name\": \"Doe\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{webUrl}}/api/auth/users/me",
+              "host": ["{{webUrl}}"],
+              "path": ["api", "auth", "users", "me"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"current_password\": \"Test1234\",\r\n  \"new_password\": \"NewPassword123\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{webUrl}}/api/auth/change-password",
+              "host": ["{{webUrl}}"],
+              "path": ["api", "auth", "change-password"]
             }
           },
           "response": []
@@ -92,13 +174,8 @@
             },
             "url": {
               "raw": "{{webUrl}}/api/chats",
-              "host": [
-                "{{webUrl}}"
-              ],
-              "path": [
-                "api",
-                "chats"
-              ]
+              "host": ["{{webUrl}}"],
+              "path": ["api", "chats"]
             }
           },
           "response": []
@@ -116,13 +193,8 @@
             ],
             "url": {
               "raw": "{{webUrl}}/api/chats?skip=0&limit=100",
-              "host": [
-                "{{webUrl}}"
-              ],
-              "path": [
-                "api",
-                "chats"
-              ],
+              "host": ["{{webUrl}}"],
+              "path": ["api", "chats"],
               "query": [
                 {
                   "key": "skip",
@@ -150,14 +222,8 @@
             ],
             "url": {
               "raw": "{{webUrl}}/api/chats/{{conversation_id}}",
-              "host": [
-                "{{webUrl}}"
-              ],
-              "path": [
-                "api",
-                "chats",
-                "{{conversation_id}}"
-              ]
+              "host": ["{{webUrl}}"],
+              "path": ["api", "chats", "{{conversation_id}}"]
             }
           },
           "response": []
@@ -184,15 +250,8 @@
             },
             "url": {
               "raw": "{{webUrl}}/api/chats/{{conversation_id}}/messages",
-              "host": [
-                "{{webUrl}}"
-              ],
-              "path": [
-                "api",
-                "chats",
-                "{{conversation_id}}",
-                "messages"
-              ]
+              "host": ["{{webUrl}}"],
+              "path": ["api", "chats", "{{conversation_id}}", "messages"]
             }
           },
           "response": []
@@ -219,14 +278,8 @@
             },
             "url": {
               "raw": "{{webUrl}}/api/chats/{{conversation_id}}",
-              "host": [
-                "{{webUrl}}"
-              ],
-              "path": [
-                "api",
-                "chats",
-                "{{conversation_id}}"
-              ]
+              "host": ["{{webUrl}}"],
+              "path": ["api", "chats", "{{conversation_id}}"]
             }
           },
           "response": []
@@ -244,14 +297,8 @@
             ],
             "url": {
               "raw": "{{webUrl}}/api/chats/{{conversation_id}}",
-              "host": [
-                "{{webUrl}}"
-              ],
-              "path": [
-                "api",
-                "chats",
-                "{{conversation_id}}"
-              ]
+              "host": ["{{webUrl}}"],
+              "path": ["api", "chats", "{{conversation_id}}"]
             }
           },
           "response": []
@@ -269,15 +316,8 @@
             ],
             "url": {
               "raw": "{{webUrl}}/api/chats/{{conversation_id}}/archive",
-              "host": [
-                "{{webUrl}}"
-              ],
-              "path": [
-                "api",
-                "chats",
-                "{{conversation_id}}",
-                "archive"
-              ]
+              "host": ["{{webUrl}}"],
+              "path": ["api", "chats", "{{conversation_id}}", "archive"]
             }
           },
           "response": []
@@ -295,15 +335,8 @@
             ],
             "url": {
               "raw": "{{webUrl}}/api/chats/{{conversation_id}}/pin",
-              "host": [
-                "{{webUrl}}"
-              ],
-              "path": [
-                "api",
-                "chats",
-                "{{conversation_id}}",
-                "pin"
-              ]
+              "host": ["{{webUrl}}"],
+              "path": ["api", "chats", "{{conversation_id}}", "pin"]
             }
           },
           "response": []
@@ -330,9 +363,7 @@
             },
             "url": {
               "raw": "{{webUrl}}/api/chats/{{conversation_id}}/messages/complete",
-              "host": [
-                "{{webUrl}}"
-              ],
+              "host": ["{{webUrl}}"],
               "path": [
                 "api",
                 "chats",
@@ -367,15 +398,34 @@
             },
             "url": {
               "raw": "{{webUrl}}/api/chats/{{conversation_id}}/messages/voice",
-              "host": [
-                "{{webUrl}}"
-              ],
+              "host": ["{{webUrl}}"],
               "path": [
                 "api",
                 "chats",
                 "{{conversation_id}}",
                 "messages",
                 "voice"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "WebSocket Chat Connection",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "ws://127.0.0.1:8000/api/ws/chat/{{conversation_id}}?token={{accessToken}}",
+              "protocol": "ws",
+              "host": ["127", "0", "0", "1"],
+              "port": "8000",
+              "path": ["api", "ws", "chat", "{{conversation_id}}"],
+              "query": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}"
+                }
               ]
             }
           },
@@ -414,14 +464,8 @@
             },
             "url": {
               "raw": "{{webUrl}}/api/whatsapp/webhook",
-              "host": [
-                "{{webUrl}}"
-              ],
-              "path": [
-                "api",
-                "whatsapp",
-                "webhook"
-              ]
+              "host": ["{{webUrl}}"],
+              "path": ["api", "whatsapp", "webhook"]
             }
           },
           "response": []
@@ -469,13 +513,8 @@
             },
             "url": {
               "raw": "{{webUrl}}/api/documents",
-              "host": [
-                "{{webUrl}}"
-              ],
-              "path": [
-                "api",
-                "documents"
-              ]
+              "host": ["{{webUrl}}"],
+              "path": ["api", "documents"]
             }
           }
         },
@@ -492,13 +531,8 @@
             ],
             "url": {
               "raw": "{{webUrl}}/api/documents",
-              "host": [
-                "{{webUrl}}"
-              ],
-              "path": [
-                "api",
-                "documents"
-              ]
+              "host": ["{{webUrl}}"],
+              "path": ["api", "documents"]
             }
           }
         },
@@ -515,14 +549,8 @@
             ],
             "url": {
               "raw": "{{webUrl}}/api/documents/{{document_id}}",
-              "host": [
-                "{{webUrl}}"
-              ],
-              "path": [
-                "api",
-                "documents",
-                "{{document_id}}"
-              ]
+              "host": ["{{webUrl}}"],
+              "path": ["api", "documents", "{{document_id}}"]
             }
           }
         },
@@ -539,14 +567,8 @@
             ],
             "url": {
               "raw": "{{webUrl}}/api/documents/{{document_id}}",
-              "host": [
-                "{{webUrl}}"
-              ],
-              "path": [
-                "api",
-                "documents",
-                "{{document_id}}"
-              ]
+              "host": ["{{webUrl}}"],
+              "path": ["api", "documents", "{{document_id}}"]
             }
           }
         },
@@ -563,15 +585,105 @@
             ],
             "url": {
               "raw": "{{webUrl}}/api/documents/{{document_id}}/process",
-              "host": [
-                "{{webUrl}}"
-              ],
-              "path": [
-                "api",
-                "documents",
-                "{{document_id}}",
-                "process"
+              "host": ["{{webUrl}}"],
+              "path": ["api", "documents", "{{document_id}}", "process"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Get Overview",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{webUrl}}/api/admin/overview",
+              "host": ["{{webUrl}}"],
+              "path": ["api", "admin", "overview"]
+            }
+          }
+        },
+        {
+          "name": "Get Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{webUrl}}/api/admin/users?skip=0&limit=100",
+              "host": ["{{webUrl}}"],
+              "path": ["api", "admin", "users"],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "0"
+                },
+                {
+                  "key": "limit",
+                  "value": "100"
+                }
               ]
+            }
+          }
+        },
+        {
+          "name": "Update User Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"is_active\": false\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{webUrl}}/api/admin/users/{{user_id}}/status",
+              "host": ["{{webUrl}}"],
+              "path": ["api", "admin", "users", "{{user_id}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Get Knowledge Metrics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{webUrl}}/api/admin/knowledge",
+              "host": ["{{webUrl}}"],
+              "path": ["api", "admin", "knowledge"]
             }
           }
         }
@@ -593,6 +705,10 @@
     },
     {
       "key": "document_id",
+      "value": "00000000-0000-0000-0000-000000000000"
+    },
+    {
+      "key": "user_id",
       "value": "00000000-0000-0000-0000-000000000000"
     }
   ]
