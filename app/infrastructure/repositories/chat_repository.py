@@ -67,13 +67,19 @@ class ChatRepository(IChatRepository):
         return True
 
     async def add_message(
-        self, conversation_id: UUID, sender: str, content: str, message_type: str = "text"
+        self,
+        conversation_id: UUID,
+        sender: str,
+        content: str,
+        message_type: str = "text",
+        audio_path: str | None = None,
     ) -> Message:
         message = Message(
             conversation_id=conversation_id,
             sender=sender,
             content=content,
             message_type=message_type,
+            audio_path=audio_path,
         )
         self.db.add(message)
         await self.db.commit()

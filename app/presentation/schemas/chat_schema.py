@@ -18,6 +18,7 @@ class MessageCreate(MessageBase):
 class MessageResponse(MessageBase):
     id: UUID
     conversation_id: UUID
+    audio_url: Optional[str] = None
     created_at: datetime
 
     class Config:
