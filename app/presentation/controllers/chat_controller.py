@@ -23,6 +23,7 @@ from app.presentation.schemas.chat_schema import (
     MessageResponse,
     MessageCompleteRequest,
 )
+from app.presentation.mappers.chat_mapper import map_message_response
 
 # Services for AI Response
 from app.infrastructure.external.openai_client import OpenAIClient
@@ -102,14 +103,8 @@ async def get_conversation(
 
     response = ConversationDetailResponse.model_validate(conversation)
     response.messages = [
-        MessageResponse.model_validate(m).model_copy(
-            update={
-                "audio_url": f"{str(request.base_url).rstrip('/')}/api/chats/{conversation_id}/messages/{m.id}/audio"
-                if m.message_type == "voice"
-                else None,
-            }
-        )
-        for m in messages
+        map_message_response(request, conversation_id, message)
+        for message in messages
     ]
     return response
 
