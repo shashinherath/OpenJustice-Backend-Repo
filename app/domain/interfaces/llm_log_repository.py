@@ -36,3 +36,18 @@ class ILLMLogRepository(ABC):
     async def get_error_count(self) -> int:
         """Counts the total number of errors."""
         pass
+
+    @abstractmethod
+    async def get_logs(self, skip: int = 0, limit: int = 100) -> tuple[int, list]:
+        """Gets a paginated list of LLM requests."""
+        pass
+
+    @abstractmethod
+    async def update_log_status(self, log_id: uuid.UUID, status: str) -> bool:
+        """Updates the status of a specific log."""
+        pass
+
+    @abstractmethod
+    async def delete_log(self, log_id: uuid.UUID) -> bool:
+        """Deletes a specific log."""
+        pass

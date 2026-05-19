@@ -64,3 +64,40 @@ async def get_knowledge(
 ):
     """Get knowledge monitoring metrics for the admin dashboard."""
     return await service.get_knowledge_metrics()
+
+from app.presentation.schemas.admin_schema import AdminLogListResponse, AdminLogStatusUpdate
+
+@router.get("/logs", response_model=AdminLogListResponse)
+async def get_logs(
+    request: Request,
+    skip: int = 0,
+    limit: int = 100,
+    service: AdminService = Depends(get_admin_service)
+):
+    """Get all logs for the admin dashboard."""
+    return await service.get_logs(skip, limit)
+
+@router.patch("/logs/{log_id}/status")
+async def update_log_status(
+    log_id: str,
+    status_update: AdminLogStatusUpdate,
+    request: Request,
+    service: AdminService = Depends(get_admin_service)
+):
+    """Update log status."""
+    success = await service.update_log_status(log_id, status_update.status)
+    if not success:
+        raise HTTPException(status_code=404, detail="Log not found")
+    return {"message": "Status updated"}
+
+@router.delete("/logs/{log_id}")
+async def delete_log(
+    log_id: str,
+    request: Request,
+    service: AdminService = Depends(get_admin_service)
+):
+    """Delete a log."""
+    success = await service.delete_log(log_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Log not found")
+    return {"message": "Log deleted"}

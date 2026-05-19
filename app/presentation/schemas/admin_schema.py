@@ -59,3 +59,25 @@ class AdminKnowledgeRecord(BaseModel):
 
 class AdminKnowledgeResponse(BaseModel):
     records: List[AdminKnowledgeRecord]
+
+class AdminTraceLog(BaseModel):
+    id: str
+    correlationId: str
+    eventType: str
+    model: str
+    promptVersion: str
+    language: str
+    promptTokens: int
+    completionTokens: int
+    latencyMs: int
+    retrievalCount: int
+    citationCount: int
+    status: str
+    timestamp: str
+
+class AdminLogListResponse(BaseModel):
+    logs: List[AdminTraceLog]
+    total: int
+
+class AdminLogStatusUpdate(BaseModel):
+    status: str
