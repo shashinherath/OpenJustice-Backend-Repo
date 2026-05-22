@@ -25,6 +25,7 @@ class Message(Base):
     message_type: Mapped[Optional[str]] = mapped_column(
         String(20), nullable=True  # text / audio
     )
+    audio_path: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

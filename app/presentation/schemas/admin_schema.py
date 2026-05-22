@@ -20,6 +20,12 @@ class ServiceStatusItem(BaseModel):
     id: int
     title: str
     status: str
+    icon: str
+
+class DailyQueryStat(BaseModel):
+    date: str
+    count: int
+    heightPercentage: str
 
 class DataSourceItem(BaseModel):
     id: int
@@ -35,6 +41,7 @@ class AdminOverviewResponse(BaseModel):
     activities: List[ActivityItem]
     core_services: List[ServiceStatusItem]
     data_sources: List[DataSourceItem]
+    queries_per_day: List[DailyQueryStat]
 
 class AdminUserItem(BaseModel):
     id: str
@@ -52,9 +59,32 @@ class AdminUserStatusUpdate(BaseModel):
 
 class AdminKnowledgeRecord(BaseModel):
     documentId: str
+    documentTitle: str
     chunkCount: int
     embeddingModel: str
     status: str
 
 class AdminKnowledgeResponse(BaseModel):
     records: List[AdminKnowledgeRecord]
+
+class AdminTraceLog(BaseModel):
+    id: str
+    correlationId: str
+    eventType: str
+    model: str
+    promptVersion: str
+    language: str
+    promptTokens: int
+    completionTokens: int
+    latencyMs: int
+    retrievalCount: int
+    citationCount: int
+    status: str
+    timestamp: str
+
+class AdminLogListResponse(BaseModel):
+    logs: List[AdminTraceLog]
+    total: int
+
+class AdminLogStatusUpdate(BaseModel):
+    status: str

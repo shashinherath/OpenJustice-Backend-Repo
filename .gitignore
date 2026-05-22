@@ -64,6 +64,7 @@ htmlcov/
 uploads/
 temp/
 tmp/
+media/
 
 # Documentation
 docs/_build/

@@ -45,6 +45,7 @@ class Settings(BaseSettings):
     MAX_AUDIO_DURATION_SECONDS: int = 300
     MAX_AUDIO_FILE_SIZE_MB: int = 25
     AUDIO_TEMP_DIR: str = "temp/audio"
+    AUDIO_MEDIA_DIR: str = "media/audio"
     AUDIO_RETENTION_MINUTES: int = 60
     
     # AWS S3

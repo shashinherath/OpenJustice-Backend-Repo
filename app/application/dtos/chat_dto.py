@@ -13,6 +13,7 @@ class MessageCreateDto:
     content: str
     sender: str = "user"
     message_type: str = "text"
+    audio_path: Optional[str] = None
 
 @dataclass(frozen=True)
 class MessageResultDto:
@@ -21,6 +22,7 @@ class MessageResultDto:
     sender: str
     content: str
     message_type: str
+    audio_path: Optional[str]
     created_at: datetime
 
 @dataclass(frozen=True)

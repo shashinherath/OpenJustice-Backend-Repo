@@ -41,6 +41,7 @@ class ChatService:
             sender=message.sender,
             content=message.content,
             message_type=message.message_type,
+            audio_path=message.audio_path,
             created_at=message.created_at,
         )
 
@@ -125,6 +126,7 @@ class ChatService:
             sender=data.sender,
             content=data.content,
             message_type=data.message_type,
+            audio_path=data.audio_path,
         )
         return self._map_message(message)
 

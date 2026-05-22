@@ -1,5 +1,9 @@
 from uuid import UUID
+import uuid
 from typing import List
+from pathlib import Path
+import os
+import shutil
 
 from fastapi import APIRouter, Depends, Request, status, File, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,6 +12,7 @@ from fastapi.responses import StreamingResponse, FileResponse
 
 from app.application.dtos.chat_dto import ConversationCreateDto, MessageCreateDto, ConversationUpdateDto
 from app.application.services.chat_service import ChatService
+from app.config import settings
 from app.infrastructure.db.base import get_db
 from app.presentation.schemas.chat_schema import (
     ConversationCreate,
@@ -18,6 +23,20 @@ from app.presentation.schemas.chat_schema import (
     MessageResponse,
     MessageCompleteRequest,
 )
+from app.presentation.mappers.chat_mapper import map_message_response
+
+# Services for AI Response
+from app.infrastructure.external.openai_client import OpenAIClient
+from app.application.services.llm_service import LLMService
+from app.application.services.retrieval_service import RetrievalService
+from app.application.services.speech_to_text_service import SpeechToTextService
+from app.application.services.text_to_speech_service import TextToSpeechService
+from app.application.services.temp_file_manager import TempFileManager
+from app.infrastructure.repositories.document_repository import DocumentRepository
+from app.infrastructure.repositories.pgvector_semantic_cache_repository import PgVectorSemanticCacheRepository
+from app.infrastructure.repositories.pg_llm_log_repository import PgLLMLogRepository
+from app.infrastructure.repositories.pg_retrieval_log_repository import PgRetrievalLogRepository
+from app.infrastructure.repositories.pg_citation_repository import PgCitationRepository
 
 # Services for AI Response
 from app.infrastructure.external.openai_client import OpenAIClient
@@ -47,6 +66,15 @@ def get_current_user_id(request: Request) -> UUID:
     if user and "sub" in user:
         return UUID(user["sub"])
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+
+
+def _persist_audio_file(source_path: str, prefix: str) -> str:
+    """Copy an audio file into the persistent media directory and return its path."""
+    os.makedirs(settings.AUDIO_MEDIA_DIR, exist_ok=True)
+    suffix = Path(source_path).suffix or ".ogg"
+    target_path = Path(settings.AUDIO_MEDIA_DIR) / f"{prefix}_{uuid.uuid4().hex}{suffix}"
+    shutil.copy2(source_path, target_path)
+    return str(target_path)
 
 
 @router.post(
@@ -87,7 +115,10 @@ async def get_conversation(
     messages = await service.get_messages(conversation_id, user_id)
 
     response = ConversationDetailResponse.model_validate(conversation)
-    response.messages = [MessageResponse.model_validate(m) for m in messages]
+    response.messages = [
+        map_message_response(request, conversation_id, message)
+        for message in messages
+    ]
     return response
 
 
@@ -105,9 +136,43 @@ async def create_message(
     """Add a new message to a conversation thread."""
     user_id = get_current_user_id(request)
     dto = MessageCreateDto(
-        content=data.content, sender=data.sender, message_type=data.message_type
+        content=data.content,
+        sender=data.sender,
+        message_type=data.message_type,
     )
     return await service.add_message(conversation_id, user_id, dto)
+
+
+@router.get("/{conversation_id}/messages/{message_id}/audio")
+async def get_message_audio(
+    conversation_id: UUID,
+    message_id: UUID,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    service: ChatService = Depends(get_chat_service),
+):
+    """Return a playable audio file for a voice message, or synthesize one on demand."""
+    user_id = get_current_user_id(request)
+    await service.get_conversation(conversation_id, user_id)
+    messages = await service.get_messages(conversation_id, user_id)
+    message = next((item for item in messages if item.id == message_id), None)
+    if not message or message.message_type != "voice":
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Voice message not found")
+
+    if getattr(message, "audio_path", None) and os.path.exists(message.audio_path):
+        return FileResponse(
+            path=message.audio_path,
+            media_type="audio/ogg",
+            filename="voice-note.ogg",
+        )
+
+    tts_service = TextToSpeechService()
+    synthesized_path = await tts_service.synthesize_speech(message.content or "")
+    return FileResponse(
+        path=synthesized_path,
+        media_type="audio/ogg",
+        filename="voice-note.ogg",
+    )
 
 
 @router.patch("/{conversation_id}", response_model=ConversationResponse)
@@ -216,6 +281,7 @@ async def voice_message(
     
     # 1. Save uploaded file
     in_audio_path = await TempFileManager.save_upload_file(file)
+    user_audio_path = _persist_audio_file(in_audio_path, "voice_user")
     
     # 2. Transcribe
     stt_service = SpeechToTextService()
@@ -244,15 +310,35 @@ async def voice_message(
         citation_repository=citation_repo
     )
     
-    ai_reply = await llm_service.generate_response(conversation_id, user_id, query, context, message_type="voice")
+    ai_reply = await llm_service.generate_response(
+        conversation_id,
+        user_id,
+        query,
+        context,
+        message_type="voice",
+        save_ai_message=False,
+        user_audio_path=user_audio_path,
+    )
     
     # 5. Synthesize Audio
     tts_service = TextToSpeechService()
     out_audio_path = await tts_service.synthesize_speech(ai_reply)
+    ai_audio_path = _persist_audio_file(out_audio_path, "voice_ai")
+
+    await service.add_message(
+        conversation_id,
+        user_id,
+        MessageCreateDto(
+            sender="ai",
+            content=ai_reply,
+            message_type="voice",
+            audio_path=ai_audio_path,
+        ),
+    )
     
     # 6. Return audio natively
     return FileResponse(
-        path=out_audio_path,
+        path=ai_audio_path,
         media_type="audio/ogg",
         filename="response.ogg"
     )

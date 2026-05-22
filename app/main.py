@@ -33,6 +33,7 @@ setup_error_handlers(app)
 
 app.include_router(api_router)
 
-# Serve temp audio files so Twilio can fetch TTS output via public URL
+# Serve persisted audio files so voice notes remain playable after refresh/login
 os.makedirs(settings.AUDIO_TEMP_DIR, exist_ok=True)
-app.mount("/media", StaticFiles(directory=settings.AUDIO_TEMP_DIR), name="media")
+os.makedirs(settings.AUDIO_MEDIA_DIR, exist_ok=True)
+app.mount("/media", StaticFiles(directory=settings.AUDIO_MEDIA_DIR), name="media")

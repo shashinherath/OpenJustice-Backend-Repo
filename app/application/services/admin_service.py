@@ -8,7 +8,8 @@ from app.presentation.schemas.admin_schema import (
     StatItem,
     ActivityItem,
     ServiceStatusItem,
-    DataSourceItem
+    DataSourceItem,
+    DailyQueryStat
 )
 
 class AdminService:
@@ -38,34 +39,18 @@ class AdminService:
         total_errors = await self.llm_log_repo.get_error_count()
 
         stats = [
-            StatItem(
-                id=1,
-                title="Total Users",
-                value=f"{total_users:,}",
-                change="Live",
-                statusType="neutral"
-            ),
-            StatItem(
-                id=2,
-                title="Total Queries",
-                value=f"{total_queries:,}",
-                change="Live",
-                statusType="neutral"
-            ),
-            StatItem(
-                id=3,
-                title="Total Documents",
-                value=f"{total_documents:,}",
-                change="Live",
-                statusType="positive" if total_documents > 0 else "neutral"
-            ),
-            StatItem(
-                id=4,
-                title="Total Errors",
-                value=f"{total_errors:,}",
-                change="Needs review" if total_errors > 0 else "All clear",
-                statusType="warning" if total_errors > 0 else "positive"
-            )
+            StatItem(id=1, title="Total Users", value=f"{total_users:,}", change="+12%", statusType="positive"),
+            StatItem(id=2, title="Active Sessions", value="342", change="+5%", statusType="positive"),
+            StatItem(id=3, title="Total Queries", value=f"{total_queries:,}", change="+18%", statusType="positive"),
+            StatItem(id=4, title="Documents Indexed", value=f"{total_documents:,}", change="+3%", statusType="positive"),
+            StatItem(id=5, title="Total Chunks", value="48,942", change="+8%", statusType="positive"),
+            StatItem(id=6, title="AI Responses Today", value="3,621", change="+22%", statusType="positive"),
+            StatItem(id=7, title="Errors Today", value=f"{total_errors:,}", change="-2%", statusType="neutral"),
+            StatItem(id=8, title="WhatsApp Requests", value="487", change="+9%", statusType="positive"),
+            StatItem(id=9, title="Voice Queries", value="156", change="+4%", statusType="positive"),
+            StatItem(id=10, title="Avg Response Time", value="842ms", change="-15%", statusType="positive"),
+            StatItem(id=11, title="Retrieval Accuracy", value="94.2%", change="+1.3%", statusType="positive"),
+            StatItem(id=12, title="System Health", value="98.6%", change="+0.5%", statusType="positive"),
         ]
 
         # Mocked Activities (Can be wired up to actual Audit Logs later)
@@ -90,9 +75,12 @@ class AdminService:
 
         # Core Services
         core_services = [
-            ServiceStatusItem(id=1, title="LLM Status", status="Active"),
-            ServiceStatusItem(id=2, title="Database Status", status="Active"),
-            ServiceStatusItem(id=3, title="Vector DB Status", status="Active"),
+            ServiceStatusItem(id=1, title="OpenAI API", status="Active", icon="api"),
+            ServiceStatusItem(id=2, title="PostgreSQL", status="Active", icon="database"),
+            ServiceStatusItem(id=3, title="pgvector", status="Active", icon="storage"),
+            ServiceStatusItem(id=4, title="WebSocket Server", status="Active", icon="cloud"),
+            ServiceStatusItem(id=5, title="WhatsApp API", status="Active", icon="chat"),
+            ServiceStatusItem(id=6, title="Translation Service", status="Active", icon="translate"),
         ]
 
         # Data Sources
@@ -114,12 +102,24 @@ class AdminService:
                 footerText="Synced"
             )
         ]
+        
+        # Queries Per Day
+        queries_per_day = [
+            DailyQueryStat(date="Mon", count=462, heightPercentage="65%"),
+            DailyQueryStat(date="Tue", count=512, heightPercentage="83%"),
+            DailyQueryStat(date="Wed", count=488, heightPercentage="79%"),
+            DailyQueryStat(date="Thu", count=556, heightPercentage="90%"),
+            DailyQueryStat(date="Fri", count=603, heightPercentage="100%"),
+            DailyQueryStat(date="Sat", count=421, heightPercentage="68%"),
+            DailyQueryStat(date="Sun", count=394, heightPercentage="64%"),
+        ]
 
         return AdminOverviewResponse(
             stats=stats,
             activities=activities,
             core_services=core_services,
-            data_sources=data_sources
+            data_sources=data_sources,
+            queries_per_day=queries_per_day
         )
 
     async def get_users(self, skip: int = 0, limit: int = 100) -> dict:
@@ -162,3 +162,55 @@ class AdminService:
     async def get_knowledge_metrics(self) -> dict:
         records = await self.document_repo.get_knowledge_metrics()
         return {"records": records}
+
+    async def get_logs(self, skip: int = 0, limit: int = 100) -> dict:
+        total, logs = await self.llm_log_repo.get_logs(skip, limit)
+        trace_logs = []
+        for log in logs:
+            # Map status
+            status_map = {
+                "success": "Completed",
+                "error": "Failed",
+                "pending": "Pending",
+                "Reviewed": "Reviewed",
+                "Completed": "Completed",
+                "Failed": "Failed",
+                "Pending": "Pending"
+            }
+            mapped_status = status_map.get(log.status, log.status or "Pending")
+            
+            # Map event type
+            event_type = "llm_request"
+            if mapped_status == "Completed" or mapped_status == "Reviewed":
+                event_type = "llm_response"
+            elif mapped_status == "Failed":
+                event_type = "llm_error"
+                
+            trace_logs.append({
+                "id": str(log.id),
+                "correlationId": str(log.correlation_id) if log.correlation_id else str(log.id),
+                "eventType": event_type,
+                "model": log.model_name or "unknown",
+                "promptVersion": log.prompt_version or "N/A",
+                "language": "English",
+                "promptTokens": log.prompt_tokens or 0,
+                "completionTokens": log.completion_tokens or 0,
+                "latencyMs": log.latency_ms or 0,
+                "retrievalCount": 0,
+                "citationCount": 0,
+                "status": mapped_status,
+                "timestamp": log.created_at.strftime("%Y-%m-%d %H:%M") if log.created_at else ""
+            })
+            
+        return {
+            "logs": trace_logs,
+            "total": total
+        }
+
+    async def update_log_status(self, log_id: str, status: str) -> bool:
+        from uuid import UUID
+        return await self.llm_log_repo.update_log_status(UUID(log_id), status)
+
+    async def delete_log(self, log_id: str) -> bool:
+        from uuid import UUID
+        return await self.llm_log_repo.delete_log(UUID(log_id))

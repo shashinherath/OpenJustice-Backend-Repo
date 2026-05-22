@@ -60,3 +60,34 @@ class PgLLMLogRepository(ILLMLogRepository):
             select(func.count(LLMRequest.id)).where(LLMRequest.status == 'error')
         )
         return result.scalar_one_or_none() or 0
+
+    async def get_logs(self, skip: int = 0, limit: int = 100) -> tuple[int, list]:
+        from sqlalchemy import select, func
+        total_result = await self.session.execute(select(func.count(LLMRequest.id)))
+        total = total_result.scalar_one_or_none() or 0
+        
+        result = await self.session.execute(
+            select(LLMRequest).order_by(LLMRequest.created_at.desc()).offset(skip).limit(limit)
+        )
+        logs = list(result.scalars().all())
+        return total, logs
+
+    async def update_log_status(self, log_id: uuid.UUID, status: str) -> bool:
+        from sqlalchemy import select
+        result = await self.session.execute(select(LLMRequest).where(LLMRequest.id == log_id))
+        log = result.scalar_one_or_none()
+        if not log:
+            return False
+        log.status = status
+        await self.session.commit()
+        return True
+
+    async def delete_log(self, log_id: uuid.UUID) -> bool:
+        from sqlalchemy import select
+        result = await self.session.execute(select(LLMRequest).where(LLMRequest.id == log_id))
+        log = result.scalar_one_or_none()
+        if not log:
+            return False
+        await self.session.delete(log)
+        await self.session.commit()
+        return True
