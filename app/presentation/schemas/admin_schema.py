@@ -20,6 +20,12 @@ class ServiceStatusItem(BaseModel):
     id: int
     title: str
     status: str
+    icon: str
+
+class DailyQueryStat(BaseModel):
+    date: str
+    count: int
+    heightPercentage: str
 
 class DataSourceItem(BaseModel):
     id: int
@@ -35,6 +41,7 @@ class AdminOverviewResponse(BaseModel):
     activities: List[ActivityItem]
     core_services: List[ServiceStatusItem]
     data_sources: List[DataSourceItem]
+    queries_per_day: List[DailyQueryStat]
 
 class AdminUserItem(BaseModel):
     id: str
