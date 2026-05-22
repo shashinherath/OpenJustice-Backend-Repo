@@ -430,6 +430,190 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "Update Conversation",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"title\": \"Updated Title\",\r\n  \"is_archived\": false,\r\n  \"is_pinned\": true\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{webUrl}}/api/chats/{{conversation_id}}",
+              "host": [
+                "{{webUrl}}"
+              ],
+              "path": [
+                "api",
+                "chats",
+                "{{conversation_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Conversation",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{webUrl}}/api/chats/{{conversation_id}}",
+              "host": [
+                "{{webUrl}}"
+              ],
+              "path": [
+                "api",
+                "chats",
+                "{{conversation_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Archive Conversation",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{webUrl}}/api/chats/{{conversation_id}}/archive",
+              "host": [
+                "{{webUrl}}"
+              ],
+              "path": [
+                "api",
+                "chats",
+                "{{conversation_id}}",
+                "archive"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Pin Conversation",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{webUrl}}/api/chats/{{conversation_id}}/pin",
+              "host": [
+                "{{webUrl}}"
+              ],
+              "path": [
+                "api",
+                "chats",
+                "{{conversation_id}}",
+                "pin"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Complete AI Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"query\": \"What should I do if my landlord hasn't fixed the heater?\",\r\n  \"context\": \"\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{webUrl}}/api/chats/{{conversation_id}}/messages/complete",
+              "host": [
+                "{{webUrl}}"
+              ],
+              "path": [
+                "api",
+                "chats",
+                "{{conversation_id}}",
+                "messages",
+                "complete"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send Voice Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{webUrl}}/api/chats/{{conversation_id}}/messages/voice",
+              "host": [
+                "{{webUrl}}"
+              ],
+              "path": [
+                "api",
+                "chats",
+                "{{conversation_id}}",
+                "messages",
+                "voice"
+              ]
+            }
+          },
+          "response": []
         }
       ]
     },

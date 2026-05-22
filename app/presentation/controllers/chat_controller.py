@@ -38,6 +38,19 @@ from app.infrastructure.repositories.pg_llm_log_repository import PgLLMLogReposi
 from app.infrastructure.repositories.pg_retrieval_log_repository import PgRetrievalLogRepository
 from app.infrastructure.repositories.pg_citation_repository import PgCitationRepository
 
+# Services for AI Response
+from app.infrastructure.external.openai_client import OpenAIClient
+from app.application.services.llm_service import LLMService
+from app.application.services.retrieval_service import RetrievalService
+from app.application.services.speech_to_text_service import SpeechToTextService
+from app.application.services.text_to_speech_service import TextToSpeechService
+from app.application.services.temp_file_manager import TempFileManager
+from app.infrastructure.repositories.document_repository import DocumentRepository
+from app.infrastructure.repositories.pgvector_semantic_cache_repository import PgVectorSemanticCacheRepository
+from app.infrastructure.repositories.pg_llm_log_repository import PgLLMLogRepository
+from app.infrastructure.repositories.pg_retrieval_log_repository import PgRetrievalLogRepository
+from app.infrastructure.repositories.pg_citation_repository import PgCitationRepository
+
 router = APIRouter(prefix="/chats", tags=["Chats"])
 
 
