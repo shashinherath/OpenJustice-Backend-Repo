@@ -88,3 +88,32 @@ class AdminLogListResponse(BaseModel):
 
 class AdminLogStatusUpdate(BaseModel):
     status: str
+
+class RetrievalMetric(BaseModel):
+    label: str
+    value: str
+    note: str
+    tone: str
+
+class TrendPoint(BaseModel):
+    label: str
+    value: int
+
+class HealthTargets(BaseModel):
+    latencyP95: str
+    citationMismatchRate: str
+    topKHitConfidence: str
+
+class RetrievalCheck(BaseModel):
+    queryFamily: str
+    topK: int
+    avgSimilarity: str
+    latency: str
+    citationValidity: str
+    status: str
+
+class AdminRetrievalMonitoringResponse(BaseModel):
+    metrics: List[RetrievalMetric]
+    trend_points: List[TrendPoint]
+    health_targets: HealthTargets
+    retrieval_checks: List[RetrievalCheck]
