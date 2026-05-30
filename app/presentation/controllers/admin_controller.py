@@ -55,7 +55,15 @@ async def update_user_status(
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
-from app.presentation.schemas.admin_schema import AdminKnowledgeResponse
+from app.presentation.schemas.admin_schema import AdminKnowledgeResponse, AdminRetrievalMonitoringResponse
+
+@router.get("/retrieval-monitoring", response_model=AdminRetrievalMonitoringResponse)
+async def get_retrieval_monitoring(
+    request: Request,
+    service: AdminService = Depends(get_admin_service)
+):
+    """Get retrieval monitoring metrics for the admin dashboard."""
+    return await service.get_retrieval_monitoring()
 
 @router.get("/knowledge", response_model=AdminKnowledgeResponse)
 async def get_knowledge(
