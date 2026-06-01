@@ -134,9 +134,9 @@ class WhatsAppService:
                             provider="OpenAI TTS"
                         )
                     
-                    # Serve via the /media static mount using PUBLIC_BASE_URL
+                    # Serve via the /temp static mount using PUBLIC_BASE_URL
                     filename = out_audio_path.split("/")[-1].split("\\")[-1]
-                    public_media_url = f"{settings.PUBLIC_BASE_URL}/media/{filename}"
+                    public_media_url = f"{settings.PUBLIC_BASE_URL}/temp/{filename}"
                     
                     await self.whatsapp_client.send_message(
                         to=from_number,
