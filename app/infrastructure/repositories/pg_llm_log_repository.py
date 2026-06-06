@@ -15,6 +15,8 @@ class PgLLMLogRepository(ILLMLogRepository):
         self,
         user_id: uuid.UUID | None,
         model_name: str,
+        query: str | None,
+        context: str | None,
         prompt_version: str | None,
         temperature: float,
         prompt_tokens: int,
@@ -27,6 +29,8 @@ class PgLLMLogRepository(ILLMLogRepository):
         req = LLMRequest(
             user_id=user_id,
             model_name=model_name,
+            query=query,
+            context=context,
             prompt_version=prompt_version,
             temperature=temperature,
             prompt_tokens=prompt_tokens,

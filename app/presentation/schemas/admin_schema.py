@@ -448,3 +448,26 @@ class AdminAIEvaluationResponse(BaseModel):
     avg_tokens: int
     recent_model_runs: List[ModelRun]
 
+class ResearchMetricItem(BaseModel):
+    label: str
+    value: str
+    note: str
+    trend: str
+
+class EvaluationDatasetItem(BaseModel):
+    name: str
+    version: str
+    samples: int
+    split: str
+    lastRun: str
+    status: str
+
+class ExperimentNoteItem(BaseModel):
+    title: str
+    description: str
+
+class AdminResearchMetricsResponse(BaseModel):
+    metrics: List[ResearchMetricItem]
+    datasets: List[EvaluationDatasetItem]
+    experiment_notes: List[ExperimentNoteItem]
+

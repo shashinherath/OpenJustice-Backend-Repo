@@ -23,6 +23,7 @@ from app.infrastructure.models.retrieval_log import RetrievalLog  # noqa: F401
 from app.infrastructure.models.retrieved_document import RetrievedDocument  # noqa: F401
 from app.infrastructure.models.retrieval_evaluation import RetrievalEvaluation  # noqa: F401
 from app.infrastructure.models.semantic_cache import SemanticCache  # noqa: F401
+from app.infrastructure.models.research import ResearchMetric, EvaluationDataset, ExperimentNote  # noqa: F401
 
 # Citations
 from app.infrastructure.models.citation import Citation  # noqa: F401

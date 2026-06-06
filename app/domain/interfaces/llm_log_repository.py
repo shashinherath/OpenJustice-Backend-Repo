@@ -10,6 +10,8 @@ class ILLMLogRepository(ABC):
         self,
         user_id: uuid.UUID | None,
         model_name: str,
+        query: str | None,
+        context: str | None,
         prompt_version: str | None,
         temperature: float,
         prompt_tokens: int,
