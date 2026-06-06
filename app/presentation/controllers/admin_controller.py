@@ -122,3 +122,15 @@ def get_admin_security_monitoring_service(db: AsyncSession = Depends(get_db)) ->
 @router.get("/security-monitoring", response_model=AdminSecurityMonitoringResponse)
 async def get_security_monitoring(request: Request, service: AdminSecurityMonitoringService = Depends(get_admin_security_monitoring_service)):
     return await service.get_security_monitoring()
+
+from app.application.services.admin_retrieval_evaluation_service import AdminRetrievalEvaluationService
+from app.infrastructure.repositories.retrieval_evaluation_repository import RetrievalEvaluationRepository
+from app.presentation.schemas.admin_schema import AdminRetrievalEvaluationResponse
+
+def get_admin_retrieval_evaluation_service(db: AsyncSession = Depends(get_db)) -> AdminRetrievalEvaluationService:
+    return AdminRetrievalEvaluationService(RetrievalEvaluationRepository(db))
+
+@router.get("/analytics/retrieval-evaluation", response_model=AdminRetrievalEvaluationResponse)
+async def get_retrieval_evaluation(request: Request, service: AdminRetrievalEvaluationService = Depends(get_admin_retrieval_evaluation_service)):
+    return await service.get_retrieval_evaluation()
+
