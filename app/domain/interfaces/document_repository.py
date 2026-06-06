@@ -53,3 +53,8 @@ class IDocumentRepository(ABC):
     async def get_knowledge_metrics(self) -> List[dict]:
         """Fetch aggregated knowledge monitoring metrics for documents."""
         pass
+
+    @abstractmethod
+    async def get_total_chunks_count(self) -> int:
+        """Return the total number of document chunks."""
+        pass

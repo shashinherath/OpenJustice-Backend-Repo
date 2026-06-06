@@ -27,3 +27,10 @@ class PgAuditLogRepository(IAuditLogRepository):
         )
         self.session.add(audit_entry)
         await self.session.commit()
+
+    async def get_recent_activities(self, limit: int = 5) -> list:
+        from sqlalchemy import select
+        result = await self.session.execute(
+            select(AuditLog).order_by(AuditLog.created_at.desc()).limit(limit)
+        )
+        return list(result.scalars().all())

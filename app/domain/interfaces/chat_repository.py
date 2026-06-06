@@ -58,3 +58,18 @@ class IChatRepository(ABC):
     async def get_user_message_count(self) -> int:
         """Count total messages sent by users."""
         pass
+
+    @abstractmethod
+    async def get_whatsapp_requests_count(self) -> int:
+        """Count total messages from whatsapp."""
+        pass
+
+    @abstractmethod
+    async def get_queries_per_day(self, days: int = 7) -> list[dict]:
+        """Get the count of queries per day for the past `days`."""
+        pass
+
+    @abstractmethod
+    async def get_voice_queries_count(self) -> int:
+        """Count total voice queries."""
+        pass

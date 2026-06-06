@@ -6,6 +6,7 @@ from app.infrastructure.repositories.user_repository import UserRepository
 from app.infrastructure.repositories.chat_repository import ChatRepository
 from app.infrastructure.repositories.document_repository import DocumentRepository
 from app.infrastructure.repositories.pg_llm_log_repository import PgLLMLogRepository
+from app.infrastructure.repositories.pg_audit_log_repository import PgAuditLogRepository
 
 from app.application.services.admin_overview_service import AdminOverviewService
 from app.application.services.admin_users_service import AdminUsersService
@@ -28,7 +29,7 @@ from app.presentation.schemas.admin_schema import (
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
 def get_admin_overview_service(db: AsyncSession = Depends(get_db)) -> AdminOverviewService:
-    return AdminOverviewService(UserRepository(db), ChatRepository(db), DocumentRepository(db), PgLLMLogRepository(db))
+    return AdminOverviewService(UserRepository(db), ChatRepository(db), DocumentRepository(db), PgLLMLogRepository(db), PgAuditLogRepository(db))
 
 def get_admin_users_service(db: AsyncSession = Depends(get_db)) -> AdminUsersService:
     return AdminUsersService(UserRepository(db))
@@ -58,6 +59,15 @@ def get_admin_multilingual_analytics_service(db: AsyncSession = Depends(get_db))
 @router.get("/overview", response_model=AdminOverviewResponse)
 async def get_overview(request: Request, service: AdminOverviewService = Depends(get_admin_overview_service)):
     return await service.get_overview_stats()
+
+from app.infrastructure.models.semantic_cache import SemanticCache
+from sqlalchemy import delete
+
+@router.post("/clear-semantic-cache")
+async def clear_semantic_cache(request: Request, db: AsyncSession = Depends(get_db)):
+    await db.execute(delete(SemanticCache))
+    await db.commit()
+    return {"message": "Semantic cache cleared successfully"}
 
 @router.get("/users", response_model=AdminUserListResponse)
 async def list_users(request: Request, skip: int = 0, limit: int = 100, service: AdminUsersService = Depends(get_admin_users_service)):

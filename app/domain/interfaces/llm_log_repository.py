@@ -53,3 +53,13 @@ class ILLMLogRepository(ABC):
     async def delete_log(self, log_id: uuid.UUID) -> bool:
         """Deletes a specific log."""
         pass
+
+    @abstractmethod
+    async def get_responses_today_count(self) -> int:
+        """Count responses generated today."""
+        pass
+
+    @abstractmethod
+    async def get_avg_response_time(self) -> float:
+        """Calculate average response time."""
+        pass

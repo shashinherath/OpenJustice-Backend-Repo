@@ -36,12 +36,7 @@ class DataSourceItem(BaseModel):
     footerText: str
     progressColorClass: Optional[str] = None
 
-class AdminOverviewResponse(BaseModel):
-    stats: List[StatItem]
-    activities: List[ActivityItem]
-    core_services: List[ServiceStatusItem]
-    data_sources: List[DataSourceItem]
-    queries_per_day: List[DailyQueryStat]
+
 
 class AdminUserItem(BaseModel):
     id: str
@@ -222,14 +217,11 @@ class PriorityAlert(BaseModel):
 
 class SecurityEventRecord(BaseModel):
     area: str
-class DataSourceItem(BaseModel):
-    id: int
-    title: str
-    statusLabel: str
-    statusColorClass: str
-    progressPercent: int
-    footerText: str
-    progressColorClass: Optional[str] = None
+class QuickActionItem(BaseModel):
+    icon: str
+    label: str
+    highlight: Optional[bool] = False
+    action_id: str
 
 class AdminOverviewResponse(BaseModel):
     stats: List[StatItem]
@@ -237,20 +229,7 @@ class AdminOverviewResponse(BaseModel):
     core_services: List[ServiceStatusItem]
     data_sources: List[DataSourceItem]
     queries_per_day: List[DailyQueryStat]
-
-class AdminUserItem(BaseModel):
-    id: str
-    email: str
-    status: str
-    createdDate: str
-
-class AdminUserListResponse(BaseModel):
-    users: List[AdminUserItem]
-    total_active: int
-    total_blocked: int
-
-class AdminUserStatusUpdate(BaseModel):
-    is_active: bool
+    quick_actions: List[QuickActionItem]
 
 class AdminKnowledgeRecord(BaseModel):
     documentId: str
