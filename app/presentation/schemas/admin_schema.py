@@ -162,4 +162,32 @@ class AdminUsageAnalyticsResponse(BaseModel):
     peak_hour: str
     queries_per_day: List[UsageDailyStat]
 
+class CostDriver(BaseModel):
+    key: str
+    title: str
+    model: str
+    unit: str
+    usage: int
+    estimatedCost: float
+    trend: str
+    detail: str
+    colorClass: str
+
+class TwilioItem(BaseModel):
+    label: str
+    value: int
+    cost: float
+    note: str
+
+class DailyCostPoint(BaseModel):
+    day: str
+    openAi: float
+    twilio: float
+
+class AdminCostAnalyticsResponse(BaseModel):
+    cost_drivers: List[CostDriver]
+    twilio_items: List[TwilioItem]
+    daily_costs: List[DailyCostPoint]
+
+
 

@@ -14,12 +14,14 @@ from app.application.services.admin_logs_service import AdminLogsService
 from app.application.services.admin_retrieval_service import AdminRetrievalService
 from app.application.services.admin_platform_analytics_service import AdminPlatformAnalyticsService
 from app.application.services.admin_usage_analytics_service import AdminUsageAnalyticsService
+from app.application.services.admin_cost_analytics_service import AdminCostAnalyticsService
 
 from app.presentation.schemas.admin_schema import (
     AdminOverviewResponse, AdminUserListResponse, AdminUserStatusUpdate, AdminUserItem,
     AdminKnowledgeResponse, AdminRetrievalMonitoringResponse,
     AdminLogListResponse, AdminLogStatusUpdate,
-    AdminPlatformAnalyticsResponse, AdminUsageAnalyticsResponse
+    AdminPlatformAnalyticsResponse, AdminUsageAnalyticsResponse,
+    AdminCostAnalyticsResponse
 )
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
@@ -44,6 +46,9 @@ def get_admin_platform_analytics_service(db: AsyncSession = Depends(get_db)) -> 
 
 def get_admin_usage_analytics_service(db: AsyncSession = Depends(get_db)) -> AdminUsageAnalyticsService:
     return AdminUsageAnalyticsService(ChatRepository(db), UserRepository(db))
+
+def get_admin_cost_analytics_service(db: AsyncSession = Depends(get_db)) -> AdminCostAnalyticsService:
+    return AdminCostAnalyticsService(ChatRepository(db), PgLLMLogRepository(db))
 
 
 @router.get("/overview", response_model=AdminOverviewResponse)
@@ -94,3 +99,7 @@ async def get_platform_analytics(request: Request, service: AdminPlatformAnalyti
 @router.get("/usage-analytics", response_model=AdminUsageAnalyticsResponse)
 async def get_usage_analytics(request: Request, service: AdminUsageAnalyticsService = Depends(get_admin_usage_analytics_service)):
     return await service.get_usage_analytics()
+
+@router.get("/cost-analytics", response_model=AdminCostAnalyticsResponse)
+async def get_cost_analytics(request: Request, service: AdminCostAnalyticsService = Depends(get_admin_cost_analytics_service)):
+    return await service.get_cost_analytics()
