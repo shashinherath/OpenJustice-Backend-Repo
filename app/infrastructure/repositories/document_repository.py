@@ -45,6 +45,10 @@ class DocumentRepository(IDocumentRepository):
             return True
         return False
 
+    async def get_total_chunks_count(self) -> int:
+        result = await self.session.execute(select(func.count(DocumentChunk.id)))
+        return result.scalar_one_or_none() or 0
+
     async def update_status(self, document_id: UUID, status: str) -> Optional[Document]:
         document = await self.get_by_id(document_id)
         if document:

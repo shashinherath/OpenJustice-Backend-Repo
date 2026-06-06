@@ -16,3 +16,8 @@ class IAuditLogRepository(ABC):
     ) -> None:
         """Logs an action performed by a user."""
         pass
+
+    @abstractmethod
+    async def get_recent_activities(self, limit: int = 5) -> list:
+        """Fetch the most recent audit logs."""
+        pass

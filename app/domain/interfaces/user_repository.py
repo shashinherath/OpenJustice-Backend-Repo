@@ -36,3 +36,7 @@ class IUserRepository(ABC):
     @abstractmethod
     async def update_status(self, user_id: UUID, is_active: bool) -> Optional[User]:
         raise NotImplementedError
+
+    @abstractmethod
+    async def get_active_sessions_count(self) -> int:
+        raise NotImplementedError

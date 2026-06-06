@@ -104,3 +104,43 @@ class ChatRepository(IChatRepository):
             select(func.count(Message.id)).where(Message.sender == 'user')
         )
         return result.scalar_one_or_none() or 0
+
+    async def get_whatsapp_requests_count(self) -> int:
+        from sqlalchemy import func
+        result = await self.db.execute(
+            select(func.count(Conversation.id)).where(Conversation.channel == 'whatsapp')
+        )
+        return result.scalar_one_or_none() or 0
+
+    async def get_queries_per_day(self, days: int = 7) -> list[dict]:
+        from sqlalchemy import func, cast, Date
+        from datetime import datetime, timedelta
+        now = datetime.utcnow()
+        cutoff = now - timedelta(days=days - 1)
+        result = await self.db.execute(
+            select(
+                cast(Message.created_at, Date).label('date'),
+                func.count(Message.id).label('count')
+            )
+            .where(Message.sender == 'user', Message.created_at >= cutoff.date())
+            .group_by(cast(Message.created_at, Date))
+            .order_by(cast(Message.created_at, Date))
+        )
+        rows = result.all()
+        counts_by_date = {row.date: row.count for row in rows}
+        
+        formatted = []
+        for i in range(days):
+            current_date = (cutoff + timedelta(days=i)).date()
+            formatted.append({
+                "date": current_date.strftime("%a"),
+                "count": counts_by_date.get(current_date, 0)
+            })
+        return formatted
+
+    async def get_voice_queries_count(self) -> int:
+        from sqlalchemy import func
+        result = await self.db.execute(
+            select(func.count(Message.id)).where(Message.message_type == 'voice')
+        )
+        return result.scalar_one_or_none() or 0

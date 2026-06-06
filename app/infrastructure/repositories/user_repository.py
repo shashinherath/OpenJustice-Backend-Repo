@@ -93,3 +93,11 @@ class UserRepository(IUserRepository):
         await self.db.commit()
         await self.db.refresh(user)
         return user
+
+    async def get_active_sessions_count(self) -> int:
+        from sqlalchemy import func
+        from app.infrastructure.models.user_session import UserSession
+        result = await self.db.execute(
+            select(func.count(UserSession.id)).where(UserSession.expires_at > func.now())
+        )
+        return result.scalar_one_or_none() or 0

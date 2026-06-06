@@ -95,3 +95,19 @@ class PgLLMLogRepository(ILLMLogRepository):
         await self.session.delete(log)
         await self.session.commit()
         return True
+
+    async def get_responses_today_count(self) -> int:
+        from sqlalchemy import select, func, text
+        from datetime import datetime, timedelta
+        cutoff = datetime.utcnow() - timedelta(days=1)
+        result = await self.session.execute(
+            select(func.count(LLMRequest.id)).where(LLMRequest.created_at >= cutoff)
+        )
+        return result.scalar_one_or_none() or 0
+
+    async def get_avg_response_time(self) -> float:
+        from sqlalchemy import select, func
+        result = await self.session.execute(
+            select(func.avg(LLMRequest.latency_ms))
+        )
+        return result.scalar_one_or_none() or 0.0
