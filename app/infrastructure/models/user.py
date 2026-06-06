@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from app.infrastructure.models.llm_request import LLMRequest
     from app.infrastructure.models.audio_request import AudioRequest
     from app.infrastructure.models.audit_log import AuditLog
+    from app.infrastructure.models.translation_log import TranslationLog
 
 
 class User(Base):
@@ -66,6 +67,9 @@ class User(Base):
     )
     audit_logs: Mapped[list["AuditLog"]] = relationship(
         "AuditLog", back_populates="user"
+    )
+    translation_logs: Mapped[list["TranslationLog"]] = relationship(
+        "TranslationLog", back_populates="user"
     )
 
     def __repr__(self) -> str:

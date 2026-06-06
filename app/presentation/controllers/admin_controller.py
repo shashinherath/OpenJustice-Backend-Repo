@@ -15,13 +15,14 @@ from app.application.services.admin_retrieval_service import AdminRetrievalServi
 from app.application.services.admin_platform_analytics_service import AdminPlatformAnalyticsService
 from app.application.services.admin_usage_analytics_service import AdminUsageAnalyticsService
 from app.application.services.admin_cost_analytics_service import AdminCostAnalyticsService
+from app.application.services.admin_multilingual_analytics_service import AdminMultilingualAnalyticsService
 
 from app.presentation.schemas.admin_schema import (
     AdminOverviewResponse, AdminUserListResponse, AdminUserStatusUpdate, AdminUserItem,
     AdminKnowledgeResponse, AdminRetrievalMonitoringResponse,
     AdminLogListResponse, AdminLogStatusUpdate,
     AdminPlatformAnalyticsResponse, AdminUsageAnalyticsResponse,
-    AdminCostAnalyticsResponse
+    AdminCostAnalyticsResponse, AdminMultilingualAnalyticsResponse
 )
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
@@ -49,6 +50,9 @@ def get_admin_usage_analytics_service(db: AsyncSession = Depends(get_db)) -> Adm
 
 def get_admin_cost_analytics_service(db: AsyncSession = Depends(get_db)) -> AdminCostAnalyticsService:
     return AdminCostAnalyticsService(ChatRepository(db), PgLLMLogRepository(db))
+
+def get_admin_multilingual_analytics_service(db: AsyncSession = Depends(get_db)) -> AdminMultilingualAnalyticsService:
+    return AdminMultilingualAnalyticsService(ChatRepository(db))
 
 
 @router.get("/overview", response_model=AdminOverviewResponse)
@@ -103,3 +107,7 @@ async def get_usage_analytics(request: Request, service: AdminUsageAnalyticsServ
 @router.get("/cost-analytics", response_model=AdminCostAnalyticsResponse)
 async def get_cost_analytics(request: Request, service: AdminCostAnalyticsService = Depends(get_admin_cost_analytics_service)):
     return await service.get_cost_analytics()
+
+@router.get("/multilingual-analytics", response_model=AdminMultilingualAnalyticsResponse)
+async def get_multilingual_analytics(request: Request, service: AdminMultilingualAnalyticsService = Depends(get_admin_multilingual_analytics_service)):
+    return await service.get_multilingual_analytics()

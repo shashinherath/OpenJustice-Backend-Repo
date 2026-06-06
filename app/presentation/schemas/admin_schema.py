@@ -189,5 +189,17 @@ class AdminCostAnalyticsResponse(BaseModel):
     twilio_items: List[TwilioItem]
     daily_costs: List[DailyCostPoint]
 
+class LanguageStat(BaseModel):
+    code: str
+    label: str
+    count: int
+
+class AdminMultilingualAnalyticsResponse(BaseModel):
+    total_queries: int
+    total_languages: int
+    translation_requests: int
+    languages: List[LanguageStat]
+
+
 
 
