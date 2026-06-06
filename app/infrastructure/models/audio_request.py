@@ -22,6 +22,7 @@ class AudioRequest(Base):
     )
     language: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
     duration_seconds: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    characters_generated: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     provider: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
