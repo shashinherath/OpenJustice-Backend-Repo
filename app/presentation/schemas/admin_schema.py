@@ -152,3 +152,14 @@ class AdminPlatformAnalyticsResponse(BaseModel):
     voice_metrics: List[VoiceHealthMetric]
     language_detection: List[LanguageDetectionRow]
 
+class UsageDailyStat(BaseModel):
+    day: str
+    count: int
+
+class AdminUsageAnalyticsResponse(BaseModel):
+    total_queries_this_week: int
+    active_users: int
+    peak_hour: str
+    queries_per_day: List[UsageDailyStat]
+
+
