@@ -111,3 +111,14 @@ async def get_cost_analytics(request: Request, service: AdminCostAnalyticsServic
 @router.get("/multilingual-analytics", response_model=AdminMultilingualAnalyticsResponse)
 async def get_multilingual_analytics(request: Request, service: AdminMultilingualAnalyticsService = Depends(get_admin_multilingual_analytics_service)):
     return await service.get_multilingual_analytics()
+
+from app.application.services.admin_security_monitoring_service import AdminSecurityMonitoringService
+from app.infrastructure.repositories.security_event_repository import SecurityEventRepository
+from app.presentation.schemas.admin_schema import AdminSecurityMonitoringResponse
+
+def get_admin_security_monitoring_service(db: AsyncSession = Depends(get_db)) -> AdminSecurityMonitoringService:
+    return AdminSecurityMonitoringService(SecurityEventRepository(db))
+
+@router.get("/security-monitoring", response_model=AdminSecurityMonitoringResponse)
+async def get_security_monitoring(request: Request, service: AdminSecurityMonitoringService = Depends(get_admin_security_monitoring_service)):
+    return await service.get_security_monitoring()
