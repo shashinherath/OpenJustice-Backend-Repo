@@ -200,6 +200,35 @@ class AdminMultilingualAnalyticsResponse(BaseModel):
     translation_requests: int
     languages: List[LanguageStat]
 
+class SecuritySignal(BaseModel):
+    label: str
+    value: str
+    note: str
+    tone: str
 
+class MonitoringArea(BaseModel):
+    key: str
+    title: str
+    icon: str
+    status: str
+    summary: str
+    metricLabel: str
+    metricValue: str
 
+class PriorityAlert(BaseModel):
+    title: str
+    detail: str
+    severity: str
 
+class SecurityEventRecord(BaseModel):
+    area: str
+    source: str
+    detail: str
+    severity: str
+    timestamp: str
+
+class AdminSecurityMonitoringResponse(BaseModel):
+    signals: List[SecuritySignal]
+    monitoring_areas: List[MonitoringArea]
+    priority_alerts: List[PriorityAlert]
+    recent_events: List[SecurityEventRecord]

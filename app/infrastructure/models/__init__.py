@@ -38,3 +38,6 @@ from app.infrastructure.models.audio_request import AudioRequest  # noqa: F401
 
 # Audit
 from app.infrastructure.models.audit_log import AuditLog  # noqa: F401
+
+# Security
+from app.infrastructure.models.security_event import SecurityEvent  # noqa: F401
