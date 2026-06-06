@@ -436,3 +436,15 @@ class AdminRetrievalEvaluationResponse(BaseModel):
     recall_at_5: float
     precision_at_5: float
     similarity_distribution: List[RetrievalDistributionBin]
+
+class ModelRun(BaseModel):
+    model: str
+    accuracy: float
+    tokens: int
+
+class AdminAIEvaluationResponse(BaseModel):
+    accuracy: float
+    hallucination_rate: float
+    avg_tokens: int
+    recent_model_runs: List[ModelRun]
+
