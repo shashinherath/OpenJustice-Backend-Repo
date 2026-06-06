@@ -146,3 +146,13 @@ def get_admin_ai_evaluation_service(db: AsyncSession = Depends(get_db)) -> Admin
 async def get_ai_evaluation(request: Request, service: AdminAIEvaluationService = Depends(get_admin_ai_evaluation_service)):
     return await service.get_ai_evaluation_metrics()
 
+from app.application.services.admin_research_service import AdminResearchService
+from app.infrastructure.repositories.research_repository import ResearchRepository
+from app.presentation.schemas.admin_schema import AdminResearchMetricsResponse
+
+def get_admin_research_service(db: AsyncSession = Depends(get_db)) -> AdminResearchService:
+    return AdminResearchService(ResearchRepository(db))
+
+@router.get("/analytics/research-metrics", response_model=AdminResearchMetricsResponse)
+async def get_research_metrics(request: Request, service: AdminResearchService = Depends(get_admin_research_service)):
+    return await service.get_research_metrics()

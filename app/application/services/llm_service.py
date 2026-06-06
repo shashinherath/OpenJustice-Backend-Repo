@@ -142,6 +142,8 @@ class LLMService:
                 req_id = await self.llm_log_repository.log_request(
                     user_id=user_id,
                     model_name=settings.OPENAI_MODEL,
+                    query=query,
+                    context=context,
                     prompt_version="v1",
                     temperature=settings.OPENAI_TEMPERATURE,
                     prompt_tokens=prompt_tokens,
@@ -232,6 +234,8 @@ class LLMService:
                         req_id = await self.llm_log_repository.log_request(
                             user_id=user_id,
                             model_name=settings.OPENAI_MODEL,
+                            query=query,
+                            context=context,
                             prompt_version="v1",
                             temperature=settings.OPENAI_TEMPERATURE,
                             prompt_tokens=prompt_tokens,
