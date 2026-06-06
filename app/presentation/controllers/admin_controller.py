@@ -109,3 +109,13 @@ async def delete_log(
     if not success:
         raise HTTPException(status_code=404, detail="Log not found")
     return {"message": "Log deleted"}
+
+from app.presentation.schemas.admin_schema import AdminPlatformAnalyticsResponse
+
+@router.get("/platform-analytics", response_model=AdminPlatformAnalyticsResponse)
+async def get_platform_analytics(
+    request: Request,
+    service: AdminService = Depends(get_admin_service)
+):
+    """Get platform analytics metrics for the admin dashboard."""
+    return await service.get_platform_analytics()

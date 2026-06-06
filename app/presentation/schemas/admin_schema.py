@@ -117,3 +117,38 @@ class AdminRetrievalMonitoringResponse(BaseModel):
     trend_points: List[TrendPoint]
     health_targets: HealthTargets
     retrieval_checks: List[RetrievalCheck]
+
+class PlatformShare(BaseModel):
+    label: str
+    value: int
+    requests: str
+    avgResponse: str
+    tone: str
+
+class PlatformModeSplit(BaseModel):
+    platform: str
+    messageUsage: str
+    voiceUsage: str
+    messageRequests: str
+    voiceRequests: str
+    avgResponseMessage: str
+    avgResponseVoice: str
+
+class VoiceHealthMetric(BaseModel):
+    label: str
+    value: str
+    note: str
+    tone: str
+
+class LanguageDetectionRow(BaseModel):
+    language: str
+    confidence: str
+    detectedRequests: str
+    fallbackRate: str
+
+class AdminPlatformAnalyticsResponse(BaseModel):
+    platform_distribution: List[PlatformShare]
+    platform_mode_split: List[PlatformModeSplit]
+    voice_metrics: List[VoiceHealthMetric]
+    language_detection: List[LanguageDetectionRow]
+
