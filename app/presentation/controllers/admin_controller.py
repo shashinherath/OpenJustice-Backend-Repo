@@ -134,3 +134,15 @@ def get_admin_retrieval_evaluation_service(db: AsyncSession = Depends(get_db)) -
 async def get_retrieval_evaluation(request: Request, service: AdminRetrievalEvaluationService = Depends(get_admin_retrieval_evaluation_service)):
     return await service.get_retrieval_evaluation()
 
+
+from app.application.services.admin_ai_evaluation_service import AdminAIEvaluationService
+from app.infrastructure.repositories.ai_evaluation_repository import AIEvaluationRepository
+from app.presentation.schemas.admin_schema import AdminAIEvaluationResponse
+
+def get_admin_ai_evaluation_service(db: AsyncSession = Depends(get_db)) -> AdminAIEvaluationService:
+    return AdminAIEvaluationService(AIEvaluationRepository(db))
+
+@router.get("/analytics/ai-evaluation", response_model=AdminAIEvaluationResponse)
+async def get_ai_evaluation(request: Request, service: AdminAIEvaluationService = Depends(get_admin_ai_evaluation_service)):
+    return await service.get_ai_evaluation_metrics()
+

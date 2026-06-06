@@ -10,11 +10,13 @@ from app.presentation.middleware.auth_middleware import AuthMiddleware
 from app.presentation.middleware.error_handler import setup_error_handlers
 from app.presentation.routes.api import api_router
 
+from app.presentation.lifespan import lifespan
 
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
     debug=settings.DEBUG,
+    lifespan=lifespan,
 )
 
 app.add_middleware(

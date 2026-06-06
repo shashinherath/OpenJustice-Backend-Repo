@@ -42,3 +42,6 @@ from app.infrastructure.models.audit_log import AuditLog  # noqa: F401
 
 # Security
 from app.infrastructure.models.security_event import SecurityEvent  # noqa: F401
+
+# Evaluation
+from app.infrastructure.models.ai_evaluation import AIEvaluation  # noqa: F401
