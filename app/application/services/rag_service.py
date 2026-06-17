@@ -8,14 +8,19 @@ from langchain_openai import OpenAIEmbeddings
 from app.config import settings
 from app.domain.interfaces.document_repository import IDocumentRepository
 from app.infrastructure.models.document_chunk import DocumentChunk
+from app.infrastructure.repositories.system_settings_repository import SystemSettingsRepository
 
 logger = logging.getLogger(__name__)
 
 class RAGService:
     """Orchestrates LangChain text splitting and OpenAI Vector Embedding."""
 
-    def __init__(self, repository: IDocumentRepository):
+    def __init__(self, repository: IDocumentRepository, system_settings_repository: SystemSettingsRepository = None):
         self.repository = repository
+        self.system_settings_repository = system_settings_repository
+        
+        # We still initialize a default embedding model here, but it will be overridden 
+        # inside process_and_store_document() if dynamic settings are fetched.
         self.embeddings = OpenAIEmbeddings(
             model=settings.OPENAI_EMBEDDING_MODEL, 
             api_key=settings.OPENAI_API_KEY
@@ -26,6 +31,26 @@ class RAGService:
     async def process_and_store_document(self, document_id: UUID, storage_path: str, language: str = "English"):
         """Extracts text depending on extension, chunks it, embeds it, and stores pgvector rows."""
         
+        # Fetch dynamic settings
+        chunk_size = settings.CHUNK_SIZE
+        chunk_overlap = settings.CHUNK_OVERLAP
+        embedding_model = settings.OPENAI_EMBEDDING_MODEL
+        
+        if self.system_settings_repository:
+            sys_settings = await self.system_settings_repository.get_settings()
+            chunk_size = sys_settings.retrieval_chunk_size
+            chunk_overlap = sys_settings.retrieval_chunk_overlap
+            embedding_model = sys_settings.retrieval_embedding_model
+            
+        # Re-initialize embeddings if model changed
+        if embedding_model != self.embeddings.model:
+            self.embeddings = OpenAIEmbeddings(
+                model=embedding_model,
+                api_key=settings.OPENAI_API_KEY
+            )
+            
+        logger.info(f"RAG settings: Chunk Size: {chunk_size}, Overlap: {chunk_overlap}, Model: {embedding_model}")
+
         # 1. Select the loader based on extension
         ext = storage_path.split('.')[-1].lower()
         if ext == 'pdf':
@@ -54,8 +79,8 @@ class RAGService:
             ]
             
             text_splitter = RecursiveCharacterTextSplitter(
-                chunk_size=settings.CHUNK_SIZE,
-                chunk_overlap=settings.CHUNK_OVERLAP,
+                chunk_size=chunk_size,
+                chunk_overlap=chunk_overlap,
                 separators=LEGAL_SEPARATORS
             )
             
@@ -83,7 +108,7 @@ class RAGService:
                     chunk_index=idx,
                     chunk_total=chunk_total,
                     chunk_size=len(split.page_content),
-                    embedding_model=settings.OPENAI_EMBEDDING_MODEL,
+                    embedding_model=embedding_model,
                     embedding_version="v3",
                     chunking_version="v1"  # Version tracked!
                 )

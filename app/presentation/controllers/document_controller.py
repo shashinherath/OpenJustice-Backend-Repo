@@ -27,8 +27,9 @@ def get_document_service(db: AsyncSession = Depends(get_db)) -> DocumentService:
 
 
 def get_rag_service(db: AsyncSession = Depends(get_db)) -> RAGService:
+    from app.infrastructure.repositories.system_settings_repository import SystemSettingsRepository
     repository = DocumentRepository(db)
-    return RAGService(repository=repository)
+    return RAGService(repository=repository, system_settings_repository=SystemSettingsRepository(db))
 
 @router.post(
     "/{document_id}/process",

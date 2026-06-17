@@ -17,17 +17,28 @@ class OpenAIClient(ILLMClient):
         self.model = settings.OPENAI_MODEL
 
     async def generate_response(
-        self, messages: List[Dict[str, Any]], temperature: Optional[float] = None, max_tokens: Optional[int] = None
+        self,
+        messages: List[Dict[str, Any]],
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        top_p: Optional[float] = None,
+        frequency_penalty: Optional[float] = None,
+        model: Optional[str] = None
     ) -> str:
         temperature = temperature if temperature is not None else settings.OPENAI_TEMPERATURE
         max_tokens = max_tokens if max_tokens is not None else settings.OPENAI_MAX_TOKENS
+        active_model = model if model else self.model
+        top_p = top_p if top_p is not None else 1.0
+        frequency_penalty = frequency_penalty if frequency_penalty is not None else 0.0
         
         try:
             response = await self.client.chat.completions.create(
-                model=self.model,
+                model=active_model,
                 messages=messages,
                 temperature=temperature,
                 max_tokens=max_tokens,
+                top_p=top_p,
+                frequency_penalty=frequency_penalty,
                 stream=False
             )
             return response.choices[0].message.content or ""
@@ -37,17 +48,28 @@ class OpenAIClient(ILLMClient):
             return "I'm currently unable to connect to my intelligence servers. Please try again later."
 
     async def stream_response(
-        self, messages: List[Dict[str, Any]], temperature: Optional[float] = None, max_tokens: Optional[int] = None
+        self,
+        messages: List[Dict[str, Any]],
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        top_p: Optional[float] = None,
+        frequency_penalty: Optional[float] = None,
+        model: Optional[str] = None
     ) -> AsyncGenerator[str, None]:
         temperature = temperature if temperature is not None else settings.OPENAI_TEMPERATURE
         max_tokens = max_tokens if max_tokens is not None else settings.OPENAI_MAX_TOKENS
+        active_model = model if model else self.model
+        top_p = top_p if top_p is not None else 1.0
+        frequency_penalty = frequency_penalty if frequency_penalty is not None else 0.0
         
         try:
             stream = await self.client.chat.completions.create(
-                model=self.model,
+                model=active_model,
                 messages=messages,
                 temperature=temperature,
                 max_tokens=max_tokens,
+                top_p=top_p,
+                frequency_penalty=frequency_penalty,
                 stream=True
             )
             async for chunk in stream:

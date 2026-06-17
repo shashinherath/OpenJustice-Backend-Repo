@@ -110,7 +110,12 @@ async def websocket_chat_endpoint(
                 
                 doc_repo = DocumentRepository(db)
                 retrieval_log_repo = PgRetrievalLogRepository(db)
-                retrieval_service = RetrievalService(doc_repo, log_repository=retrieval_log_repo)
+                from app.infrastructure.repositories.system_settings_repository import SystemSettingsRepository
+                retrieval_service = RetrievalService(
+                    doc_repo, 
+                    log_repository=retrieval_log_repo,
+                    system_settings_repository=SystemSettingsRepository(db)
+                )
                 
                 semantic_cache = PgVectorSemanticCacheRepository(db)
                 llm_log_repo = PgLLMLogRepository(db)

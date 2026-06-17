@@ -239,7 +239,11 @@ async def complete_message(
     
     doc_repo = DocumentRepository(db)
     retrieval_log_repo = PgRetrievalLogRepository(db)
-    retrieval_service = RetrievalService(doc_repo, log_repository=retrieval_log_repo)
+    retrieval_service = RetrievalService(
+        doc_repo, 
+        log_repository=retrieval_log_repo,
+        system_settings_repository=SystemSettingsRepository(db)
+    )
     
     semantic_cache = PgVectorSemanticCacheRepository(db)
     llm_log_repo = PgLLMLogRepository(db)
@@ -292,7 +296,11 @@ async def voice_message(
     # 3. Retrieve context
     doc_repo = DocumentRepository(db)
     retrieval_log_repo = PgRetrievalLogRepository(db)
-    retrieval_service = RetrievalService(doc_repo, log_repository=retrieval_log_repo)
+    retrieval_service = RetrievalService(
+        doc_repo, 
+        log_repository=retrieval_log_repo,
+        system_settings_repository=SystemSettingsRepository(db)
+    )
     
     chunks, confidence = await retrieval_service.retrieve(query=query)
     context = ""

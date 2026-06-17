@@ -151,9 +151,31 @@ class LLMService:
         # Language is already detected earlier for saving the message
         messages = await self._build_messages(conversation_id, user_id, query, context)
         
+        # Fetch dynamic AI parameters
+        ai_model = None
+        ai_temp = None
+        ai_tokens = None
+        ai_top_p = None
+        ai_freq_pen = None
+        
+        if self.system_settings_repository:
+            system_settings = await self.system_settings_repository.get_settings()
+            ai_model = system_settings.ai_model_name
+            ai_temp = system_settings.ai_temperature
+            ai_tokens = system_settings.ai_max_tokens
+            ai_top_p = system_settings.ai_top_p
+            ai_freq_pen = system_settings.ai_frequency_penalty
+
         # Execute LLM Call natively
         start_time = time.perf_counter()
-        response = await self.llm_client.generate_response(messages)
+        response = await self.llm_client.generate_response(
+            messages=messages,
+            temperature=ai_temp,
+            max_tokens=ai_tokens,
+            top_p=ai_top_p,
+            frequency_penalty=ai_freq_pen,
+            model=ai_model
+        )
         latency_ms = int((time.perf_counter() - start_time) * 1000)
         
         # Log LLM Telemetry
@@ -233,11 +255,33 @@ class LLMService:
         # Language is already detected earlier for saving the message
         messages = await self._build_messages(conversation_id, user_id, query, context)
         
+        # Fetch dynamic AI parameters
+        ai_model = None
+        ai_temp = None
+        ai_tokens = None
+        ai_top_p = None
+        ai_freq_pen = None
+        
+        if self.system_settings_repository:
+            system_settings = await self.system_settings_repository.get_settings()
+            ai_model = system_settings.ai_model_name
+            ai_temp = system_settings.ai_temperature
+            ai_tokens = system_settings.ai_max_tokens
+            ai_top_p = system_settings.ai_top_p
+            ai_freq_pen = system_settings.ai_frequency_penalty
+
         # Stream response back
         full_response = ""
         start_time = time.perf_counter()
         try:
-            async for chunk in self.llm_client.stream_response(messages):
+            async for chunk in self.llm_client.stream_response(
+                messages=messages,
+                temperature=ai_temp,
+                max_tokens=ai_tokens,
+                top_p=ai_top_p,
+                frequency_penalty=ai_freq_pen,
+                model=ai_model
+            ):
                 full_response += chunk
                 yield chunk
                 
