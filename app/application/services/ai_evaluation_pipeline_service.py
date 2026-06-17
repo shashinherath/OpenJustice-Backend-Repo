@@ -86,7 +86,8 @@ class AIEvaluationPipelineService:
                 # Initialize Judge Service
                 from app.application.services.llm_as_a_judge_service import LLMAsAJudgeService
                 from app.infrastructure.external.openai_client import OpenAIClient
-                judge_service = LLMAsAJudgeService(OpenAIClient())
+                from app.infrastructure.repositories.system_settings_repository import SystemSettingsRepository
+                judge_service = LLMAsAJudgeService(OpenAIClient(system_settings_repository=SystemSettingsRepository(self.session)))
 
                 avg_faithfulness = 0.0
                 avg_relevance = 0.0

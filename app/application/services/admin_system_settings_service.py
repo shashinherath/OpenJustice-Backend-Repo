@@ -47,3 +47,22 @@ class AdminSystemSettingsService:
             retrieval_chunk_size=retrieval_chunk_size,
             retrieval_chunk_overlap=retrieval_chunk_overlap
         )
+
+    async def get_integration_settings(self) -> SystemSettings:
+        return await self.settings_repository.get_settings()
+
+    async def update_integration_settings(
+        self,
+        openai_api_key: str = None,
+        twilio_account_sid: str = None,
+        twilio_auth_token: str = None,
+        whatsapp_phone_number: str = None,
+        web_socket_url: str = None
+    ) -> SystemSettings:
+        return await self.settings_repository.update_integration_settings(
+            openai_api_key=openai_api_key,
+            twilio_account_sid=twilio_account_sid,
+            twilio_auth_token=twilio_auth_token,
+            whatsapp_phone_number=whatsapp_phone_number,
+            web_socket_url=web_socket_url
+        )

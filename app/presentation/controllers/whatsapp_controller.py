@@ -24,7 +24,8 @@ router = APIRouter(prefix="/whatsapp", tags=["WhatsApp"])
 
 def get_whatsapp_service(db: AsyncSession = Depends(get_db)) -> WhatsAppService:
     """Dependency injection for WhatsAppService."""
-    client = TwilioWhatsAppClient()
+    settings_repo = SystemSettingsRepository(db)
+    client = TwilioWhatsAppClient(system_settings_repository=settings_repo)
     
     chat_svc = ChatService(db)
     semantic_cache = PgVectorSemanticCacheRepository(db)
@@ -33,15 +34,14 @@ def get_whatsapp_service(db: AsyncSession = Depends(get_db)) -> WhatsAppService:
     
     llm_service = LLMService(
         chat_svc, 
-        OpenAIClient(), 
+        OpenAIClient(system_settings_repository=settings_repo), 
         semantic_cache=semantic_cache, 
         llm_log_repository=llm_log_repo,
         citation_repository=citation_repo,
-        system_settings_repository=SystemSettingsRepository(db)
+        system_settings_repository=settings_repo
     )
-    
     audio_log_repo = PgAudioLogRepository(db)
-    return WhatsAppService(whatsapp_client=client, llm_service=llm_service, db=db, audio_log_repository=audio_log_repo)
+    return WhatsAppService(whatsapp_client=client, llm_service=llm_service, db=db, audio_log_repository=audio_log_repo, system_settings_repository=settings_repo)
 
 
 @router.post("/webhook")

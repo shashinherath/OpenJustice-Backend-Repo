@@ -172,7 +172,8 @@ from app.infrastructure.repositories.system_settings_repository import SystemSet
 from app.presentation.schemas.admin_schema import (
     LanguageSettingsResponse, LanguageSettingsUpdate, 
     AISettingsResponse, AISettingsUpdate,
-    RetrievalSettingsResponse, RetrievalSettingsUpdate
+    RetrievalSettingsResponse, RetrievalSettingsUpdate,
+    IntegrationSettingsResponse, IntegrationSettingsUpdate
 )
 
 def get_admin_system_settings_service(db: AsyncSession = Depends(get_db)) -> AdminSystemSettingsService:
@@ -216,4 +217,18 @@ async def update_retrieval_settings(update_data: RetrievalSettingsUpdate, reques
         retrieval_embedding_model=update_data.retrieval_embedding_model,
         retrieval_chunk_size=update_data.retrieval_chunk_size,
         retrieval_chunk_overlap=update_data.retrieval_chunk_overlap
+    )
+
+@router.get("/settings/integration", response_model=IntegrationSettingsResponse)
+async def get_integration_settings(request: Request, service: AdminSystemSettingsService = Depends(get_admin_system_settings_service)):
+    return await service.get_integration_settings()
+
+@router.patch("/settings/integration", response_model=IntegrationSettingsResponse)
+async def update_integration_settings(update_data: IntegrationSettingsUpdate, request: Request, service: AdminSystemSettingsService = Depends(get_admin_system_settings_service)):
+    return await service.update_integration_settings(
+        openai_api_key=update_data.openai_api_key,
+        twilio_account_sid=update_data.twilio_account_sid,
+        twilio_auth_token=update_data.twilio_auth_token,
+        whatsapp_phone_number=update_data.whatsapp_phone_number,
+        web_socket_url=update_data.web_socket_url
     )

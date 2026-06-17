@@ -167,7 +167,7 @@ async def get_message_audio(
             filename="voice-note.ogg",
         )
 
-    tts_service = TextToSpeechService()
+    tts_service = TextToSpeechService(system_settings_repository=SystemSettingsRepository(db))
     synthesized_path = await tts_service.synthesize_speech(message.content or "")
     return FileResponse(
         path=synthesized_path,
@@ -251,7 +251,7 @@ async def complete_message(
     
     llm_service = LLMService(
         service, 
-        OpenAIClient(), 
+        OpenAIClient(system_settings_repository=SystemSettingsRepository(db)), 
         semantic_cache=semantic_cache, 
         llm_log_repository=llm_log_repo,
         citation_repository=citation_repo,
@@ -290,7 +290,7 @@ async def voice_message(
     user_audio_path = _persist_audio_file(in_audio_path, "voice_user")
     
     # 2. Transcribe
-    stt_service = SpeechToTextService()
+    stt_service = SpeechToTextService(system_settings_repository=SystemSettingsRepository(db))
     query = await stt_service.transcribe_audio(in_audio_path)
     
     # 3. Retrieve context
@@ -314,7 +314,7 @@ async def voice_message(
     
     llm_service = LLMService(
         service, 
-        OpenAIClient(), 
+        OpenAIClient(system_settings_repository=SystemSettingsRepository(db)), 
         semantic_cache=semantic_cache, 
         llm_log_repository=llm_log_repo,
         citation_repository=citation_repo,
@@ -332,7 +332,7 @@ async def voice_message(
     )
     
     # 5. Synthesize Audio
-    tts_service = TextToSpeechService()
+    tts_service = TextToSpeechService(system_settings_repository=SystemSettingsRepository(db))
     out_audio_path = await tts_service.synthesize_speech(ai_reply)
     ai_audio_path = _persist_audio_file(out_audio_path, "voice_ai")
 
