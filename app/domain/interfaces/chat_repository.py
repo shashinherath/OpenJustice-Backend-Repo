@@ -42,7 +42,7 @@ class IChatRepository(ABC):
 
     @abstractmethod
     async def add_message(
-        self, conversation_id: UUID, sender: str, content: str, message_type: str = "text"
+        self, conversation_id: UUID, sender: str, content: str, message_type: str = "text", audio_path: str | None = None, language: str | None = None
     ) -> Message:
         """Add a new message to a conversation."""
         pass

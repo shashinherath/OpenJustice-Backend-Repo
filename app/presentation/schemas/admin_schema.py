@@ -450,3 +450,12 @@ class AdminResearchMetricsResponse(BaseModel):
     datasets: List[EvaluationDatasetItem]
     experiment_notes: List[ExperimentNoteItem]
 
+class LanguageSettingsResponse(BaseModel):
+    enabled_languages: List[str]
+    default_language: str
+    translation_pipeline_enabled: bool
+
+class LanguageSettingsUpdate(BaseModel):
+    enabled_languages: List[str]
+    default_language: str
+    translation_pipeline_enabled: bool

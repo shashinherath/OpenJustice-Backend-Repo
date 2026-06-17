@@ -1,5 +1,5 @@
 import logging
-from typing import AsyncGenerator, Dict, List, Any
+from typing import AsyncGenerator, Dict, List, Any, Optional
 
 from openai import AsyncOpenAI
 
@@ -17,7 +17,7 @@ class OpenAIClient(ILLMClient):
         self.model = settings.OPENAI_MODEL
 
     async def generate_response(
-        self, messages: List[Dict[str, Any]], temperature: float = None, max_tokens: int = None
+        self, messages: List[Dict[str, Any]], temperature: Optional[float] = None, max_tokens: Optional[int] = None
     ) -> str:
         temperature = temperature if temperature is not None else settings.OPENAI_TEMPERATURE
         max_tokens = max_tokens if max_tokens is not None else settings.OPENAI_MAX_TOKENS
@@ -37,7 +37,7 @@ class OpenAIClient(ILLMClient):
             return "I'm currently unable to connect to my intelligence servers. Please try again later."
 
     async def stream_response(
-        self, messages: List[Dict[str, Any]], temperature: float = None, max_tokens: int = None
+        self, messages: List[Dict[str, Any]], temperature: Optional[float] = None, max_tokens: Optional[int] = None
     ) -> AsyncGenerator[str, None]:
         temperature = temperature if temperature is not None else settings.OPENAI_TEMPERATURE
         max_tokens = max_tokens if max_tokens is not None else settings.OPENAI_MAX_TOKENS

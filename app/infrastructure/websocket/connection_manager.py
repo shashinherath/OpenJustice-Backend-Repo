@@ -3,6 +3,7 @@ import logging
 from collections import defaultdict
 from datetime import datetime, timedelta
 from typing import Dict, List
+from uuid import UUID
 
 from fastapi import WebSocket
 
@@ -14,10 +15,10 @@ class ConnectionManager:
 
     def __init__(self):
         # user_id -> list of WebSocket connections
-        self.active_connections: Dict[int, List[WebSocket]] = {}
+        self.active_connections: Dict[UUID, List[WebSocket]] = {}
         self._lock = asyncio.Lock()
 
-    async def connect(self, user_id: int, websocket: WebSocket):
+    async def connect(self, user_id: UUID, websocket: WebSocket):
         """Register new connection"""
         async with self._lock:
             if user_id not in self.active_connections:
@@ -28,7 +29,7 @@ class ConnectionManager:
                 f"User {user_id} connected (total connections: {len(self.active_connections[user_id])})"
             )
 
-    async def disconnect(self, user_id: int, websocket: WebSocket = None):
+    async def disconnect(self, user_id: UUID, websocket: WebSocket = None):
         """Remove connection"""
         async with self._lock:
             if user_id in self.active_connections:
@@ -45,7 +46,7 @@ class ConnectionManager:
 
                 logger.info(f"User {user_id} disconnected")
 
-    async def send_personal_message(self, user_id: int, message: dict):
+    async def send_personal_message(self, user_id: UUID, message: dict):
         """Send message to specific user (all their connections)"""
         # We need to copy to avoid modifying while iterating
         if user_id in self.active_connections:
@@ -64,10 +65,10 @@ class WebSocketRateLimiter:
     def __init__(self, max_messages: int = 10, window_seconds: int = 60):
         self.max_messages = max_messages
         self.window_seconds = window_seconds
-        self.message_history: Dict[int, List[datetime]] = defaultdict(list)
+        self.message_history: Dict[UUID, List[datetime]] = defaultdict(list)
         self._lock = asyncio.Lock()
 
-    async def is_allowed(self, user_id: int) -> bool:
+    async def is_allowed(self, user_id: UUID) -> bool:
         """Check if user is allowed to send message"""
         async with self._lock:
             now = datetime.utcnow()
@@ -91,3 +92,4 @@ class WebSocketRateLimiter:
 # Global instances
 connection_manager = ConnectionManager()
 rate_limiter = WebSocketRateLimiter(max_messages=20, window_seconds=60)
+

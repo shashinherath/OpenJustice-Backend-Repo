@@ -46,3 +46,6 @@ from app.infrastructure.models.security_event import SecurityEvent  # noqa: F401
 
 # Evaluation
 from app.infrastructure.models.ai_evaluation import AIEvaluation  # noqa: F401
+
+# System Settings
+from app.infrastructure.models.system_settings import SystemSettings  # noqa: F401

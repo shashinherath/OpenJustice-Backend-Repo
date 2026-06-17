@@ -166,3 +166,22 @@ def get_admin_research_service(db: AsyncSession = Depends(get_db)) -> AdminResea
 @router.get("/analytics/research-metrics", response_model=AdminResearchMetricsResponse)
 async def get_research_metrics(request: Request, service: AdminResearchService = Depends(get_admin_research_service)):
     return await service.get_research_metrics()
+
+from app.application.services.admin_system_settings_service import AdminSystemSettingsService
+from app.infrastructure.repositories.system_settings_repository import SystemSettingsRepository
+from app.presentation.schemas.admin_schema import LanguageSettingsResponse, LanguageSettingsUpdate
+
+def get_admin_system_settings_service(db: AsyncSession = Depends(get_db)) -> AdminSystemSettingsService:
+    return AdminSystemSettingsService(SystemSettingsRepository(db))
+
+@router.get("/settings/language", response_model=LanguageSettingsResponse)
+async def get_language_settings(request: Request, service: AdminSystemSettingsService = Depends(get_admin_system_settings_service)):
+    return await service.get_language_settings()
+
+@router.patch("/settings/language", response_model=LanguageSettingsResponse)
+async def update_language_settings(update_data: LanguageSettingsUpdate, request: Request, service: AdminSystemSettingsService = Depends(get_admin_system_settings_service)):
+    return await service.update_language_settings(
+        enabled_languages=update_data.enabled_languages,
+        default_language=update_data.default_language,
+        translation_pipeline_enabled=update_data.translation_pipeline_enabled
+    )
