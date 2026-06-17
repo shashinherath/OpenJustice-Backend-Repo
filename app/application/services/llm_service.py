@@ -132,6 +132,15 @@ class LLMService:
         query_embedding = None
         if self.semantic_cache:
             try:
+                # Update embeddings key if dynamic settings exist
+                if self.system_settings_repository:
+                    sys_settings = await self.system_settings_repository.get_settings()
+                    if sys_settings.openai_api_key and sys_settings.openai_api_key != getattr(self.embeddings, 'api_key', settings.OPENAI_API_KEY):
+                        self.embeddings = OpenAIEmbeddings(
+                            model=self.embeddings.model,
+                            api_key=sys_settings.openai_api_key
+                        )
+                
                 query_embedding = await self.embeddings.aembed_query(query)
                 cached_response = await self.semantic_cache.get_similar_response(
                     query_embedding, 

@@ -124,7 +124,7 @@ async def websocket_chat_endpoint(
                 
                 llm_service = LLMService(
                     chat_service, 
-                    OpenAIClient(), 
+                    OpenAIClient(system_settings_repository=SystemSettingsRepository(db)), 
                     semantic_cache=semantic_cache, 
                     llm_log_repository=llm_log_repo,
                     citation_repository=citation_repo,

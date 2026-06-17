@@ -71,3 +71,28 @@ class SystemSettingsRepository:
         await self.db.commit()
         await self.db.refresh(settings)
         return settings
+
+    async def update_integration_settings(
+        self,
+        openai_api_key: Optional[str],
+        twilio_account_sid: Optional[str],
+        twilio_auth_token: Optional[str],
+        whatsapp_phone_number: Optional[str],
+        web_socket_url: Optional[str]
+    ) -> SystemSettings:
+        settings = await self.get_settings()
+        
+        if openai_api_key is not None:
+            settings.openai_api_key = openai_api_key
+        if twilio_account_sid is not None:
+            settings.twilio_account_sid = twilio_account_sid
+        if twilio_auth_token is not None:
+            settings.twilio_auth_token = twilio_auth_token
+        if whatsapp_phone_number is not None:
+            settings.whatsapp_phone_number = whatsapp_phone_number
+        if web_socket_url is not None:
+            settings.web_socket_url = web_socket_url
+            
+        await self.db.commit()
+        await self.db.refresh(settings)
+        return settings

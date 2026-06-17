@@ -44,22 +44,25 @@ class RetrievalService:
         top_k = 5
         sim_threshold = 0.7
         embedding_model = settings.OPENAI_EMBEDDING_MODEL
+        api_key = settings.OPENAI_API_KEY
         
         if self.system_settings_repository:
             sys_settings = await self.system_settings_repository.get_settings()
             top_k = sys_settings.retrieval_top_k
             sim_threshold = sys_settings.retrieval_similarity_threshold
             embedding_model = sys_settings.retrieval_embedding_model
+            if sys_settings.openai_api_key:
+                api_key = sys_settings.openai_api_key
         
         # Override if explicitly passed
         if threshold is not None:
             sim_threshold = threshold
             
-        # Re-initialize embeddings if model changed
-        if embedding_model != self.embeddings.model:
+        # Re-initialize embeddings if model or key changed
+        if embedding_model != self.embeddings.model or api_key != getattr(self.embeddings, 'api_key', settings.OPENAI_API_KEY):
             self.embeddings = OpenAIEmbeddings(
                 model=embedding_model,
-                api_key=settings.OPENAI_API_KEY
+                api_key=api_key
             )
 
         logger.info(f"Retrieving Top-K: {top_k}, Threshold: {sim_threshold}, Model: {embedding_model}")

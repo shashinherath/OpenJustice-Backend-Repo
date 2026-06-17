@@ -9,12 +9,24 @@ from app.domain.interfaces.llm_client import ILLMClient
 logger = logging.getLogger(__name__)
 
 
+from app.infrastructure.repositories.system_settings_repository import SystemSettingsRepository
+
 class OpenAIClient(ILLMClient):
     """Concrete implementation of ILLMClient utilizing native OpenAI endpoints."""
 
-    def __init__(self):
+    def __init__(self, system_settings_repository: SystemSettingsRepository = None):
+        self.system_settings_repository = system_settings_repository
         self.client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+        self.current_api_key = settings.OPENAI_API_KEY
         self.model = settings.OPENAI_MODEL
+
+    async def _ensure_client(self):
+        if self.system_settings_repository:
+            sys_settings = await self.system_settings_repository.get_settings()
+            db_key = sys_settings.openai_api_key
+            if db_key and db_key != self.current_api_key:
+                self.current_api_key = db_key
+                self.client = AsyncOpenAI(api_key=self.current_api_key)
 
     async def generate_response(
         self,
@@ -30,6 +42,8 @@ class OpenAIClient(ILLMClient):
         active_model = model if model else self.model
         top_p = top_p if top_p is not None else 1.0
         frequency_penalty = frequency_penalty if frequency_penalty is not None else 0.0
+        
+        await self._ensure_client()
         
         try:
             response = await self.client.chat.completions.create(
@@ -61,6 +75,8 @@ class OpenAIClient(ILLMClient):
         active_model = model if model else self.model
         top_p = top_p if top_p is not None else 1.0
         frequency_penalty = frequency_penalty if frequency_penalty is not None else 0.0
+        
+        await self._ensure_client()
         
         try:
             stream = await self.client.chat.completions.create(

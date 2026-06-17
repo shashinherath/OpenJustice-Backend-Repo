@@ -35,18 +35,21 @@ class RAGService:
         chunk_size = settings.CHUNK_SIZE
         chunk_overlap = settings.CHUNK_OVERLAP
         embedding_model = settings.OPENAI_EMBEDDING_MODEL
+        api_key = settings.OPENAI_API_KEY
         
         if self.system_settings_repository:
             sys_settings = await self.system_settings_repository.get_settings()
             chunk_size = sys_settings.retrieval_chunk_size
             chunk_overlap = sys_settings.retrieval_chunk_overlap
             embedding_model = sys_settings.retrieval_embedding_model
+            if sys_settings.openai_api_key:
+                api_key = sys_settings.openai_api_key
             
-        # Re-initialize embeddings if model changed
-        if embedding_model != self.embeddings.model:
+        # Re-initialize embeddings if model or key changed
+        if embedding_model != self.embeddings.model or api_key != getattr(self.embeddings, 'api_key', settings.OPENAI_API_KEY):
             self.embeddings = OpenAIEmbeddings(
                 model=embedding_model,
-                api_key=settings.OPENAI_API_KEY
+                api_key=api_key
             )
             
         logger.info(f"RAG settings: Chunk Size: {chunk_size}, Overlap: {chunk_overlap}, Model: {embedding_model}")

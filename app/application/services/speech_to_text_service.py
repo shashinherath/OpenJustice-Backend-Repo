@@ -6,12 +6,24 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
+from app.infrastructure.repositories.system_settings_repository import SystemSettingsRepository
+
 class SpeechToTextService:
     """Async speech-to-text wrapper utilizing OpenAI Whisper API."""
 
-    def __init__(self):
+    def __init__(self, system_settings_repository: SystemSettingsRepository = None):
+        self.system_settings_repository = system_settings_repository
         self.client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+        self.current_api_key = settings.OPENAI_API_KEY
         self.model = settings.WHISPER_MODEL
+
+    async def _ensure_client(self):
+        if self.system_settings_repository:
+            sys_settings = await self.system_settings_repository.get_settings()
+            db_key = sys_settings.openai_api_key
+            if db_key and db_key != self.current_api_key:
+                self.current_api_key = db_key
+                self.client = AsyncOpenAI(api_key=self.current_api_key)
 
     async def transcribe_audio(self, audio_file_path: str) -> str:
         """
@@ -19,6 +31,7 @@ class SpeechToTextService:
         Automatically detects language natively within Whisper.
         """
         logger.info(f"Transcribing audio sequence: {audio_file_path}")
+        await self._ensure_client()
 
         try:
             # Whisper handles MP3, MP4, MPEG, MPGA, M4A, WAV, and WEBM

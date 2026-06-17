@@ -26,3 +26,10 @@ class SystemSettings(Base):
     retrieval_embedding_model: Mapped[str] = mapped_column(String(50), default="text-embedding-3-large", nullable=False)
     retrieval_chunk_size: Mapped[int] = mapped_column(Integer, default=1000, nullable=False)
     retrieval_chunk_overlap: Mapped[int] = mapped_column(Integer, default=200, nullable=False)
+
+    # Integration Fields
+    openai_api_key: Mapped[str] = mapped_column(String(255), nullable=True)
+    twilio_account_sid: Mapped[str] = mapped_column(String(255), nullable=True)
+    twilio_auth_token: Mapped[str] = mapped_column(String(255), nullable=True)
+    whatsapp_phone_number: Mapped[str] = mapped_column(String(50), nullable=True)
+    web_socket_url: Mapped[str] = mapped_column(String(255), nullable=True)

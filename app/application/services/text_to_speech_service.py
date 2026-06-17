@@ -8,13 +8,25 @@ from app.application.services.temp_file_manager import TempFileManager
 
 logger = logging.getLogger(__name__)
 
+from app.infrastructure.repositories.system_settings_repository import SystemSettingsRepository
+
 class TextToSpeechService:
     """Async text-to-speech wrapper natively utilizing OpenAI TTS bounds."""
 
-    def __init__(self):
+    def __init__(self, system_settings_repository: SystemSettingsRepository = None):
+        self.system_settings_repository = system_settings_repository
         self.client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+        self.current_api_key = settings.OPENAI_API_KEY
         self.model = settings.TTS_MODEL
         self.voice = settings.TTS_VOICE
+
+    async def _ensure_client(self):
+        if self.system_settings_repository:
+            sys_settings = await self.system_settings_repository.get_settings()
+            db_key = sys_settings.openai_api_key
+            if db_key and db_key != self.current_api_key:
+                self.current_api_key = db_key
+                self.client = AsyncOpenAI(api_key=self.current_api_key)
 
     async def synthesize_speech(self, text: str) -> str:
         """
@@ -25,6 +37,7 @@ class TextToSpeechService:
             raise ValueError("TTS Text buffer cannot be inherently empty.")
 
         logger.info(f"Synthesizing logical speech: {len(text)} chars utilizing {self.voice}")
+        await self._ensure_client()
 
         try:
             response = await self.client.audio.speech.create(

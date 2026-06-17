@@ -41,7 +41,7 @@ class TempFileManager:
             raise ValueError(f"Error saving incoming voice note: {e}")
 
     @staticmethod
-    async def download_twilio_audio(media_url: str) -> str:
+    async def download_twilio_audio(media_url: str, twilio_sid: str = None, twilio_token: str = None) -> str:
         """Download remote Twilio mobile audio block internally for local Whisper consumption."""
         os.makedirs(settings.AUDIO_TEMP_DIR, exist_ok=True)
         
@@ -53,8 +53,12 @@ class TempFileManager:
             # Twilio media usually requires HTTP Basic Auth with Account SID and Auth Token 
             # if "Secure Media" is explicitly enabled, otherwise it serves publicly on hard unguessable URLs.
             auth = None
-            if settings.TWILIO_ACCOUNT_SID and settings.TWILIO_AUTH_TOKEN:
-                auth = (settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+            
+            sid = twilio_sid or settings.TWILIO_ACCOUNT_SID
+            token = twilio_token or settings.TWILIO_AUTH_TOKEN
+            
+            if sid and token:
+                auth = (sid, token)
                 
             async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
                 response = await client.get(media_url, auth=auth)

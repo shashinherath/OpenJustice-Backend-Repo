@@ -487,3 +487,17 @@ class RetrievalSettingsUpdate(BaseModel):
     retrieval_embedding_model: str
     retrieval_chunk_size: int
     retrieval_chunk_overlap: int
+
+class IntegrationSettingsResponse(BaseModel):
+    openai_api_key: Optional[str]
+    twilio_account_sid: Optional[str]
+    twilio_auth_token: Optional[str]
+    whatsapp_phone_number: Optional[str]
+    web_socket_url: Optional[str]
+
+class IntegrationSettingsUpdate(BaseModel):
+    openai_api_key: Optional[str]
+    twilio_account_sid: Optional[str]
+    twilio_auth_token: Optional[str]
+    whatsapp_phone_number: Optional[str]
+    web_socket_url: Optional[str]

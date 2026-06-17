@@ -30,18 +30,22 @@ logger = logging.getLogger(__name__)
 class WhatsAppService:
     """Service to handle WhatsApp messaging logic."""
 
-    def __init__(self, whatsapp_client: IWhatsAppClient, llm_service: "LLMService", db: "AsyncSession", audio_log_repository: IAudioLogRepository = None):
+    def __init__(self, whatsapp_client: IWhatsAppClient, llm_service: "LLMService", db: "AsyncSession", audio_log_repository: IAudioLogRepository = None, system_settings_repository: "SystemSettingsRepository" = None):
         self.whatsapp_client = whatsapp_client
         self.llm_service = llm_service
         self.db = db
         self.audio_log_repository = audio_log_repository
+        self.system_settings_repository = system_settings_repository
         # Initialize retrieval service mapping strictly to DB session
         self.retrieval_log_repo = PgRetrievalLogRepository(db)
         from app.infrastructure.repositories.system_settings_repository import SystemSettingsRepository
+        
+        repo_to_use = system_settings_repository or SystemSettingsRepository(db)
+        
         self.retrieval_service = RetrievalService(
             DocumentRepository(db), 
             log_repository=self.retrieval_log_repo,
-            system_settings_repository=SystemSettingsRepository(db)
+            system_settings_repository=repo_to_use
         )
 
     async def handle_incoming_message(self, from_number: str, body: str = None, media_url: str = None) -> None:
@@ -71,8 +75,15 @@ class WhatsAppService:
             has_voiced = True
 
             try:
-                audio_path = await TempFileManager.download_twilio_audio(media_url)
-                stt_service = SpeechToTextService()
+                sid = None
+                token = None
+                if self.system_settings_repository:
+                    sys_settings = await self.system_settings_repository.get_settings()
+                    sid = sys_settings.twilio_account_sid
+                    token = sys_settings.twilio_auth_token
+                    
+                audio_path = await TempFileManager.download_twilio_audio(media_url, twilio_sid=sid, twilio_token=token)
+                stt_service = SpeechToTextService(system_settings_repository=self.system_settings_repository)
                 
                 start_time = time.perf_counter()
                 body = await stt_service.transcribe_audio(audio_path)
@@ -124,7 +135,7 @@ class WhatsAppService:
             # 4. Synthesize Audio back out if user spoke
             if has_voiced:
                 try:
-                    tts_service = TextToSpeechService()
+                    tts_service = TextToSpeechService(system_settings_repository=self.system_settings_repository)
                     
                     start_time = time.perf_counter()
                     out_audio_path = await tts_service.synthesize_speech(reply_message)
