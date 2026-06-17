@@ -6,6 +6,7 @@ from app.config import settings
 from app.domain.interfaces.document_repository import IDocumentRepository
 from app.infrastructure.models.document_chunk import DocumentChunk
 from app.domain.interfaces.retrieval_log_repository import IRetrievalLogRepository
+from app.infrastructure.repositories.system_settings_repository import SystemSettingsRepository
 import uuid
 
 logger = logging.getLogger(__name__)
@@ -14,9 +15,18 @@ logger = logging.getLogger(__name__)
 class RetrievalService:
     """Centralized document retrieval service with telemetry logging."""
 
-    def __init__(self, repository: IDocumentRepository, log_repository: IRetrievalLogRepository = None):
+    def __init__(
+        self, 
+        repository: IDocumentRepository, 
+        log_repository: IRetrievalLogRepository = None,
+        system_settings_repository: SystemSettingsRepository = None
+    ):
         self.repository = repository
         self.log_repository = log_repository
+        self.system_settings_repository = system_settings_repository
+        
+        # We still initialize a default embedding model here, but it will be overridden 
+        # inside retrieve() if dynamic settings are fetched.
         self.embeddings = OpenAIEmbeddings(
             model=settings.OPENAI_EMBEDDING_MODEL, 
             api_key=settings.OPENAI_API_KEY
@@ -26,13 +36,33 @@ class RetrievalService:
         self,
         query: str,
         language: str = "English",
-        threshold: float = 0.7
+        threshold: float = None
     ) -> Tuple[List[DocumentChunk], str]:
         """Retrieve relevant document chunks with dynamic top-k and confidence scoring."""
         
-        # Determine dynamic Top-K based on query complexity
-        top_k = self._determine_optimal_top_k(query)
-        logger.info(f"Dynamic Top-K determined as {top_k} for query length {len(query.split())}")
+        # Fetch dynamic settings
+        top_k = 5
+        sim_threshold = 0.7
+        embedding_model = settings.OPENAI_EMBEDDING_MODEL
+        
+        if self.system_settings_repository:
+            sys_settings = await self.system_settings_repository.get_settings()
+            top_k = sys_settings.retrieval_top_k
+            sim_threshold = sys_settings.retrieval_similarity_threshold
+            embedding_model = sys_settings.retrieval_embedding_model
+        
+        # Override if explicitly passed
+        if threshold is not None:
+            sim_threshold = threshold
+            
+        # Re-initialize embeddings if model changed
+        if embedding_model != self.embeddings.model:
+            self.embeddings = OpenAIEmbeddings(
+                model=embedding_model,
+                api_key=settings.OPENAI_API_KEY
+            )
+
+        logger.info(f"Retrieving Top-K: {top_k}, Threshold: {sim_threshold}, Model: {embedding_model}")
 
         try:
             query_vector = await self.embeddings.aembed_query(query)
@@ -40,7 +70,7 @@ class RetrievalService:
             chunks = await self.repository.search_similar_chunks(
                 query_vector, 
                 limit=top_k, 
-                threshold=threshold
+                threshold=sim_threshold
             )
             
             confidence = self._calculate_confidence(chunks, query_vector)

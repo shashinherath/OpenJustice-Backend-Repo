@@ -169,7 +169,11 @@ async def get_research_metrics(request: Request, service: AdminResearchService =
 
 from app.application.services.admin_system_settings_service import AdminSystemSettingsService
 from app.infrastructure.repositories.system_settings_repository import SystemSettingsRepository
-from app.presentation.schemas.admin_schema import LanguageSettingsResponse, LanguageSettingsUpdate
+from app.presentation.schemas.admin_schema import (
+    LanguageSettingsResponse, LanguageSettingsUpdate, 
+    AISettingsResponse, AISettingsUpdate,
+    RetrievalSettingsResponse, RetrievalSettingsUpdate
+)
 
 def get_admin_system_settings_service(db: AsyncSession = Depends(get_db)) -> AdminSystemSettingsService:
     return AdminSystemSettingsService(SystemSettingsRepository(db))
@@ -184,4 +188,32 @@ async def update_language_settings(update_data: LanguageSettingsUpdate, request:
         enabled_languages=update_data.enabled_languages,
         default_language=update_data.default_language,
         translation_pipeline_enabled=update_data.translation_pipeline_enabled
+    )
+
+@router.get("/settings/ai", response_model=AISettingsResponse)
+async def get_ai_settings(request: Request, service: AdminSystemSettingsService = Depends(get_admin_system_settings_service)):
+    return await service.get_ai_settings()
+
+@router.patch("/settings/ai", response_model=AISettingsResponse)
+async def update_ai_settings(update_data: AISettingsUpdate, request: Request, service: AdminSystemSettingsService = Depends(get_admin_system_settings_service)):
+    return await service.update_ai_settings(
+        ai_model_name=update_data.ai_model_name,
+        ai_temperature=update_data.ai_temperature,
+        ai_max_tokens=update_data.ai_max_tokens,
+        ai_top_p=update_data.ai_top_p,
+        ai_frequency_penalty=update_data.ai_frequency_penalty
+    )
+
+@router.get("/settings/retrieval", response_model=RetrievalSettingsResponse)
+async def get_retrieval_settings(request: Request, service: AdminSystemSettingsService = Depends(get_admin_system_settings_service)):
+    return await service.get_retrieval_settings()
+
+@router.patch("/settings/retrieval", response_model=RetrievalSettingsResponse)
+async def update_retrieval_settings(update_data: RetrievalSettingsUpdate, request: Request, service: AdminSystemSettingsService = Depends(get_admin_system_settings_service)):
+    return await service.update_retrieval_settings(
+        retrieval_top_k=update_data.retrieval_top_k,
+        retrieval_similarity_threshold=update_data.retrieval_similarity_threshold,
+        retrieval_embedding_model=update_data.retrieval_embedding_model,
+        retrieval_chunk_size=update_data.retrieval_chunk_size,
+        retrieval_chunk_overlap=update_data.retrieval_chunk_overlap
     )

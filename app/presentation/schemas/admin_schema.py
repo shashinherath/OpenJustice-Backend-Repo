@@ -459,3 +459,31 @@ class LanguageSettingsUpdate(BaseModel):
     enabled_languages: List[str]
     default_language: str
     translation_pipeline_enabled: bool
+
+class AISettingsResponse(BaseModel):
+    ai_model_name: str
+    ai_temperature: float
+    ai_max_tokens: int
+    ai_top_p: float
+    ai_frequency_penalty: float
+
+class AISettingsUpdate(BaseModel):
+    ai_model_name: str
+    ai_temperature: float
+    ai_max_tokens: int
+    ai_top_p: float
+    ai_frequency_penalty: float
+
+class RetrievalSettingsResponse(BaseModel):
+    retrieval_top_k: int
+    retrieval_similarity_threshold: float
+    retrieval_embedding_model: str
+    retrieval_chunk_size: int
+    retrieval_chunk_overlap: int
+
+class RetrievalSettingsUpdate(BaseModel):
+    retrieval_top_k: int
+    retrieval_similarity_threshold: float
+    retrieval_embedding_model: str
+    retrieval_chunk_size: int
+    retrieval_chunk_overlap: int

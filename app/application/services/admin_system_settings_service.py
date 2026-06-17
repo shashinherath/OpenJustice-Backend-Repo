@@ -16,3 +16,34 @@ class AdminSystemSettingsService:
             default_language=default_language,
             translation_pipeline_enabled=translation_pipeline_enabled
         )
+
+    async def get_ai_settings(self) -> SystemSettings:
+        return await self.settings_repository.get_settings()
+
+    async def update_ai_settings(self, ai_model_name: str, ai_temperature: float, ai_max_tokens: int, ai_top_p: float, ai_frequency_penalty: float) -> SystemSettings:
+        return await self.settings_repository.update_ai_settings(
+            ai_model_name=ai_model_name,
+            ai_temperature=ai_temperature,
+            ai_max_tokens=ai_max_tokens,
+            ai_top_p=ai_top_p,
+            ai_frequency_penalty=ai_frequency_penalty
+        )
+
+    async def get_retrieval_settings(self) -> SystemSettings:
+        return await self.settings_repository.get_settings()
+
+    async def update_retrieval_settings(
+        self,
+        retrieval_top_k: int,
+        retrieval_similarity_threshold: float,
+        retrieval_embedding_model: str,
+        retrieval_chunk_size: int,
+        retrieval_chunk_overlap: int
+    ) -> SystemSettings:
+        return await self.settings_repository.update_retrieval_settings(
+            retrieval_top_k=retrieval_top_k,
+            retrieval_similarity_threshold=retrieval_similarity_threshold,
+            retrieval_embedding_model=retrieval_embedding_model,
+            retrieval_chunk_size=retrieval_chunk_size,
+            retrieval_chunk_overlap=retrieval_chunk_overlap
+        )

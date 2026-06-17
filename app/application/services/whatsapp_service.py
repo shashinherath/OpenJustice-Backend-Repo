@@ -37,7 +37,12 @@ class WhatsAppService:
         self.audio_log_repository = audio_log_repository
         # Initialize retrieval service mapping strictly to DB session
         self.retrieval_log_repo = PgRetrievalLogRepository(db)
-        self.retrieval_service = RetrievalService(DocumentRepository(db), log_repository=self.retrieval_log_repo)
+        from app.infrastructure.repositories.system_settings_repository import SystemSettingsRepository
+        self.retrieval_service = RetrievalService(
+            DocumentRepository(db), 
+            log_repository=self.retrieval_log_repo,
+            system_settings_repository=SystemSettingsRepository(db)
+        )
 
     async def handle_incoming_message(self, from_number: str, body: str = None, media_url: str = None) -> None:
         """

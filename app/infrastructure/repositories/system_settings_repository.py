@@ -38,3 +38,36 @@ class SystemSettingsRepository:
         await self.db.commit()
         await self.db.refresh(settings)
         return settings
+
+    async def update_ai_settings(self, ai_model_name: str, ai_temperature: float, ai_max_tokens: int, ai_top_p: float, ai_frequency_penalty: float) -> SystemSettings:
+        settings = await self.get_settings()
+        
+        settings.ai_model_name = ai_model_name
+        settings.ai_temperature = ai_temperature
+        settings.ai_max_tokens = ai_max_tokens
+        settings.ai_top_p = ai_top_p
+        settings.ai_frequency_penalty = ai_frequency_penalty
+        
+        await self.db.commit()
+        await self.db.refresh(settings)
+        return settings
+
+    async def update_retrieval_settings(
+        self,
+        retrieval_top_k: int,
+        retrieval_similarity_threshold: float,
+        retrieval_embedding_model: str,
+        retrieval_chunk_size: int,
+        retrieval_chunk_overlap: int
+    ) -> SystemSettings:
+        settings = await self.get_settings()
+        
+        settings.retrieval_top_k = retrieval_top_k
+        settings.retrieval_similarity_threshold = retrieval_similarity_threshold
+        settings.retrieval_embedding_model = retrieval_embedding_model
+        settings.retrieval_chunk_size = retrieval_chunk_size
+        settings.retrieval_chunk_overlap = retrieval_chunk_overlap
+        
+        await self.db.commit()
+        await self.db.refresh(settings)
+        return settings
