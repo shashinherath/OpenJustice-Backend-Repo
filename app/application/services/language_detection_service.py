@@ -13,7 +13,7 @@ class LanguageDetectionService:
         'ta': 'Tamil'
     }
 
-    DEFAULT_LANGUAGE = 'English'
+    DEFAULT_LANGUAGE = 'en'
 
     @classmethod
     def detect_language(cls, text: str) -> str:
@@ -23,10 +23,10 @@ class LanguageDetectionService:
 
         try:
             language_code = cls._detect_by_unicode(text)
-            if language_code:
-                detected = cls.SUPPORTED_LANGUAGES.get(language_code, cls.DEFAULT_LANGUAGE)
-                logger.info(f"Detected language context: {detected} (code: {language_code})")
-                return detected
+            if language_code and language_code in cls.SUPPORTED_LANGUAGES:
+                detected_name = cls.SUPPORTED_LANGUAGES.get(language_code)
+                logger.info(f"Detected language context: {detected_name} (code: {language_code})")
+                return language_code
 
             return cls.DEFAULT_LANGUAGE
         except Exception as e:

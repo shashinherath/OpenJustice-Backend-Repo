@@ -37,6 +37,7 @@ from app.infrastructure.repositories.pgvector_semantic_cache_repository import P
 from app.infrastructure.repositories.pg_llm_log_repository import PgLLMLogRepository
 from app.infrastructure.repositories.pg_retrieval_log_repository import PgRetrievalLogRepository
 from app.infrastructure.repositories.pg_citation_repository import PgCitationRepository
+from app.infrastructure.repositories.system_settings_repository import SystemSettingsRepository
 
 # Services for AI Response
 from app.infrastructure.external.openai_client import OpenAIClient
@@ -249,7 +250,8 @@ async def complete_message(
         OpenAIClient(), 
         semantic_cache=semantic_cache, 
         llm_log_repository=llm_log_repo,
-        citation_repository=citation_repo
+        citation_repository=citation_repo,
+        system_settings_repository=SystemSettingsRepository(db)
     )
 
     # Note: Stream response expects to save the user message automatically via query.
@@ -307,7 +309,8 @@ async def voice_message(
         OpenAIClient(), 
         semantic_cache=semantic_cache, 
         llm_log_repository=llm_log_repo,
-        citation_repository=citation_repo
+        citation_repository=citation_repo,
+        system_settings_repository=SystemSettingsRepository(db)
     )
     
     ai_reply = await llm_service.generate_response(

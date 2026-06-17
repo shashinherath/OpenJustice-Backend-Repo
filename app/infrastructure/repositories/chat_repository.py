@@ -73,6 +73,7 @@ class ChatRepository(IChatRepository):
         content: str,
         message_type: str = "text",
         audio_path: str | None = None,
+        language: str | None = None,
     ) -> Message:
         message = Message(
             conversation_id=conversation_id,
@@ -80,6 +81,7 @@ class ChatRepository(IChatRepository):
             content=content,
             message_type=message_type,
             audio_path=audio_path,
+            language=language,
         )
         self.db.add(message)
         await self.db.commit()

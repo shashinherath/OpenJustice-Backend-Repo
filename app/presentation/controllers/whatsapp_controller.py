@@ -15,6 +15,7 @@ from app.infrastructure.repositories.pgvector_semantic_cache_repository import P
 from app.infrastructure.repositories.pg_llm_log_repository import PgLLMLogRepository
 from app.infrastructure.repositories.pg_citation_repository import PgCitationRepository
 from app.infrastructure.repositories.pg_audio_log_repository import PgAudioLogRepository
+from app.infrastructure.repositories.system_settings_repository import SystemSettingsRepository
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +36,8 @@ def get_whatsapp_service(db: AsyncSession = Depends(get_db)) -> WhatsAppService:
         OpenAIClient(), 
         semantic_cache=semantic_cache, 
         llm_log_repository=llm_log_repo,
-        citation_repository=citation_repo
+        citation_repository=citation_repo,
+        system_settings_repository=SystemSettingsRepository(db)
     )
     
     audio_log_repo = PgAudioLogRepository(db)

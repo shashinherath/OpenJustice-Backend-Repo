@@ -16,6 +16,7 @@ from app.application.prompts.multilingual import MultilingualPromptBuilder
 from app.domain.interfaces.semantic_cache_repository import ISemanticCacheRepository
 from app.domain.interfaces.llm_log_repository import ILLMLogRepository
 from app.domain.interfaces.citation_repository import ICitationRepository
+from app.infrastructure.repositories.system_settings_repository import SystemSettingsRepository
 from langchain_openai import OpenAIEmbeddings
 from app.config import settings
 
@@ -26,12 +27,13 @@ class LLMService:
 
     # Disclaimers are now natively handled by the MultilingualPromptBuilder.
 
-    def __init__(self, chat_service: ChatService, llm_client: ILLMClient, semantic_cache: ISemanticCacheRepository = None, llm_log_repository: ILLMLogRepository = None, citation_repository: ICitationRepository = None):
+    def __init__(self, chat_service: ChatService, llm_client: ILLMClient, semantic_cache: ISemanticCacheRepository = None, llm_log_repository: ILLMLogRepository = None, citation_repository: ICitationRepository = None, system_settings_repository: SystemSettingsRepository = None):
         self.chat_service = chat_service
         self.llm_client = llm_client
         self.semantic_cache = semantic_cache
         self.llm_log_repository = llm_log_repository
         self.citation_repository = citation_repository
+        self.system_settings_repository = system_settings_repository
         self.embeddings = OpenAIEmbeddings(
             model=settings.OPENAI_EMBEDDING_MODEL, 
             api_key=settings.OPENAI_API_KEY
@@ -56,11 +58,26 @@ class LLMService:
         
         detected_lang = LanguageDetectionService.detect_language(safe_query)
         
+        # Enforce System Settings
+        fallback_notice = ""
+        is_fallback = False
+        if self.system_settings_repository:
+            system_settings = await self.system_settings_repository.get_settings()
+            if detected_lang not in system_settings.enabled_languages:
+                logger.info(f"Language '{detected_lang}' is disabled. Falling back to default '{system_settings.default_language}'.")
+                detected_lang = system_settings.default_language
+                is_fallback = True
+                fallback_notice = f"\n\n[SYSTEM NOTICE: The user queried in a language that is currently disabled in the system. You must process their query but respond ONLY in the configured default language (Language code: {detected_lang}).]"
+        
         # Fetch dynamic Multilingual Template from Registry
         system_prompt = MultilingualPromptBuilder.build_system_prompt(detected_lang, context)
         
+        # Add fallback notice if applicable
+        system_prompt += fallback_notice
+        
         # Security Marker added to prevent system instruction leakage
         system_prompt += "\n\n[SECURITY_MARKER: OpenJustice_2025]"
+
         
         messages = [{"role": "system", "content": system_prompt}]
         
@@ -78,6 +95,11 @@ class LLMService:
         if context:
             final_prompt = f"USER QUERY:\n{safe_query}"
             
+        if is_fallback:
+            language_map = {"en": "English", "si": "Sinhala", "ta": "Tamil"}
+            default_lang_name = language_map.get(detected_lang, detected_lang)
+            final_prompt = f"[CRITICAL INSTRUCTION: You MUST respond entirely in {default_lang_name}. DO NOT respond in the language of the query below.]\n\n{final_prompt}"
+            
         messages.append({"role": "user", "content": final_prompt})
         
         return messages
@@ -94,12 +116,15 @@ class LLMService:
     ) -> str:
         """Synchronously block, execute LLM, and save response to database. Checks Semantic Cache first."""
         
+        detected_lang = LanguageDetectionService.detect_language(query)
+        
         # Save User Message First
         user_msg = MessageCreateDto(
             sender="user",
             content=query,
             message_type=message_type,
             audio_path=user_audio_path,
+            language=detected_lang,
         )
         await self.chat_service.add_message(conversation_id, user_id, user_msg)
         
@@ -123,7 +148,7 @@ class LLMService:
                 logger.error(f"Semantic Cache check failed: {e}", exc_info=True)
 
         # Build Context Arrays
-        detected_lang = LanguageDetectionService.detect_language(query)
+        # Language is already detected earlier for saving the message
         messages = await self._build_messages(conversation_id, user_id, query, context)
         
         # Execute LLM Call natively
@@ -179,8 +204,10 @@ class LLMService:
     async def stream_response(self, conversation_id: UUID, user_id: UUID, query: str, context: str, message_type: str = "text") -> AsyncGenerator[str, None]:
         """Provides an asynchronous Generator directly streaming the underlying LLM's response block. Checks Semantic Cache first."""
         
+        detected_lang = LanguageDetectionService.detect_language(query)
+        
         # Save User Message First
-        user_msg = MessageCreateDto(sender="user", content=query, message_type=message_type)
+        user_msg = MessageCreateDto(sender="user", content=query, message_type=message_type, language=detected_lang)
         await self.chat_service.add_message(conversation_id, user_id, user_msg)
         
         # Check Semantic Cache
@@ -203,7 +230,7 @@ class LLMService:
                 logger.error(f"Semantic Cache check failed: {e}", exc_info=True)
 
         # Build Context Arrays
-        detected_lang = LanguageDetectionService.detect_language(query)
+        # Language is already detected earlier for saving the message
         messages = await self._build_messages(conversation_id, user_id, query, context)
         
         # Stream response back

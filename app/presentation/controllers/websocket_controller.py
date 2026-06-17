@@ -115,12 +115,15 @@ async def websocket_chat_endpoint(
                 semantic_cache = PgVectorSemanticCacheRepository(db)
                 llm_log_repo = PgLLMLogRepository(db)
                 citation_repo = PgCitationRepository(db)
+                from app.infrastructure.repositories.system_settings_repository import SystemSettingsRepository
+                
                 llm_service = LLMService(
                     chat_service, 
                     OpenAIClient(), 
                     semantic_cache=semantic_cache, 
                     llm_log_repository=llm_log_repo,
-                    citation_repository=citation_repo
+                    citation_repository=citation_repo,
+                    system_settings_repository=SystemSettingsRepository(db)
                 )
                 
                 try:
