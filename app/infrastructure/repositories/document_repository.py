@@ -27,15 +27,43 @@ class DocumentRepository(IDocumentRepository):
         )
         return result.scalars().first()
 
-    async def list_documents(self, skip: int = 0, limit: int = 100) -> List[Document]:
-        result = await self.session.execute(
-            select(Document).offset(skip).limit(limit)
-        )
+    async def list_documents(
+        self,
+        skip: int = 0,
+        limit: int = 25,
+        search_query: Optional[str] = None,
+        language: Optional[str] = None,
+        status: Optional[str] = None
+    ) -> List[Document]:
+        stmt = select(Document)
+        
+        if search_query:
+            stmt = stmt.where(Document.title.ilike(f"%{search_query}%"))
+        if language:
+            stmt = stmt.where(Document.language == language)
+        if status:
+            stmt = stmt.where(Document.status == status)
+            
+        stmt = stmt.order_by(Document.created_at.desc()).offset(skip).limit(limit)
+        
+        result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
     async def get_total_count(self) -> int:
         result = await self.session.execute(select(func.count(Document.id)))
         return result.scalar_one_or_none() or 0
+
+    async def get_status_counts(self) -> dict:
+        stmt = select(Document.status, func.count(Document.id)).group_by(Document.status)
+        result = await self.session.execute(stmt)
+        counts = {row[0]: row[1] for row in result.all()}
+        total = sum(counts.values())
+        return {
+            "total": total,
+            "processed": counts.get("Processed", 0),
+            "pending": counts.get("Pending", 0),
+            "failed": counts.get("Failed", 0)
+        }
 
     async def delete(self, document_id: UUID) -> bool:
         document = await self.get_by_id(document_id)

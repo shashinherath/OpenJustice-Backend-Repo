@@ -101,14 +101,29 @@ async def upload_document(
 )
 async def list_documents(
     skip: int = 0,
-    limit: int = 100,
+    limit: int = 25,
+    search_query: Optional[str] = None,
+    language: Optional[str] = None,
+    status: Optional[str] = None,
     service: DocumentService = Depends(get_document_service),
 ):
     """Retrieve all ingested documents."""
-    results = await service.list_documents(skip, limit)
+    results = await service.list_documents(skip, limit, search_query, language, status)
     response_data = [DocumentResponse.model_validate(r) for r in results]
     
     return SuccessResponse(data=response_data, message="Documents retrieved successfully")
+
+
+@router.get(
+    "/stats",
+    response_model=SuccessResponse[dict],
+)
+async def get_document_stats(
+    service: DocumentService = Depends(get_document_service),
+):
+    """Retrieve document statistics by status."""
+    stats = await service.get_document_stats()
+    return SuccessResponse(data=stats, message="Stats retrieved successfully")
 
 
 @router.get(

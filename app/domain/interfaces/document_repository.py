@@ -20,8 +20,15 @@ class IDocumentRepository(ABC):
         pass
 
     @abstractmethod
-    async def list_documents(self, skip: int = 0, limit: int = 100) -> List[Document]:
-        """Fetch all documents with pagination."""
+    async def list_documents(
+        self,
+        skip: int = 0,
+        limit: int = 25,
+        search_query: Optional[str] = None,
+        language: Optional[str] = None,
+        status: Optional[str] = None
+    ) -> List[Document]:
+        """Fetch all documents with pagination and optional filters."""
         pass
 
     @abstractmethod
@@ -57,4 +64,9 @@ class IDocumentRepository(ABC):
     @abstractmethod
     async def get_total_chunks_count(self) -> int:
         """Return the total number of document chunks."""
+        pass
+
+    @abstractmethod
+    async def get_status_counts(self) -> dict:
+        """Fetch count of documents by status."""
         pass

@@ -72,9 +72,16 @@ class DocumentService:
 
         return self._map_to_dto(doc_saved)
 
-    async def list_documents(self, skip: int = 0, limit: int = 100) -> List[DocumentResultDto]:
+    async def list_documents(
+        self,
+        skip: int = 0,
+        limit: int = 25,
+        search_query: str | None = None,
+        language: str | None = None,
+        status: str | None = None
+    ) -> List[DocumentResultDto]:
         """Fetch all documents."""
-        docs = await self.repository.list_documents(skip, limit)
+        docs = await self.repository.list_documents(skip, limit, search_query, language, status)
         return [self._map_to_dto(d) for d in docs]
 
     async def get_document(self, document_id: UUID) -> DocumentResultDto:
@@ -83,6 +90,10 @@ class DocumentService:
         if not doc:
             raise AppError("Document not found", status_code=404, error_code="NOT_FOUND")
         return self._map_to_dto(doc)
+
+    async def get_document_stats(self) -> dict:
+        """Fetch document statistics by status."""
+        return await self.repository.get_status_counts()
 
     async def delete_document(self, document_id: UUID) -> bool:
         """Delete document from database and storage."""
