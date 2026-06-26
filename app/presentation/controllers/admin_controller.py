@@ -32,7 +32,8 @@ def get_admin_overview_service(db: AsyncSession = Depends(get_db)) -> AdminOverv
     return AdminOverviewService(UserRepository(db), ChatRepository(db), DocumentRepository(db), PgLLMLogRepository(db), PgAuditLogRepository(db))
 
 def get_admin_users_service(db: AsyncSession = Depends(get_db)) -> AdminUsersService:
-    return AdminUsersService(UserRepository(db))
+    from app.infrastructure.security.password_hasher import BcryptPasswordHasher
+    return AdminUsersService(UserRepository(db), password_hasher=BcryptPasswordHasher())
 
 def get_admin_knowledge_service(db: AsyncSession = Depends(get_db)) -> AdminKnowledgeService:
     return AdminKnowledgeService(DocumentRepository(db))
@@ -72,6 +73,26 @@ async def clear_semantic_cache(request: Request, db: AsyncSession = Depends(get_
 @router.get("/users", response_model=AdminUserListResponse)
 async def list_users(request: Request, skip: int = 0, limit: int = 100, service: AdminUsersService = Depends(get_admin_users_service)):
     return await service.get_users(skip, limit)
+
+from app.presentation.schemas.admin_schema import AdminUserCreateRequest
+from app.presentation.schemas.response_schema import SuccessResponse
+from app.domain.exceptions import UserAlreadyExistsError
+
+@router.post("/users", response_model=SuccessResponse[AdminUserItem])
+async def create_admin_user(request: Request, payload: AdminUserCreateRequest, service: AdminUsersService = Depends(get_admin_users_service)):
+    try:
+        user = await service.create_admin_user(
+            first_name=payload.first_name,
+            last_name=payload.last_name,
+            phone_number=payload.phone_number,
+            email=payload.email,
+            password=payload.password
+        )
+        return SuccessResponse(data=AdminUserItem(**user), message="Admin user created successfully")
+    except UserAlreadyExistsError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 @router.patch("/users/{user_id}/status", response_model=AdminUserItem)
 async def update_user_status(user_id: str, status_update: AdminUserStatusUpdate, request: Request, service: AdminUsersService = Depends(get_admin_users_service)):
