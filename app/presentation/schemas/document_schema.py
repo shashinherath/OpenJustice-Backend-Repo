@@ -16,6 +16,7 @@ class DocumentResponse(BaseModel):
     storage_path: Optional[str]
     status: str
     published_year: Optional[int]
+    collection_id: Optional[str]
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

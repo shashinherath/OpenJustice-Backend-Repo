@@ -72,6 +72,7 @@ async def upload_document(
     document_type: Optional[str] = Form(None),
     language: Optional[str] = Form(None),
     published_year: Optional[int] = Form(None),
+    collection_id: Optional[str] = Form(None),
     service: DocumentService = Depends(get_document_service),
 ):
     """
@@ -86,6 +87,7 @@ async def upload_document(
         document_type=document_type,
         language=language,
         published_year=published_year,
+        collection_id=collection_id,
     )
     
     result = await service.ingest_document(file=file, dto=dto)

@@ -28,6 +28,7 @@ class DocumentService:
             storage_path=doc.storage_path,
             status=doc.status,
             published_year=doc.published_year,
+            collection_id=doc.collection_id,
             created_at=doc.created_at,
         )
 
@@ -65,7 +66,8 @@ class DocumentService:
             document_type=dto.document_type,
             language=dto.language or "en",
             storage_path=storage_path,
-            published_year=dto.published_year
+            published_year=dto.published_year,
+            collection_id=dto.collection_id
         )
 
         doc_saved = await self.repository.create(doc_model)

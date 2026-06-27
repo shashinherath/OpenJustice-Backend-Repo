@@ -33,7 +33,9 @@ class DocumentRepository(IDocumentRepository):
         limit: int = 25,
         search_query: Optional[str] = None,
         language: Optional[str] = None,
-        status: Optional[str] = None
+        status: Optional[str] = None,
+        collection_id: Optional[str] = None,
+        letter: Optional[str] = None
     ) -> List[Document]:
         stmt = select(Document)
         
@@ -43,6 +45,10 @@ class DocumentRepository(IDocumentRepository):
             stmt = stmt.where(Document.language == language)
         if status:
             stmt = stmt.where(Document.status == status)
+        if collection_id:
+            stmt = stmt.where(Document.collection_id == collection_id)
+        if letter:
+            stmt = stmt.where(Document.title.ilike(f"{letter}%"))
             
         stmt = stmt.order_by(Document.created_at.desc()).offset(skip).limit(limit)
         
@@ -64,6 +70,21 @@ class DocumentRepository(IDocumentRepository):
             "pending": counts.get("Pending", 0),
             "failed": counts.get("Failed", 0)
         }
+
+    async def get_collection_counts(self) -> List[dict]:
+        stmt = select(Document.collection_id, func.count(Document.id)).group_by(Document.collection_id)
+        result = await self.session.execute(stmt)
+        return [{"collection_id": row[0] or "unassigned", "count": row[1]} for row in result.all()]
+
+    async def get_letter_counts(self, collection_id: str) -> List[dict]:
+        stmt = (
+            select(func.upper(func.substr(Document.title, 1, 1)).label("letter"), func.count(Document.id))
+            .where(Document.collection_id == collection_id)
+            .group_by("letter")
+            .order_by("letter")
+        )
+        result = await self.session.execute(stmt)
+        return [{"letter": row[0], "count": row[1]} for row in result.all() if row[0] and row[0].isalpha()]
 
     async def delete(self, document_id: UUID) -> bool:
         document = await self.get_by_id(document_id)

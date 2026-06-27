@@ -26,7 +26,9 @@ class IDocumentRepository(ABC):
         limit: int = 25,
         search_query: Optional[str] = None,
         language: Optional[str] = None,
-        status: Optional[str] = None
+        status: Optional[str] = None,
+        collection_id: Optional[str] = None,
+        letter: Optional[str] = None
     ) -> List[Document]:
         """Fetch all documents with pagination and optional filters."""
         pass
@@ -69,4 +71,14 @@ class IDocumentRepository(ABC):
     @abstractmethod
     async def get_status_counts(self) -> dict:
         """Fetch count of documents by status."""
+        pass
+
+    @abstractmethod
+    async def get_collection_counts(self) -> List[dict]:
+        """Fetch count of documents by collection_id."""
+        pass
+
+    @abstractmethod
+    async def get_letter_counts(self, collection_id: str) -> List[dict]:
+        """Fetch count of documents grouped by starting letter for a specific collection."""
         pass

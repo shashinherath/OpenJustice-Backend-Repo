@@ -38,5 +38,8 @@ app.include_router(api_router)
 # Serve persisted audio files so voice notes remain playable after refresh/login
 os.makedirs(settings.AUDIO_TEMP_DIR, exist_ok=True)
 os.makedirs(settings.AUDIO_MEDIA_DIR, exist_ok=True)
+os.makedirs("uploads", exist_ok=True)
+
 app.mount("/media", StaticFiles(directory=settings.AUDIO_MEDIA_DIR), name="media")
 app.mount("/temp", StaticFiles(directory=settings.AUDIO_TEMP_DIR), name="temp")
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
