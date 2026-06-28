@@ -50,7 +50,7 @@ async def get_letters(
     status_code=status.HTTP_200_OK,
 )
 async def list_library_documents(
-    collection_id: str = Query(..., description="The collection ID to filter by"),
+    collection_id: Optional[str] = Query(None, description="The collection ID to filter by"),
     letter: Optional[str] = Query(None, description="The starting letter to filter by"),
     search_query: Optional[str] = Query(None, description="Search query"),
     skip: int = Query(0, ge=0),

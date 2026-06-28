@@ -49,7 +49,7 @@ class LibraryService:
 
     async def list_library_documents(
         self,
-        collection_id: str,
+        collection_id: Optional[str] = None,
         letter: Optional[str] = None,
         search_query: Optional[str] = None,
         skip: int = 0,
