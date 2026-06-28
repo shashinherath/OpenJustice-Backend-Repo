@@ -1,7 +1,7 @@
 from typing import List, Optional
 from uuid import UUID
 
-from sqlalchemy import select, func
+from sqlalchemy import select, func, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.interfaces.document_repository import IDocumentRepository
@@ -105,6 +105,16 @@ class DocumentRepository(IDocumentRepository):
             await self.session.commit()
             await self.session.refresh(document)
         return document
+
+    async def get_chunks_by_document_id(self, document_id: UUID) -> List[DocumentChunk]:
+        stmt = select(DocumentChunk).where(DocumentChunk.document_id == document_id).order_by(DocumentChunk.chunk_index)
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def delete_chunks_by_document_id(self, document_id: UUID) -> None:
+        stmt = delete(DocumentChunk).where(DocumentChunk.document_id == document_id)
+        await self.session.execute(stmt)
+        await self.session.commit()
 
     async def save_chunks(self, chunks: List[DocumentChunk]) -> None:
         self.session.add_all(chunks)

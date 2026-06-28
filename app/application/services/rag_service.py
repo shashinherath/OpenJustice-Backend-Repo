@@ -119,6 +119,7 @@ class RAGService:
                 db_chunks.append(chunk)
 
             # 6. Push to repository saving vectors natively to pgvector
+            await self.repository.delete_chunks_by_document_id(document_id)
             await self.repository.save_chunks(db_chunks)
             await self.repository.update_status(document_id, "Processed")
             

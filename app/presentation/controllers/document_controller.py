@@ -12,7 +12,7 @@ from app.application.services.document_service import DocumentService
 from app.infrastructure.db.base import get_db
 from app.infrastructure.repositories.document_repository import DocumentRepository
 from app.infrastructure.storage.local_storage import LocalStorageHandler
-from app.presentation.schemas.document_schema import DocumentResponse
+from app.presentation.schemas.document_schema import DocumentResponse, DocumentChunkResponse
 from app.presentation.schemas.response_schema import SuccessResponse
 
 
@@ -141,6 +141,20 @@ async def get_document(
     response_data = DocumentResponse.model_validate(result)
     
     return SuccessResponse(data=response_data, message="Document retrieved successfully")
+
+
+@router.get(
+    "/{document_id}/chunks",
+    response_model=SuccessResponse[List[DocumentChunkResponse]],
+)
+async def get_document_chunks(
+    document_id: UUID,
+    service: DocumentService = Depends(get_document_service)
+):
+    """Retrieve all chunks for a specific document."""
+    chunks = await service.get_document_chunks(document_id)
+    response_data = [DocumentChunkResponse.model_validate(c) for c in chunks]
+    return SuccessResponse(data=response_data, message="Chunks retrieved successfully")
 
 
 @router.delete(

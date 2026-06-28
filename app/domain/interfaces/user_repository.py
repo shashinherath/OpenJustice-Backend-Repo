@@ -30,7 +30,7 @@ class IUserRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def list_users(self, skip: int = 0, limit: int = 100) -> list[User]:
+    async def list_users(self, skip: int = 0, limit: int = 100, search_query: Optional[str] = None, role: Optional[str] = None, status: Optional[str] = None) -> list[User]:
         raise NotImplementedError
 
     @abstractmethod

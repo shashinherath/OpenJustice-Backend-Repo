@@ -71,8 +71,8 @@ async def clear_semantic_cache(request: Request, db: AsyncSession = Depends(get_
     return {"message": "Semantic cache cleared successfully"}
 
 @router.get("/users", response_model=AdminUserListResponse)
-async def list_users(request: Request, skip: int = 0, limit: int = 100, service: AdminUsersService = Depends(get_admin_users_service)):
-    return await service.get_users(skip, limit)
+async def list_users(request: Request, skip: int = 0, limit: int = 100, search_query: str | None = None, role: str | None = None, status_filter: str | None = None, service: AdminUsersService = Depends(get_admin_users_service)):
+    return await service.get_users(skip=skip, limit=limit, search_query=search_query, role=role, status=status_filter)
 
 from app.presentation.schemas.admin_schema import AdminUserCreateRequest
 from app.presentation.schemas.response_schema import SuccessResponse

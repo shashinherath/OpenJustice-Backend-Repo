@@ -40,10 +40,31 @@ class UserRepository(IUserRepository):
         result = await self.db.execute(select(func.count(User.id)))
         return result.scalar_one_or_none() or 0
 
-    async def list_users(self, skip: int = 0, limit: int = 100) -> list[User]:
-        result = await self.db.execute(
-            select(User).order_by(User.created_at.desc()).offset(skip).limit(limit)
-        )
+    async def list_users(self, skip: int = 0, limit: int = 100, search_query: Optional[str] = None, role: Optional[str] = None, status: Optional[str] = None) -> list[User]:
+        from sqlalchemy import or_
+        
+        stmt = select(User)
+        
+        if search_query:
+            term = f"%{search_query}%"
+            stmt = stmt.where(
+                or_(
+                    User.first_name.ilike(term),
+                    User.last_name.ilike(term),
+                    User.email.ilike(term),
+                    User.phone_number.ilike(term)
+                )
+            )
+            
+        if role and role.lower() != "all":
+            stmt = stmt.where(User.role == role.lower())
+            
+        if status and status.lower() != "all":
+            is_active = status.lower() == "active"
+            stmt = stmt.where(User.is_active == is_active)
+            
+        stmt = stmt.order_by(User.created_at.desc()).offset(skip).limit(limit)
+        result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
     async def update_status(self, user_id: UUID, is_active: bool) -> Optional[User]:

@@ -47,8 +47,8 @@ class AdminUsersService:
             "createdDate": user.created_at.strftime("%Y-%m-%d") if user.created_at else ""
         }
 
-    async def get_users(self, skip: int = 0, limit: int = 100) -> dict:
-        users = await self.user_repo.list_users(skip, limit)
+    async def get_users(self, skip: int = 0, limit: int = 100, search_query: str = None, role: str = None, status: str = None) -> dict:
+        users = await self.user_repo.list_users(skip=skip, limit=limit, search_query=search_query, role=role, status=status)
         user_items = []
         total_active = 0
         total_blocked = 0

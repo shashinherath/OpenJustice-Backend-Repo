@@ -49,6 +49,16 @@ class IDocumentRepository(ABC):
         pass
 
     @abstractmethod
+    async def get_chunks_by_document_id(self, document_id: UUID) -> List[DocumentChunk]:
+        """Fetch all chunks for a given document."""
+        pass
+
+    @abstractmethod
+    async def delete_chunks_by_document_id(self, document_id: UUID) -> None:
+        """Delete all chunks for a given document."""
+        pass
+
+    @abstractmethod
     async def save_chunks(self, chunks: List[DocumentChunk]) -> None:
         """Save vector chunks."""
         pass

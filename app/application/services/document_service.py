@@ -97,6 +97,10 @@ class DocumentService:
         """Fetch document statistics by status."""
         return await self.repository.get_status_counts()
 
+    async def get_document_chunks(self, document_id: UUID) -> list:
+        """Fetch chunks for a specific document."""
+        return await self.repository.get_chunks_by_document_id(document_id)
+
     async def delete_document(self, document_id: UUID) -> bool:
         """Delete document from database and storage."""
         doc = await self.repository.get_by_id(document_id)
