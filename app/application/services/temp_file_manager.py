@@ -34,7 +34,6 @@ class TempFileManager:
             await asyncio.to_thread(_write_file)
             
             logger.info(f"Successfully saved uploaded audio to {file_path}")
-            TempFileManager.schedule_deletion(file_path)
             return file_path
         except Exception as e:
             logger.error(f"Failed to save uploaded audio: {e}", exc_info=True)
@@ -69,8 +68,6 @@ class TempFileManager:
 
                 logger.info(f"Successfully downloaded secure media from WhatsApp to {file_path}")
                 
-                # Cleanup memory
-                TempFileManager.schedule_deletion(file_path)
                 return file_path
                 
         except Exception as e:
@@ -78,9 +75,20 @@ class TempFileManager:
             raise ValueError(f"Error proxing incoming WhatsApp voicenote: {e}")
 
     @staticmethod
-    def schedule_deletion(file_path: str):
+    def schedule_deletion(file_path: str, delay_seconds: int = None):
         """Creates a background thread natively to scrub physical server payload after configuration timeouts."""
-        asyncio.create_task(TempFileManager._delete_after_delay(file_path, settings.AUDIO_RETENTION_MINUTES * 60))
+        delay = delay_seconds if delay_seconds is not None else settings.AUDIO_RETENTION_MINUTES * 60
+        asyncio.create_task(TempFileManager._delete_after_delay(file_path, delay))
+
+    @staticmethod
+    def delete_file_immediately(file_path: str):
+        """Immediately delete the specified physical payload from memory."""
+        if os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+                logger.info(f"Temporary audio memory flushed successfully: {file_path}")
+            except Exception as e:
+                logger.error(f"Failed to flush memory for temporary trace {file_path}: {e}")
 
     @staticmethod
     async def _delete_after_delay(file_path: str, seconds: int):
