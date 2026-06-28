@@ -57,6 +57,9 @@ class WhatsAppService:
         
         if not body and not media_url:
             return
+            
+        audio_path = None
+        out_audio_path = None
         
         # 1. Lookup or create User dynamically from WhatsApp tag
         phone = from_number.replace('whatsapp:', '').strip()
@@ -158,6 +161,12 @@ class WhatsAppService:
                         to=from_number,
                         media_url=public_media_url
                     )
+                    
+                    if audio_path:
+                        TempFileManager.delete_file_immediately(audio_path)
+                    if out_audio_path:
+                        TempFileManager.schedule_deletion(out_audio_path, delay_seconds=120)
+                        
                     return
                 except Exception as e:
                     logger.error(f"Failed to generate TTS outbound response: {e}", exc_info=True)
@@ -169,3 +178,8 @@ class WhatsAppService:
             )
         except Exception as e:
             logger.error(f"Failed to generate LLM sequence for {from_number}: {e}", exc_info=True)
+            
+        if audio_path:
+            TempFileManager.delete_file_immediately(audio_path)
+        if out_audio_path:
+            TempFileManager.schedule_deletion(out_audio_path, delay_seconds=120)

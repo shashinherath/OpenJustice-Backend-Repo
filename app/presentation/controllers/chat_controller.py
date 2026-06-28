@@ -167,12 +167,14 @@ async def get_message_audio(
             filename="voice-note.ogg",
         )
 
+    from starlette.background import BackgroundTask
     tts_service = TextToSpeechService(system_settings_repository=SystemSettingsRepository(db))
     synthesized_path = await tts_service.synthesize_speech(message.content or "")
     return FileResponse(
         path=synthesized_path,
         media_type="audio/ogg",
         filename="voice-note.ogg",
+        background=BackgroundTask(TempFileManager.delete_file_immediately, synthesized_path)
     )
 
 
@@ -289,6 +291,9 @@ async def voice_message(
     in_audio_path = await TempFileManager.save_upload_file(file)
     user_audio_path = _persist_audio_file(in_audio_path, "voice_user")
     
+    # We no longer need the temp input audio
+    TempFileManager.delete_file_immediately(in_audio_path)
+    
     # 2. Transcribe
     stt_service = SpeechToTextService(system_settings_repository=SystemSettingsRepository(db))
     query = await stt_service.transcribe_audio(in_audio_path)
@@ -335,6 +340,9 @@ async def voice_message(
     tts_service = TextToSpeechService(system_settings_repository=SystemSettingsRepository(db))
     out_audio_path = await tts_service.synthesize_speech(ai_reply)
     ai_audio_path = _persist_audio_file(out_audio_path, "voice_ai")
+    
+    # We no longer need the temp TTS output audio since it's persisted in media/audio
+    TempFileManager.delete_file_immediately(out_audio_path)
 
     await service.add_message(
         conversation_id,

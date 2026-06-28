@@ -64,9 +64,6 @@ class TextToSpeechService:
 
             logger.info(f"Speech synthesized to physical payload memory: {output_path}")
             
-            # Autocleanup policy appended to output as well, deleting it after Twilio hits it
-            TempFileManager.schedule_deletion(output_path)
-            
             return output_path
 
         except Exception as e:
