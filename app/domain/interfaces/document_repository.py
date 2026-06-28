@@ -20,8 +20,17 @@ class IDocumentRepository(ABC):
         pass
 
     @abstractmethod
-    async def list_documents(self, skip: int = 0, limit: int = 100) -> List[Document]:
-        """Fetch all documents with pagination."""
+    async def list_documents(
+        self,
+        skip: int = 0,
+        limit: int = 25,
+        search_query: Optional[str] = None,
+        language: Optional[str] = None,
+        status: Optional[str] = None,
+        collection_id: Optional[str] = None,
+        letter: Optional[str] = None
+    ) -> List[Document]:
+        """Fetch all documents with pagination and optional filters."""
         pass
 
     @abstractmethod
@@ -37,6 +46,16 @@ class IDocumentRepository(ABC):
     @abstractmethod
     async def update_status(self, document_id: UUID, status: str) -> Optional[Document]:
         """Update the processing status of a document."""
+        pass
+
+    @abstractmethod
+    async def get_chunks_by_document_id(self, document_id: UUID) -> List[DocumentChunk]:
+        """Fetch all chunks for a given document."""
+        pass
+
+    @abstractmethod
+    async def delete_chunks_by_document_id(self, document_id: UUID) -> None:
+        """Delete all chunks for a given document."""
         pass
 
     @abstractmethod
@@ -57,4 +76,19 @@ class IDocumentRepository(ABC):
     @abstractmethod
     async def get_total_chunks_count(self) -> int:
         """Return the total number of document chunks."""
+        pass
+
+    @abstractmethod
+    async def get_status_counts(self) -> dict:
+        """Fetch count of documents by status."""
+        pass
+
+    @abstractmethod
+    async def get_collection_counts(self) -> List[dict]:
+        """Fetch count of documents by collection_id."""
+        pass
+
+    @abstractmethod
+    async def get_letter_counts(self, collection_id: str) -> List[dict]:
+        """Fetch count of documents grouped by starting letter for a specific collection."""
         pass

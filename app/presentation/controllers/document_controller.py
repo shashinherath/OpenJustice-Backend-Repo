@@ -12,7 +12,7 @@ from app.application.services.document_service import DocumentService
 from app.infrastructure.db.base import get_db
 from app.infrastructure.repositories.document_repository import DocumentRepository
 from app.infrastructure.storage.local_storage import LocalStorageHandler
-from app.presentation.schemas.document_schema import DocumentResponse
+from app.presentation.schemas.document_schema import DocumentResponse, DocumentChunkResponse
 from app.presentation.schemas.response_schema import SuccessResponse
 
 
@@ -72,6 +72,7 @@ async def upload_document(
     document_type: Optional[str] = Form(None),
     language: Optional[str] = Form(None),
     published_year: Optional[int] = Form(None),
+    collection_id: Optional[str] = Form(None),
     service: DocumentService = Depends(get_document_service),
 ):
     """
@@ -86,6 +87,7 @@ async def upload_document(
         document_type=document_type,
         language=language,
         published_year=published_year,
+        collection_id=collection_id,
     )
     
     result = await service.ingest_document(file=file, dto=dto)
@@ -101,14 +103,29 @@ async def upload_document(
 )
 async def list_documents(
     skip: int = 0,
-    limit: int = 100,
+    limit: int = 25,
+    search_query: Optional[str] = None,
+    language: Optional[str] = None,
+    status: Optional[str] = None,
     service: DocumentService = Depends(get_document_service),
 ):
     """Retrieve all ingested documents."""
-    results = await service.list_documents(skip, limit)
+    results = await service.list_documents(skip, limit, search_query, language, status)
     response_data = [DocumentResponse.model_validate(r) for r in results]
     
     return SuccessResponse(data=response_data, message="Documents retrieved successfully")
+
+
+@router.get(
+    "/stats",
+    response_model=SuccessResponse[dict],
+)
+async def get_document_stats(
+    service: DocumentService = Depends(get_document_service),
+):
+    """Retrieve document statistics by status."""
+    stats = await service.get_document_stats()
+    return SuccessResponse(data=stats, message="Stats retrieved successfully")
 
 
 @router.get(
@@ -124,6 +141,20 @@ async def get_document(
     response_data = DocumentResponse.model_validate(result)
     
     return SuccessResponse(data=response_data, message="Document retrieved successfully")
+
+
+@router.get(
+    "/{document_id}/chunks",
+    response_model=SuccessResponse[List[DocumentChunkResponse]],
+)
+async def get_document_chunks(
+    document_id: UUID,
+    service: DocumentService = Depends(get_document_service)
+):
+    """Retrieve all chunks for a specific document."""
+    chunks = await service.get_document_chunks(document_id)
+    response_data = [DocumentChunkResponse.model_validate(c) for c in chunks]
+    return SuccessResponse(data=response_data, message="Chunks retrieved successfully")
 
 
 @router.delete(

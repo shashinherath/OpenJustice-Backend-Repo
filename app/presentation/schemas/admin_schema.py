@@ -38,9 +38,20 @@ class DataSourceItem(BaseModel):
 
 
 
+class AdminUserCreateRequest(BaseModel):
+    first_name: str
+    last_name: str
+    phone_number: str
+    email: str
+    password: str
+
 class AdminUserItem(BaseModel):
     id: str
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
     email: str
+    phone_number: Optional[str] = None
+    role: str
     status: str
     createdDate: str
 

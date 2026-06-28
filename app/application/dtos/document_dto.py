@@ -10,6 +10,7 @@ class DocumentCreateDto:
     document_type: Optional[str] = None
     language: Optional[str] = None
     published_year: Optional[int] = None
+    collection_id: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -22,4 +23,5 @@ class DocumentResultDto:
     storage_path: Optional[str]
     status: str
     published_year: Optional[int]
+    collection_id: Optional[str]
     created_at: datetime

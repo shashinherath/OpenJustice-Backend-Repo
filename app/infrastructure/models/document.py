@@ -25,6 +25,7 @@ class Document(Base):
     storage_path: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(50), nullable=False, default="Pending")
     published_year: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    collection_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
