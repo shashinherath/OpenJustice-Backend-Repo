@@ -142,6 +142,7 @@ class DocumentRepository(IDocumentRepository):
             select(
                 Document.id.label("document_id"),
                 Document.title.label("document_title"),
+                Document.collection_id.label("collection_id"),
                 func.count(DocumentChunk.id).label("chunk_count"),
                 func.max(DocumentChunk.embedding_model).label("embedding_model"),
                 Document.status
@@ -163,6 +164,7 @@ class DocumentRepository(IDocumentRepository):
             records.append({
                 "documentId": str(row.document_id),
                 "documentTitle": (row.document_title or "").strip() if getattr(row, "document_title", None) is not None else "",
+                "collectionId": (row.collection_id or "unassigned").strip() if getattr(row, "collection_id", None) is not None else "unassigned",
                 "chunkCount": row.chunk_count,
                 "embeddingModel": row.embedding_model or "N/A",
                 "status": status

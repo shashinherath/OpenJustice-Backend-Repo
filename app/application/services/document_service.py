@@ -80,10 +80,11 @@ class DocumentService:
         limit: int = 25,
         search_query: str | None = None,
         language: str | None = None,
-        status: str | None = None
+        status: str | None = None,
+        collection_id: str | None = None
     ) -> List[DocumentResultDto]:
         """Fetch all documents."""
-        docs = await self.repository.list_documents(skip, limit, search_query, language, status)
+        docs = await self.repository.list_documents(skip, limit, search_query, language, status, collection_id)
         return [self._map_to_dto(d) for d in docs]
 
     async def get_document(self, document_id: UUID) -> DocumentResultDto:

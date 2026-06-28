@@ -66,6 +66,7 @@ class AdminUserStatusUpdate(BaseModel):
 class AdminKnowledgeRecord(BaseModel):
     documentId: str
     documentTitle: str
+    collectionId: Optional[str] = None
     chunkCount: int
     embeddingModel: str
     status: str
@@ -245,6 +246,7 @@ class AdminOverviewResponse(BaseModel):
 class AdminKnowledgeRecord(BaseModel):
     documentId: str
     documentTitle: str
+    collectionId: Optional[str] = None
     chunkCount: int
     embeddingModel: str
     status: str
