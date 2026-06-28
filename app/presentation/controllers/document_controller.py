@@ -48,13 +48,13 @@ async def process_document(
     """
     doc = await doc_service.get_document(document_id)
     if not doc.storage_path:
-        raise AppError("Document has no physical storage path", status_code=400)
+        raise AppError("Document has no physical storage path", status_code=400, error_code="NO_STORAGE_PATH")
         
     background_tasks.add_task(
         rag_service.process_and_store_document,
         document_id=document_id,
         storage_path=doc.storage_path,
-        language=doc.language
+        language=doc.language or "English"
     )
     
     return SuccessResponse(data={"job_status": "queued"}, message="Document is queued for LangChain decomposition and OpenAI pgvector embedding.")
@@ -107,10 +107,11 @@ async def list_documents(
     search_query: Optional[str] = None,
     language: Optional[str] = None,
     status: Optional[str] = None,
+    collection_id: Optional[str] = None,
     service: DocumentService = Depends(get_document_service),
 ):
     """Retrieve all ingested documents."""
-    results = await service.list_documents(skip, limit, search_query, language, status)
+    results = await service.list_documents(skip, limit, search_query, language, status, collection_id)
     response_data = [DocumentResponse.model_validate(r) for r in results]
     
     return SuccessResponse(data=response_data, message="Documents retrieved successfully")
