@@ -15,6 +15,7 @@ class ActivityItem(BaseModel):
     timeAgo: str
     icon: str
     iconColorClass: str
+    userEmail: Optional[str] = None
 
 class ServiceStatusItem(BaseModel):
     id: int

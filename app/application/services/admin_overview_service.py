@@ -66,13 +66,15 @@ class AdminOverviewService:
         recent_logs = await self.audit_log_repo.get_recent_activities(limit=5)
         activities = []
         for idx, log in enumerate(recent_logs):
+            user_email = log.user.email if log.user else None
             activities.append(ActivityItem(
                 id=idx + 1,
                 title=log.action or "System Event",
                 description=f"Entity: {log.entity} ({log.entity_id})" if log.entity else "General activity",
                 timeAgo=log.created_at.strftime("%Y-%m-%d %H:%M"),
                 icon="history",
-                iconColorClass="text-cyan-300"
+                iconColorClass="text-cyan-300",
+                userEmail=user_email
             ))
         if not activities:
             activities = [

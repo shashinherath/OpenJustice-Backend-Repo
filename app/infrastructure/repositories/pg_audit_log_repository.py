@@ -30,7 +30,8 @@ class PgAuditLogRepository(IAuditLogRepository):
 
     async def get_recent_activities(self, limit: int = 5) -> list:
         from sqlalchemy import select
+        from sqlalchemy.orm import selectinload
         result = await self.session.execute(
-            select(AuditLog).order_by(AuditLog.created_at.desc()).limit(limit)
+            select(AuditLog).options(selectinload(AuditLog.user)).order_by(AuditLog.created_at.desc()).limit(limit)
         )
         return list(result.scalars().all())

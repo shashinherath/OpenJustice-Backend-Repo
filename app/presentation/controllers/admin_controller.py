@@ -42,7 +42,8 @@ def get_admin_logs_service(db: AsyncSession = Depends(get_db)) -> AdminLogsServi
     return AdminLogsService(PgLLMLogRepository(db))
 
 def get_admin_retrieval_service(db: AsyncSession = Depends(get_db)) -> AdminRetrievalService:
-    return AdminRetrievalService(DocumentRepository(db))
+    from app.infrastructure.repositories.system_settings_repository import SystemSettingsRepository
+    return AdminRetrievalService(DocumentRepository(db), system_settings_repo=SystemSettingsRepository(db))
 
 def get_admin_platform_analytics_service(db: AsyncSession = Depends(get_db)) -> AdminPlatformAnalyticsService:
     return AdminPlatformAnalyticsService(ChatRepository(db))
