@@ -38,7 +38,7 @@ class AdminMultilingualAnalyticsService:
             "de": "German"
         }
         
-        languages = []
+        aggregated_languages = {}
         total_queries = 0
         for row in lang_data:
             code = (row.language or "en").lower()
@@ -46,11 +46,18 @@ class AdminMultilingualAnalyticsService:
             count = row.count or 0
             
             total_queries += count
-            languages.append(LanguageStat(
-                code=code.upper(),
-                label=label,
-                count=count
-            ))
+            
+            unique_code = code.upper()
+            if unique_code in aggregated_languages:
+                aggregated_languages[unique_code].count += count
+            else:
+                aggregated_languages[unique_code] = LanguageStat(
+                    code=unique_code,
+                    label=label,
+                    count=count
+                )
+                
+        languages = list(aggregated_languages.values())
 
         # Sort languages by count descending
         languages.sort(key=lambda x: x.count, reverse=True)
