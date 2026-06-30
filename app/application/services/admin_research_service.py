@@ -108,12 +108,22 @@ class AdminResearchService:
             golden_context = item.get(keys.get('golden_context', 'golden_context'), '')
             if not golden_context:
                 golden_context = item.get(keys.get('context', 'context'), '')
+            
+            # Convert dict/list to string if needed
+            if not isinstance(golden_context, str):
+                golden_context = json.dumps(golden_context)
+                
+            metadata = item.get(keys.get('metadata', 'metadata'), None)
+            metadata_json = None
+            if metadata:
+                metadata_json = json.dumps(metadata) if not isinstance(metadata, str) else metadata
                 
             db_item = DbEvaluationDatasetItem(
                 dataset_id=dataset.id,
                 query=query,
                 ground_truth_answer=ground_truth,
-                golden_context=golden_context
+                golden_context=golden_context,
+                metadata_json=metadata_json
             )
             db_items.append(db_item)
             
