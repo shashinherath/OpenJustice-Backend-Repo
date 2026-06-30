@@ -442,6 +442,7 @@ class ModelRun(BaseModel):
     model: str
     accuracy: float
     tokens: int
+    date: str
 
 class AdminAIEvaluationResponse(BaseModel):
     accuracy: float

@@ -28,8 +28,19 @@ class AIEvaluationRepository:
         return None
 
     async def get_recent_runs(self, limit: int = 5) -> List[AIEvaluation]:
-        """Fetches the most recent model runs."""
+        """Fetches the most recent distinct model runs."""
         result = await self.session.execute(
-            select(AIEvaluation).order_by(AIEvaluation.evaluation_date.desc()).limit(limit)
+            select(AIEvaluation).order_by(AIEvaluation.evaluation_date.desc())
         )
-        return list(result.scalars().all())
+        all_runs = result.scalars().all()
+        
+        distinct_runs = []
+        seen_models = set()
+        for run in all_runs:
+            if run.model_name not in seen_models:
+                distinct_runs.append(run)
+                seen_models.add(run.model_name)
+            if len(distinct_runs) >= limit:
+                break
+                
+        return distinct_runs

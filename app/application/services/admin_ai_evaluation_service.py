@@ -22,7 +22,8 @@ class AdminAIEvaluationService:
             {
                 "model": run.model_name,
                 "accuracy": run.accuracy,
-                "tokens": run.avg_tokens
+                "tokens": run.avg_tokens,
+                "date": run.evaluation_date.isoformat() if run.evaluation_date else ""
             }
             for run in runs
         ]
