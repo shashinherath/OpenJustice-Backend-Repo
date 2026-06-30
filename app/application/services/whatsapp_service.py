@@ -132,7 +132,8 @@ class WhatsAppService:
                 conversation_id=conv.id, 
                 user_id=user.id, 
                 query=body,
-                context=context
+                context=context,
+                message_type="audio" if has_voiced else "text"
             )
             
             # 4. Synthesize Audio back out if user spoke
