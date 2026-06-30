@@ -457,6 +457,7 @@ class ResearchMetricItem(BaseModel):
     trend: str
 
 class EvaluationDatasetItem(BaseModel):
+    id: str
     name: str
     version: str
     samples: int

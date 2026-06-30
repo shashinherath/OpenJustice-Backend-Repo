@@ -26,6 +26,17 @@ class EvaluationDataset(Base):
     status = Column(String(50), nullable=False) # 'Ready', 'Running', 'Needs Refresh'
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
 
+class EvaluationDatasetItem(Base):
+    __tablename__ = "evaluation_dataset_items"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    dataset_id = Column(String(36), nullable=False) # Foreign key loosely bound
+    query = Column(String(1000), nullable=False)
+    ground_truth_answer = Column(String(5000), nullable=False)
+    golden_context = Column(String(5000), nullable=True)
+    metadata_json = Column(String(2000), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+
 class ExperimentNote(Base):
     __tablename__ = "experiment_notes"
 
