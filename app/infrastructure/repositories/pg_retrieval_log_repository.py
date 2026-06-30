@@ -17,14 +17,16 @@ class PgRetrievalLogRepository(IRetrievalLogRepository):
         query: str, 
         language: str, 
         top_k: int, 
-        retrieved_chunks: List[dict]
+        retrieved_chunks: List[dict],
+        latency_ms: int = None
     ) -> uuid.UUID:
         # Create log entry
         log_entry = RetrievalLog(
             conversation_id=conversation_id, # Integer expected in model? Wait, it's defined as Integer in model! Let me check retrieval_log.py
             query=query,
             language=language,
-            top_k=top_k
+            top_k=top_k,
+            retrieval_latency_ms=latency_ms
         )
         self.session.add(log_entry)
         await self.session.flush() # get ID

@@ -15,6 +15,7 @@ class ActivityItem(BaseModel):
     timeAgo: str
     icon: str
     iconColorClass: str
+    userEmail: Optional[str] = None
 
 class ServiceStatusItem(BaseModel):
     id: int
@@ -414,11 +415,19 @@ class SecurityEventRecord(BaseModel):
     severity: str
     timestamp: str
 
+class ActivityLogItem(BaseModel):
+    id: str
+    user_email: Optional[str] = None
+    action: str
+    entity: Optional[str] = None
+    timestamp: str
+
 class AdminSecurityMonitoringResponse(BaseModel):
     signals: List[SecuritySignal]
     monitoring_areas: List[MonitoringArea]
     priority_alerts: List[PriorityAlert]
     recent_events: List[SecurityEventRecord]
+    activity_logs: List[ActivityLogItem]
 
 class RetrievalDistributionBin(BaseModel):
     bin_label: str

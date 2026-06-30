@@ -23,6 +23,7 @@ class RetrievalLog(Base):
     query: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     language: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
     top_k: Mapped[Optional[uuid_module.UUID]] = mapped_column(Integer, nullable=True)
+    retrieval_latency_ms: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

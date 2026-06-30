@@ -1,18 +1,25 @@
 from typing import List
 
 from app.infrastructure.repositories.security_event_repository import SecurityEventRepository
+from app.infrastructure.repositories.pg_audit_log_repository import PgAuditLogRepository
 from app.presentation.schemas.admin_schema import (
     AdminSecurityMonitoringResponse,
     SecuritySignal,
     MonitoringArea,
     PriorityAlert,
-    SecurityEventRecord
+    SecurityEventRecord,
+    ActivityLogItem
 )
 
 
 class AdminSecurityMonitoringService:
-    def __init__(self, security_event_repository: SecurityEventRepository):
+    def __init__(
+        self,
+        security_event_repository: SecurityEventRepository,
+        audit_log_repository: PgAuditLogRepository
+    ):
         self.security_event_repository = security_event_repository
+        self.audit_log_repository = audit_log_repository
 
     async def get_security_monitoring(self) -> AdminSecurityMonitoringResponse:
         # 1. Fetch recent events
@@ -44,7 +51,6 @@ class AdminSecurityMonitoringService:
         failed_logins_count = await self.security_event_repository.get_count_by_area("Failed Logins", 24)
         rate_limits_count = await self.security_event_repository.get_count_by_area("Rate Limits", 24)
         jwt_activity_count = await self.security_event_repository.get_count_by_area("JWT Activity", 24)
-        session_monitoring_count = await self.security_event_repository.get_count_by_area("Session Monitoring", 24)
 
         # Build Signals
         signals = [
@@ -59,12 +65,6 @@ class AdminSecurityMonitoringService:
                 value=str(failed_logins_count),
                 note="Across web and mobile",
                 tone="amber" if failed_logins_count > 20 else "emerald"
-            ),
-            SecuritySignal(
-                label="Active Sessions",
-                value="2,430", # Static for now, as we don't have session tracking fully in security events
-                note="Tracked for anomalies",
-                tone="cyan"
             ),
             SecuritySignal(
                 label="Rate Limit Events",
@@ -101,15 +101,6 @@ class AdminSecurityMonitoringService:
                 metricValue=str(failed_logins_count)
             ),
             MonitoringArea(
-                key="session-monitoring",
-                title="Session Monitoring",
-                icon="devices",
-                status="Healthy",
-                summary="Monitoring geo and device-fingerprint anomalies.",
-                metricLabel="Suspicious sessions",
-                metricValue=str(session_monitoring_count)
-            ),
-            MonitoringArea(
                 key="rate-limits",
                 title="Rate Limits",
                 icon="speed",
@@ -129,9 +120,23 @@ class AdminSecurityMonitoringService:
             )
         ]
 
+        # 4. Fetch recent activity logs
+        activities_raw = await self.audit_log_repository.get_recent_activities(limit=10)
+        activity_logs = [
+            ActivityLogItem(
+                id=str(a.id),
+                user_email=a.user.email if a.user else "System",
+                action=a.action or "Unknown Action",
+                entity=a.entity or "N/A",
+                timestamp=a.created_at.strftime("%Y-%m-%d %H:%M")
+            )
+            for a in activities_raw
+        ]
+
         return AdminSecurityMonitoringResponse(
             signals=signals,
             monitoring_areas=monitoring_areas,
             priority_alerts=priority_alerts,
-            recent_events=recent_events
+            recent_events=recent_events,
+            activity_logs=activity_logs
         )

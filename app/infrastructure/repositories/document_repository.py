@@ -123,18 +123,24 @@ class DocumentRepository(IDocumentRepository):
     async def search_similar_chunks(self, query_embedding: list[float], limit: int = 5, threshold: float = 0.7) -> List[DocumentChunk]:
         """
         Uses pgvector's cosine_distance mapper to return the closest chunks.
-        Lower distance means more similar for cosine distance natively in pgvector.
-        A threshold of 0.7 means cosine distance must be < 0.3.
+        Returns the top-K closest chunks with their similarity scores attached.
+        The threshold is applied by the calling service for context selection,
+        but all top-K results are returned for monitoring/logging purposes.
         """
-        max_distance = 1.0 - threshold
+        distance_col = DocumentChunk.embedding.cosine_distance(query_embedding).label("distance")
         stmt = (
-            select(DocumentChunk)
-            .where(DocumentChunk.embedding.cosine_distance(query_embedding) < max_distance)
-            .order_by(DocumentChunk.embedding.cosine_distance(query_embedding))
+            select(DocumentChunk, distance_col)
+            .where(DocumentChunk.embedding.isnot(None))
+            .order_by(distance_col)
             .limit(limit)
         )
         result = await self.session.execute(stmt)
-        return list(result.scalars().all())
+        
+        chunks = []
+        for chunk, distance in result.all():
+            chunk.similarity = 1.0 - distance
+            chunks.append(chunk)
+        return chunks
 
     async def get_knowledge_metrics(self) -> List[dict]:
         """Fetch aggregated knowledge monitoring metrics for documents."""

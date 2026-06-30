@@ -8,6 +8,7 @@ from app.infrastructure.models.document_chunk import DocumentChunk
 from app.domain.interfaces.retrieval_log_repository import IRetrievalLogRepository
 from app.infrastructure.repositories.system_settings_repository import SystemSettingsRepository
 import uuid
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -70,23 +71,29 @@ class RetrievalService:
         try:
             query_vector = await self.embeddings.aembed_query(query)
             
-            chunks = await self.repository.search_similar_chunks(
+            start_time = time.perf_counter()
+            all_chunks = await self.repository.search_similar_chunks(
                 query_vector, 
                 limit=top_k, 
                 threshold=sim_threshold
             )
+            latency_ms = int((time.perf_counter() - start_time) * 1000)
+            
+            # Filter chunks that pass the similarity threshold for LLM context
+            chunks = [c for c in all_chunks if getattr(c, "similarity", 0.0) >= sim_threshold]
             
             confidence = self._calculate_confidence(chunks, query_vector)
             
             if self.log_repository:
-                # Fire and forget log / or await it
-                retrieved_data = [{"chunk_id": c.id, "similarity_score": getattr(c, "similarity", 0.0)} for c in chunks]
+                # Log ALL retrieved chunks (even below threshold) for monitoring visibility
+                retrieved_data = [{"chunk_id": c.id, "similarity_score": getattr(c, "similarity", 0.0)} for c in all_chunks]
                 await self.log_repository.log_retrieval(
                     conversation_id=None, # Passed from LLMService if we want to track it later, keeping simple for now
                     query=query,
                     language=language,
                     top_k=top_k,
-                    retrieved_chunks=retrieved_data
+                    retrieved_chunks=retrieved_data,
+                    latency_ms=latency_ms
                 )
                 
             return chunks, confidence

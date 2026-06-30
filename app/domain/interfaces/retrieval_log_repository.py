@@ -12,7 +12,8 @@ class IRetrievalLogRepository(ABC):
         query: str, 
         language: str, 
         top_k: int, 
-        retrieved_chunks: List[dict]
+        retrieved_chunks: List[dict],
+        latency_ms: int = None
     ) -> uuid.UUID:
         """
         Logs the retrieval action and the exact chunks returned.

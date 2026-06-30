@@ -33,7 +33,7 @@ def get_admin_overview_service(db: AsyncSession = Depends(get_db)) -> AdminOverv
 
 def get_admin_users_service(db: AsyncSession = Depends(get_db)) -> AdminUsersService:
     from app.infrastructure.security.password_hasher import BcryptPasswordHasher
-    return AdminUsersService(UserRepository(db), password_hasher=BcryptPasswordHasher())
+    return AdminUsersService(UserRepository(db), password_hasher=BcryptPasswordHasher(), audit_log_repo=PgAuditLogRepository(db))
 
 def get_admin_knowledge_service(db: AsyncSession = Depends(get_db)) -> AdminKnowledgeService:
     return AdminKnowledgeService(DocumentRepository(db))
@@ -42,7 +42,8 @@ def get_admin_logs_service(db: AsyncSession = Depends(get_db)) -> AdminLogsServi
     return AdminLogsService(PgLLMLogRepository(db))
 
 def get_admin_retrieval_service(db: AsyncSession = Depends(get_db)) -> AdminRetrievalService:
-    return AdminRetrievalService(DocumentRepository(db))
+    from app.infrastructure.repositories.system_settings_repository import SystemSettingsRepository
+    return AdminRetrievalService(DocumentRepository(db), system_settings_repo=SystemSettingsRepository(db))
 
 def get_admin_platform_analytics_service(db: AsyncSession = Depends(get_db)) -> AdminPlatformAnalyticsService:
     return AdminPlatformAnalyticsService(ChatRepository(db))
@@ -80,13 +81,15 @@ from app.domain.exceptions import UserAlreadyExistsError
 
 @router.post("/users", response_model=SuccessResponse[AdminUserItem])
 async def create_admin_user(request: Request, payload: AdminUserCreateRequest, service: AdminUsersService = Depends(get_admin_users_service)):
+    current_user_id = getattr(request.state, "user", {}).get("sub")
     try:
         user = await service.create_admin_user(
             first_name=payload.first_name,
             last_name=payload.last_name,
             phone_number=payload.phone_number,
             email=payload.email,
-            password=payload.password
+            password=payload.password,
+            current_user_id=current_user_id
         )
         return SuccessResponse(data=AdminUserItem(**user), message="Admin user created successfully")
     except UserAlreadyExistsError as e:
@@ -96,8 +99,9 @@ async def create_admin_user(request: Request, payload: AdminUserCreateRequest, s
 
 @router.patch("/users/{user_id}/status", response_model=AdminUserItem)
 async def update_user_status(user_id: str, status_update: AdminUserStatusUpdate, request: Request, service: AdminUsersService = Depends(get_admin_users_service)):
+    current_user_id = getattr(request.state, "user", {}).get("sub")
     try:
-        return await service.update_user_status(user_id, status_update.is_active)
+        return await service.update_user_status(user_id, status_update.is_active, current_user_id=current_user_id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
@@ -145,10 +149,11 @@ async def get_multilingual_analytics(request: Request, service: AdminMultilingua
 
 from app.application.services.admin_security_monitoring_service import AdminSecurityMonitoringService
 from app.infrastructure.repositories.security_event_repository import SecurityEventRepository
+from app.infrastructure.repositories.pg_audit_log_repository import PgAuditLogRepository
 from app.presentation.schemas.admin_schema import AdminSecurityMonitoringResponse
 
 def get_admin_security_monitoring_service(db: AsyncSession = Depends(get_db)) -> AdminSecurityMonitoringService:
-    return AdminSecurityMonitoringService(SecurityEventRepository(db))
+    return AdminSecurityMonitoringService(SecurityEventRepository(db), PgAuditLogRepository(db))
 
 @router.get("/security-monitoring", response_model=AdminSecurityMonitoringResponse)
 async def get_security_monitoring(request: Request, service: AdminSecurityMonitoringService = Depends(get_admin_security_monitoring_service)):
@@ -198,7 +203,7 @@ from app.presentation.schemas.admin_schema import (
 )
 
 def get_admin_system_settings_service(db: AsyncSession = Depends(get_db)) -> AdminSystemSettingsService:
-    return AdminSystemSettingsService(SystemSettingsRepository(db))
+    return AdminSystemSettingsService(SystemSettingsRepository(db), audit_log_repo=PgAuditLogRepository(db))
 
 @router.get("/settings/language", response_model=LanguageSettingsResponse)
 async def get_language_settings(request: Request, service: AdminSystemSettingsService = Depends(get_admin_system_settings_service)):
@@ -206,10 +211,12 @@ async def get_language_settings(request: Request, service: AdminSystemSettingsSe
 
 @router.patch("/settings/language", response_model=LanguageSettingsResponse)
 async def update_language_settings(update_data: LanguageSettingsUpdate, request: Request, service: AdminSystemSettingsService = Depends(get_admin_system_settings_service)):
+    current_user_id = getattr(request.state, "user", {}).get("sub")
     return await service.update_language_settings(
         enabled_languages=update_data.enabled_languages,
         default_language=update_data.default_language,
-        translation_pipeline_enabled=update_data.translation_pipeline_enabled
+        translation_pipeline_enabled=update_data.translation_pipeline_enabled,
+        current_user_id=current_user_id
     )
 
 @router.get("/settings/ai", response_model=AISettingsResponse)
@@ -218,12 +225,14 @@ async def get_ai_settings(request: Request, service: AdminSystemSettingsService 
 
 @router.patch("/settings/ai", response_model=AISettingsResponse)
 async def update_ai_settings(update_data: AISettingsUpdate, request: Request, service: AdminSystemSettingsService = Depends(get_admin_system_settings_service)):
+    current_user_id = getattr(request.state, "user", {}).get("sub")
     return await service.update_ai_settings(
         ai_model_name=update_data.ai_model_name,
         ai_temperature=update_data.ai_temperature,
         ai_max_tokens=update_data.ai_max_tokens,
         ai_top_p=update_data.ai_top_p,
-        ai_frequency_penalty=update_data.ai_frequency_penalty
+        ai_frequency_penalty=update_data.ai_frequency_penalty,
+        current_user_id=current_user_id
     )
 
 @router.get("/settings/retrieval", response_model=RetrievalSettingsResponse)
@@ -232,12 +241,14 @@ async def get_retrieval_settings(request: Request, service: AdminSystemSettingsS
 
 @router.patch("/settings/retrieval", response_model=RetrievalSettingsResponse)
 async def update_retrieval_settings(update_data: RetrievalSettingsUpdate, request: Request, service: AdminSystemSettingsService = Depends(get_admin_system_settings_service)):
+    current_user_id = getattr(request.state, "user", {}).get("sub")
     return await service.update_retrieval_settings(
         retrieval_top_k=update_data.retrieval_top_k,
         retrieval_similarity_threshold=update_data.retrieval_similarity_threshold,
         retrieval_embedding_model=update_data.retrieval_embedding_model,
         retrieval_chunk_size=update_data.retrieval_chunk_size,
-        retrieval_chunk_overlap=update_data.retrieval_chunk_overlap
+        retrieval_chunk_overlap=update_data.retrieval_chunk_overlap,
+        current_user_id=current_user_id
     )
 
 @router.get("/settings/integration", response_model=IntegrationSettingsResponse)
@@ -246,10 +257,12 @@ async def get_integration_settings(request: Request, service: AdminSystemSetting
 
 @router.patch("/settings/integration", response_model=IntegrationSettingsResponse)
 async def update_integration_settings(update_data: IntegrationSettingsUpdate, request: Request, service: AdminSystemSettingsService = Depends(get_admin_system_settings_service)):
+    current_user_id = getattr(request.state, "user", {}).get("sub")
     return await service.update_integration_settings(
         openai_api_key=update_data.openai_api_key,
         twilio_account_sid=update_data.twilio_account_sid,
         twilio_auth_token=update_data.twilio_auth_token,
         whatsapp_phone_number=update_data.whatsapp_phone_number,
-        web_socket_url=update_data.web_socket_url
+        web_socket_url=update_data.web_socket_url,
+        current_user_id=current_user_id
     )
