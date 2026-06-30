@@ -83,62 +83,9 @@ class AIEvaluationPipelineService:
                 )
                 self.session.add(new_eval)
 
-                # Initialize Judge Service
-                from app.application.services.llm_as_a_judge_service import LLMAsAJudgeService
-                from app.infrastructure.external.openai_client import OpenAIClient
-                from app.infrastructure.repositories.system_settings_repository import SystemSettingsRepository
-                judge_service = LLMAsAJudgeService(OpenAIClient(system_settings_repository=SystemSettingsRepository(self.session)))
 
-                avg_faithfulness = 0.0
-                avg_relevance = 0.0
-                eval_count = 0
-
-                for r in responses:
-                    if r.query and r.response_text:
-                        faith = await judge_service.evaluate_faithfulness(r.query, r.context, r.response_text)
-                        rel = await judge_service.evaluate_answer_relevance(r.query, r.response_text)
-                        avg_faithfulness += faith
-                        avg_relevance += rel
-                        eval_count += 1
                 
-                if eval_count > 0:
-                    avg_faithfulness /= eval_count
-                    avg_relevance /= eval_count
-                else:
-                    # Fallback to heuristics if no real requests available
-                    avg_faithfulness = 0.88 + random.uniform(-0.02, 0.02)
-                    avg_relevance = 0.78 + random.uniform(-0.02, 0.02)
-
-                from app.infrastructure.models.research import ResearchMetric, EvaluationDataset, ExperimentNote
-                
-                def generate_metric(label, value, note):
-                    trend = "up" if value > 0.8 else "down" if value < 0.6 else "neutral"
-                    return ResearchMetric(label=label, value=str(round(value, 2)), note=note, trend=trend)
-
-                # RAGAS Score is roughly the average of Faithfulness and Relevance in this subset
-                ragas_score = (avg_faithfulness + avg_relevance) / 2
-
-                metrics = [
-                    generate_metric("Faithfulness", avg_faithfulness, "Groundedness against retrieved context"),
-                    generate_metric("Context Precision", avg_relevance, "Relevant chunks among retrieved context"),
-                    generate_metric("RAGAS Score", ragas_score, "Composite retrieval-generation score"),
-                    # Reference-based metrics remain pseudo until benchmark suite is integrated
-                    generate_metric("Context Recall", 0.85 + random.uniform(-0.02, 0.02), "Coverage of required evidence (pseudo)"),
-                    generate_metric("BLEU", 0.45 + random.uniform(-0.02, 0.02), "n-gram overlap with references (pseudo)"),
-                    generate_metric("ROUGE-L", 0.63 + random.uniform(-0.02, 0.02), "Longest common subsequence overlap (pseudo)")
-                ]
-                
-                for m in metrics:
-                    self.session.add(m)
-                
-            # Insert standard evaluation datasets and notes only if they don't exist yet
-            dataset_count = await self.session.execute(select(func.count(EvaluationDataset.id)))
-            if dataset_count.scalar() == 0:
-                self.session.add_all([
-                    EvaluationDataset(name="OJ-LegalQA-Benchmark", version="v2.3", samples=2400, split="70/15/15", last_run=datetime.utcnow().strftime("%Y-%m-%d"), status="Ready"),
-                    EvaluationDataset(name="SriLanka-Statute-Citations", version="v1.9", samples=1300, split="80/10/10", last_run=datetime.utcnow().strftime("%Y-%m-%d"), status="Running"),
-                    EvaluationDataset(name="Multilingual-Legal-Reasoning", version="v1.4", samples=980, split="75/10/15", last_run=datetime.utcnow().strftime("%Y-%m-%d"), status="Needs Refresh")
-                ])
+            # (Dataset seeding logic removed)
                 
             note_count = await self.session.execute(select(func.count(ExperimentNote.id)))
             if note_count.scalar() == 0:

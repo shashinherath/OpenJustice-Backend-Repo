@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Request, status, HTTPException
+from fastapi import APIRouter, Depends, Request, status, HTTPException, File, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.db.base import get_db
@@ -192,6 +192,39 @@ def get_admin_research_service(db: AsyncSession = Depends(get_db)) -> AdminResea
 @router.get("/analytics/research-metrics", response_model=AdminResearchMetricsResponse)
 async def get_research_metrics(request: Request, service: AdminResearchService = Depends(get_admin_research_service)):
     return await service.get_research_metrics()
+
+
+
+@router.post("/research/datasets/upload")
+async def upload_research_dataset(
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db)
+):
+    service = AdminResearchService(ResearchRepository(db))
+    dataset_id = await service.upload_and_save_dataset(file)
+    return {"status": "success", "dataset_id": dataset_id}
+
+@router.post("/research/datasets/{dataset_id}/evaluate")
+async def evaluate_research_dataset(
+    dataset_id: str,
+    db: AsyncSession = Depends(get_db)
+):
+    service = AdminResearchService(ResearchRepository(db))
+    await service.trigger_evaluation(dataset_id)
+    return {"status": "success", "message": "Evaluation started in background"}
+
+@router.delete("/research/datasets/{dataset_id}")
+async def delete_research_dataset(
+    dataset_id: str,
+    db: AsyncSession = Depends(get_db)
+):
+    service = AdminResearchService(ResearchRepository(db))
+    success = await service.delete_dataset(dataset_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Dataset not found")
+    # Need to commit because the repository executed deletes
+    await db.commit()
+    return {"status": "success", "message": "Dataset deleted"}
 
 from app.application.services.admin_system_settings_service import AdminSystemSettingsService
 from app.infrastructure.repositories.system_settings_repository import SystemSettingsRepository
