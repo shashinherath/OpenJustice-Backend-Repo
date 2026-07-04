@@ -221,11 +221,11 @@ class LLMService:
                 
                 req_id = await self.llm_log_repository.log_request(
                     user_id=user_id,
-                    model_name=settings.OPENAI_MODEL,
+                    model_name=ai_model or settings.OPENAI_MODEL,
                     query=query,
                     context=context,
                     prompt_version="v1",
-                    temperature=settings.OPENAI_TEMPERATURE,
+                    temperature=ai_temp if ai_temp is not None else settings.OPENAI_TEMPERATURE,
                     prompt_tokens=prompt_tokens,
                     completion_tokens=completion_tokens,
                     total_tokens=total_tokens,
@@ -361,11 +361,11 @@ class LLMService:
                         
                         req_id = await self.llm_log_repository.log_request(
                             user_id=user_id,
-                            model_name=settings.OPENAI_MODEL,
+                            model_name=ai_model or settings.OPENAI_MODEL,
                             query=query,
                             context=context,
                             prompt_version="v1",
-                            temperature=settings.OPENAI_TEMPERATURE,
+                            temperature=ai_temp if ai_temp is not None else settings.OPENAI_TEMPERATURE,
                             prompt_tokens=prompt_tokens,
                             completion_tokens=completion_tokens,
                             total_tokens=total_tokens,
