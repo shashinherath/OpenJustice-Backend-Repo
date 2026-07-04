@@ -165,6 +165,17 @@ def get_admin_security_monitoring_service(db: AsyncSession = Depends(get_db)) ->
 async def get_security_monitoring(request: Request, service: AdminSecurityMonitoringService = Depends(get_admin_security_monitoring_service)):
     return await service.get_security_monitoring()
 
+from app.application.services.admin_error_monitoring_service import AdminErrorMonitoringService
+from app.infrastructure.repositories.pg_system_error_repository import PgSystemErrorRepository
+from app.presentation.schemas.admin_schema import AdminErrorMonitoringResponse
+
+def get_admin_error_monitoring_service(db: AsyncSession = Depends(get_db)) -> AdminErrorMonitoringService:
+    return AdminErrorMonitoringService(PgSystemErrorRepository(db))
+
+@router.get("/error-monitoring", response_model=AdminErrorMonitoringResponse)
+async def get_error_monitoring(request: Request, skip: int = 0, limit: int = 100, service: AdminErrorMonitoringService = Depends(get_admin_error_monitoring_service)):
+    return await service.get_errors(skip, limit)
+
 from app.application.services.admin_retrieval_evaluation_service import AdminRetrievalEvaluationService
 from app.infrastructure.repositories.retrieval_evaluation_repository import RetrievalEvaluationRepository
 from app.presentation.schemas.admin_schema import AdminRetrievalEvaluationResponse

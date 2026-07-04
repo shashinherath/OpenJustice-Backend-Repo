@@ -4,6 +4,9 @@ from uuid import UUID
 import time
 import tiktoken
 import re
+import traceback
+
+from app.application.services.system_error_logger import log_system_error
 
 from app.application.dtos.chat_dto import MessageCreateDto
 from app.application.services.chat_service import ChatService
@@ -201,14 +204,22 @@ class LLMService:
 
         # Execute LLM Call natively
         start_time = time.perf_counter()
-        response = await self.llm_client.generate_response(
-            messages=messages,
-            temperature=ai_temp,
-            max_tokens=ai_tokens,
-            top_p=ai_top_p,
-            frequency_penalty=ai_freq_pen,
-            model=ai_model
-        )
+        try:
+            response = await self.llm_client.generate_response(
+                messages=messages,
+                temperature=ai_temp,
+                max_tokens=ai_tokens,
+                top_p=ai_top_p,
+                frequency_penalty=ai_freq_pen,
+                model=ai_model
+            )
+        except Exception as e:
+            await log_system_error(
+                error_type="LLM",
+                message="LLM provider generated an error during request.",
+                details=f"Model: {ai_model or settings.OPENAI_MODEL}\n{traceback.format_exc()}"
+            )
+            raise
         latency_ms = int((time.perf_counter() - start_time) * 1000)
         
         # Log LLM Telemetry
@@ -341,6 +352,13 @@ class LLMService:
             ):
                 full_response += chunk
                 yield chunk
+        except Exception as e:
+            await log_system_error(
+                error_type="LLM",
+                message="LLM provider generated an error during streaming.",
+                details=f"Model: {ai_model or settings.OPENAI_MODEL}\n{traceback.format_exc()}"
+            )
+            raise
                 
         finally:
             latency_ms = int((time.perf_counter() - start_time) * 1000)

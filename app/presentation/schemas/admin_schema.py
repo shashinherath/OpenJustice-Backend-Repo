@@ -457,6 +457,22 @@ class AdminSecurityMonitoringResponse(BaseModel):
     recent_events: List[SecurityEventRecord]
     activity_logs: List[ActivityLogItem]
 
+class ErrorRecord(BaseModel):
+    id: str
+    type: str
+    message: str
+    timestamp: str
+    details: str
+
+class AdminErrorMonitoringResponse(BaseModel):
+    errors: List[ErrorRecord]
+    total_errors: int = 0
+    total_llm: int = 0
+    total_db: int = 0
+    total_api: int = 0
+    total_auth: int = 0
+    total_system: int = 0
+
 class RetrievalDistributionBin(BaseModel):
     bin_label: str
     count: int
