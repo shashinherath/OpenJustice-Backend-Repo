@@ -40,6 +40,12 @@ class User(Base):
     is_active: Mapped[bool] = mapped_column(
         nullable=False, default=True
     )
+    failed_login_attempts: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0
+    )
+    locked_until: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     avatar_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     created_at: Mapped[datetime] = mapped_column(

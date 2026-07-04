@@ -53,19 +53,24 @@ class LLMService:
     async def _build_messages(self, conversation_id: UUID, user_id: UUID, query: str, context: str) -> List[Dict[str, Any]]:
         """Constructs the full system-history-context message array for LLMs."""
         
+        system_settings = None
+        if self.system_settings_repository:
+            system_settings = await self.system_settings_repository.get_settings()
+
         # Security Check & Sanitize
-        is_safe, violations = PromptSecurityValidator.is_safe(query)
-        if not is_safe:
-            logger.warning(f"Prompt injection detected on query '{query}': {violations}")
-        safe_query = PromptSecurityValidator.sanitize(query)
+        safe_query = query
+        if system_settings is None or system_settings.prompt_validation_enabled:
+            is_safe, violations = PromptSecurityValidator.is_safe(query)
+            if not is_safe:
+                logger.warning(f"Prompt injection detected on query '{query}': {violations}")
+            safe_query = PromptSecurityValidator.sanitize(query)
         
         detected_lang = LanguageDetectionService.detect_language(safe_query)
         
         # Enforce System Settings
         fallback_notice = ""
         is_fallback = False
-        if self.system_settings_repository:
-            system_settings = await self.system_settings_repository.get_settings()
+        if system_settings:
             if detected_lang not in system_settings.enabled_languages:
                 logger.info(f"Language '{detected_lang}' is disabled. Falling back to default '{system_settings.default_language}'.")
                 detected_lang = system_settings.default_language

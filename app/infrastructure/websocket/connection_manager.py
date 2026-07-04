@@ -68,7 +68,7 @@ class WebSocketRateLimiter:
         self.message_history: Dict[UUID, List[datetime]] = defaultdict(list)
         self._lock = asyncio.Lock()
 
-    async def is_allowed(self, user_id: UUID) -> bool:
+    async def is_allowed(self, user_id: UUID, max_messages_override: int = None) -> bool:
         """Check if user is allowed to send message"""
         async with self._lock:
             now = datetime.utcnow()
@@ -80,7 +80,8 @@ class WebSocketRateLimiter:
             ]
 
             # Check limit
-            if len(self.message_history[user_id]) >= self.max_messages:
+            limit = max_messages_override if max_messages_override is not None else self.max_messages
+            if len(self.message_history[user_id]) >= limit:
                 logger.warning(f"Rate limit exceeded for user {user_id}")
                 return False
 

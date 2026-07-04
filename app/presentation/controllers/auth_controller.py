@@ -18,6 +18,7 @@ from app.infrastructure.security.jwt_handler import jwt_handler
 from app.infrastructure.security.password_hasher import BcryptPasswordHasher
 from app.infrastructure.repositories.pg_user_session_repository import PgUserSessionRepository
 from app.infrastructure.repositories.pg_audit_log_repository import PgAuditLogRepository
+from app.infrastructure.repositories.system_settings_repository import SystemSettingsRepository
 from app.presentation.schemas.auth_schema import (
     LoginRequest,
     LoginResponseData,
@@ -48,14 +49,16 @@ async def login(
     db: AsyncSession = Depends(get_db),
 ) -> SuccessResponse[LoginResponseData]:
     """Authenticate a user and set an access token cookie."""
-    service = AuthService(
+    auth_service = AuthService(
         repository=UserRepository(db),
         password_hasher=BcryptPasswordHasher(),
         token_issuer=jwt_handler,
         user_session_repo=PgUserSessionRepository(db),
         audit_log_repo=PgAuditLogRepository(db),
+        system_settings_repo=SystemSettingsRepository(db),
     )
-    result = await service.login(
+
+    result = await auth_service.login(
         LoginDto(
             email=payload.email,
             phone_number=payload.phone_number,
@@ -65,6 +68,10 @@ async def login(
             channel="web",
         )
     )
+
+    system_settings_repo = SystemSettingsRepository(db)
+    sys_settings = await system_settings_repo.get_settings()
+    jwt_expiry_minutes = sys_settings.jwt_expiry_minutes if sys_settings else settings.ACCESS_TOKEN_EXPIRE_MINUTES
 
     cookie_secure = (
         settings.AUTH_COOKIE_SECURE
@@ -78,7 +85,7 @@ async def login(
         httponly=True,
         secure=cookie_secure,
         samesite=settings.AUTH_COOKIE_SAMESITE,
-        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        max_age=jwt_expiry_minutes * 60,
         path="/",
     )
 

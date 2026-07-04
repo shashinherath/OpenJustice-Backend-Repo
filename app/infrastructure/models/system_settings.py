@@ -27,6 +27,12 @@ class SystemSettings(Base):
     retrieval_chunk_size: Mapped[int] = mapped_column(Integer, default=1000, nullable=False)
     retrieval_chunk_overlap: Mapped[int] = mapped_column(Integer, default=200, nullable=False)
 
+    # Security Configuration Fields
+    jwt_expiry_minutes: Mapped[int] = mapped_column(Integer, default=60, nullable=False)
+    rate_limit_per_minute: Mapped[int] = mapped_column(Integer, default=100, nullable=False)
+    prompt_validation_enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    account_lockout_threshold: Mapped[int] = mapped_column(Integer, default=5, nullable=False)
+
     # Integration Fields
     openai_api_key: Mapped[str] = mapped_column(String(255), nullable=True)
     twilio_account_sid: Mapped[str] = mapped_column(String(255), nullable=True)

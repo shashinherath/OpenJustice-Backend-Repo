@@ -13,6 +13,8 @@ from app.domain.interfaces.user_repository import IUserRepository
 from app.infrastructure.models.user import User
 from app.domain.interfaces.user_session_repository import IUserSessionRepository
 from app.domain.interfaces.audit_log_repository import IAuditLogRepository
+from app.infrastructure.repositories.system_settings_repository import SystemSettingsRepository
+from datetime import datetime, timezone, timedelta
 import uuid
 
 
@@ -26,12 +28,14 @@ class AuthService:
         token_issuer: AccessTokenIssuer,
         user_session_repo: IUserSessionRepository = None,
         audit_log_repo: IAuditLogRepository = None,
+        system_settings_repo: SystemSettingsRepository = None,
     ) -> None:
         self.repository = repository
         self.password_hasher = password_hasher
         self.token_issuer = token_issuer
         self.user_session_repo = user_session_repo
         self.audit_log_repo = audit_log_repo
+        self.system_settings_repo = system_settings_repo
 
     async def login(self, dto: LoginDto) -> LoginResultDto:
         """Authenticate a user and return a login result."""
@@ -44,15 +48,44 @@ class AuthService:
         if not user or not user.hashed_password:
             raise InvalidCredentialsError()
 
+        # Check Lockout
+        sys_settings = None
+        if self.system_settings_repo:
+            sys_settings = await self.system_settings_repo.get_settings()
+        
+        now = datetime.now(timezone.utc)
+        if user.locked_until and user.locked_until > now:
+            raise InvalidCredentialsError(f"Account is temporarily locked. Try again later.")
+        elif user.locked_until and user.locked_until <= now:
+            user.locked_until = None
+            user.failed_login_attempts = 0
+            if hasattr(self.repository, 'db'):
+                await self.repository.db.commit()
+
         if not self.password_hasher.verify_password(dto.password, user.hashed_password):
+            user.failed_login_attempts += 1
+            if sys_settings and user.failed_login_attempts >= sys_settings.account_lockout_threshold:
+                user.locked_until = now + timedelta(minutes=15)
+                if self.audit_log_repo:
+                    await self.audit_log_repo.log_action(user.id, "ACCOUNT_LOCKED", {"attempts": user.failed_login_attempts})
+            if hasattr(self.repository, 'db'):
+                await self.repository.db.commit()
             raise InvalidCredentialsError()
+
+        # Reset failed attempts on success
+        if user.failed_login_attempts > 0:
+            user.failed_login_attempts = 0
+            user.locked_until = None
+            if hasattr(self.repository, 'db'):
+                await self.repository.db.commit()
 
         token = self.token_issuer.create_access_token(
             data={
                 "sub": str(user.id),
                 "role": user.role,
                 "preferred_language": user.preferred_language,
-            }
+            },
+            expires_delta=timedelta(minutes=sys_settings.jwt_expiry_minutes) if sys_settings else None
         )
 
         if self.user_session_repo:

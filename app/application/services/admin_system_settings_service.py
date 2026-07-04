@@ -106,3 +106,30 @@ class AdminSystemSettingsService:
                 metadata={"whatsapp_phone_number_updated": bool(whatsapp_phone_number)}
             )
         return settings
+
+    async def get_security_settings(self) -> SystemSettings:
+        return await self.settings_repository.get_settings()
+
+    async def update_security_settings(
+        self,
+        jwt_expiry_minutes: int,
+        rate_limit_per_minute: int,
+        prompt_validation_enabled: bool,
+        account_lockout_threshold: int,
+        current_user_id: str = None
+    ) -> SystemSettings:
+        settings = await self.settings_repository.update_security_settings(
+            jwt_expiry_minutes=jwt_expiry_minutes,
+            rate_limit_per_minute=rate_limit_per_minute,
+            prompt_validation_enabled=prompt_validation_enabled,
+            account_lockout_threshold=account_lockout_threshold
+        )
+        if self.audit_log_repo:
+            from uuid import UUID
+            await self.audit_log_repo.log_action(
+                user_id=UUID(current_user_id) if current_user_id else None,
+                action="UPDATE_SECURITY_SETTINGS",
+                entity="SystemSettings",
+                metadata={"prompt_validation_enabled": prompt_validation_enabled}
+            )
+        return settings

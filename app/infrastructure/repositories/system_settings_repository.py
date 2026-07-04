@@ -96,3 +96,21 @@ class SystemSettingsRepository:
         await self.db.commit()
         await self.db.refresh(settings)
         return settings
+
+    async def update_security_settings(
+        self,
+        jwt_expiry_minutes: int,
+        rate_limit_per_minute: int,
+        prompt_validation_enabled: bool,
+        account_lockout_threshold: int
+    ) -> SystemSettings:
+        settings = await self.get_settings()
+        
+        settings.jwt_expiry_minutes = jwt_expiry_minutes
+        settings.rate_limit_per_minute = rate_limit_per_minute
+        settings.prompt_validation_enabled = prompt_validation_enabled
+        settings.account_lockout_threshold = account_lockout_threshold
+        
+        await self.db.commit()
+        await self.db.refresh(settings)
+        return settings

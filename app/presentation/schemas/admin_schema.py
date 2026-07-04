@@ -569,3 +569,15 @@ class IntegrationSettingsUpdate(BaseModel):
     twilio_auth_token: Optional[str]
     whatsapp_phone_number: Optional[str]
     web_socket_url: Optional[str]
+
+class SecuritySettingsResponse(BaseModel):
+    jwt_expiry_minutes: int
+    rate_limit_per_minute: int
+    prompt_validation_enabled: bool
+    account_lockout_threshold: int
+
+class SecuritySettingsUpdate(BaseModel):
+    jwt_expiry_minutes: int
+    rate_limit_per_minute: int
+    prompt_validation_enabled: bool
+    account_lockout_threshold: int
