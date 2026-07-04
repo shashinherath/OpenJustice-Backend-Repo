@@ -45,6 +45,8 @@ from app.application.services.llm_service import LLMService
 from app.application.services.retrieval_service import RetrievalService
 from app.application.services.speech_to_text_service import SpeechToTextService
 from app.application.services.text_to_speech_service import TextToSpeechService
+from app.infrastructure.repositories.pg_audio_log_repository import PgAudioLogRepository
+import time
 from app.application.services.temp_file_manager import TempFileManager
 from app.infrastructure.repositories.document_repository import DocumentRepository
 from app.infrastructure.repositories.pgvector_semantic_cache_repository import PgVectorSemanticCacheRepository
@@ -169,7 +171,19 @@ async def get_message_audio(
 
     from starlette.background import BackgroundTask
     tts_service = TextToSpeechService(system_settings_repository=SystemSettingsRepository(db))
+    start_time = time.perf_counter()
     synthesized_path = await tts_service.synthesize_speech(message.content or "")
+    tts_latency = time.perf_counter() - start_time
+    
+    audio_log_repo = PgAudioLogRepository(db)
+    await audio_log_repo.log_audio_request(
+        user_id=user_id,
+        audio_type="tts",
+        language=None,
+        duration_seconds=tts_latency,
+        provider="OpenAI TTS"
+    )
+    
     return FileResponse(
         path=synthesized_path,
         media_type="audio/ogg",
@@ -241,10 +255,12 @@ async def complete_message(
     
     doc_repo = DocumentRepository(db)
     retrieval_log_repo = PgRetrievalLogRepository(db)
+    from app.infrastructure.repositories.pg_llm_log_repository import PgLLMLogRepository
     retrieval_service = RetrievalService(
         doc_repo, 
         log_repository=retrieval_log_repo,
-        system_settings_repository=SystemSettingsRepository(db)
+        system_settings_repository=SystemSettingsRepository(db),
+        llm_log_repository=PgLLMLogRepository(db)
     )
     
     semantic_cache = PgVectorSemanticCacheRepository(db)
@@ -296,15 +312,29 @@ async def voice_message(
     
     # 2. Transcribe
     stt_service = SpeechToTextService(system_settings_repository=SystemSettingsRepository(db))
-    query = await stt_service.transcribe_audio(in_audio_path)
+    
+    start_time = time.perf_counter()
+    query = await stt_service.transcribe_audio(user_audio_path)
+    stt_latency = time.perf_counter() - start_time
+    
+    audio_log_repo = PgAudioLogRepository(db)
+    await audio_log_repo.log_audio_request(
+        user_id=user_id,
+        audio_type="stt",
+        language="auto",
+        duration_seconds=stt_latency,
+        provider="OpenAI Whisper"
+    )
     
     # 3. Retrieve context
     doc_repo = DocumentRepository(db)
     retrieval_log_repo = PgRetrievalLogRepository(db)
+    from app.infrastructure.repositories.pg_llm_log_repository import PgLLMLogRepository
     retrieval_service = RetrievalService(
         doc_repo, 
         log_repository=retrieval_log_repo,
-        system_settings_repository=SystemSettingsRepository(db)
+        system_settings_repository=SystemSettingsRepository(db),
+        llm_log_repository=PgLLMLogRepository(db)
     )
     
     chunks, confidence = await retrieval_service.retrieve(query=query)
@@ -338,7 +368,18 @@ async def voice_message(
     
     # 5. Synthesize Audio
     tts_service = TextToSpeechService(system_settings_repository=SystemSettingsRepository(db))
+    
+    tts_start = time.perf_counter()
     out_audio_path = await tts_service.synthesize_speech(ai_reply)
+    tts_latency = time.perf_counter() - tts_start
+    
+    await audio_log_repo.log_audio_request(
+        user_id=user_id,
+        audio_type="tts",
+        language=None,
+        duration_seconds=tts_latency,
+        provider="OpenAI TTS"
+    )
     ai_audio_path = _persist_audio_file(out_audio_path, "voice_ai")
     
     # We no longer need the temp TTS output audio since it's persisted in media/audio

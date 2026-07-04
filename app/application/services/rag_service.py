@@ -4,6 +4,9 @@ from uuid import UUID
 
 from langchain_community.document_loaders import PyPDFLoader, TextLoader
 from langchain_openai import OpenAIEmbeddings
+import time
+import tiktoken
+from app.domain.interfaces.llm_log_repository import ILLMLogRepository
 
 from app.config import settings
 from app.domain.interfaces.document_repository import IDocumentRepository
@@ -15,9 +18,10 @@ logger = logging.getLogger(__name__)
 class RAGService:
     """Orchestrates LangChain text splitting and OpenAI Vector Embedding."""
 
-    def __init__(self, repository: IDocumentRepository, system_settings_repository: SystemSettingsRepository = None):
+    def __init__(self, repository: IDocumentRepository, system_settings_repository: SystemSettingsRepository = None, llm_log_repository: ILLMLogRepository = None):
         self.repository = repository
         self.system_settings_repository = system_settings_repository
+        self.llm_log_repository = llm_log_repository
         
         # We still initialize a default embedding model here, but it will be overridden 
         # inside process_and_store_document() if dynamic settings are fetched.
@@ -96,7 +100,30 @@ class RAGService:
             texts = [s.page_content for s in splits]
             
             # 4. Generate Embeddings (this hits the network)
+            emb_start = time.perf_counter()
             vectors = await self.embeddings.aembed_documents(texts)
+            emb_latency = int((time.perf_counter() - emb_start) * 1000)
+            
+            if self.llm_log_repository:
+                try:
+                    encoding = tiktoken.encoding_for_model(embedding_model)
+                    total_tokens = sum(len(encoding.encode(t)) for t in texts)
+                    await self.llm_log_repository.log_request(
+                        user_id=None,
+                        model_name=embedding_model,
+                        query="<bulk document embedding>",
+                        context=f"Document {document_id}",
+                        prompt_version="v1",
+                        temperature=0.0,
+                        prompt_tokens=total_tokens,
+                        completion_tokens=0,
+                        total_tokens=total_tokens,
+                        latency_ms=emb_latency,
+                        status="success",
+                        error_message=None
+                    )
+                except Exception as e:
+                    logger.error(f"Embedding telemetry failed: {e}")
             
             # 5. Assemble to Database Models
             db_chunks = []
