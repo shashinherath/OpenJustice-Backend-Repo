@@ -12,6 +12,9 @@ from app.domain.interfaces.retrieval_log_repository import IRetrievalLogReposito
 from app.infrastructure.repositories.system_settings_repository import SystemSettingsRepository
 import uuid
 import time
+import traceback
+
+from app.application.services.system_error_logger import log_system_error
 
 logger = logging.getLogger(__name__)
 
@@ -127,8 +130,13 @@ class RetrievalService:
             return chunks, confidence
             
         except Exception as e:
+            await log_system_error(
+                error_type="DB",
+                message="Vector database retrieval or embedding failed.",
+                details=f"Model: {embedding_model}\n{traceback.format_exc()}"
+            )
             logger.error(f"Retrieval Service failed during similarity extraction: {str(e)}", exc_info=True)
-            return [], "None"
+            raise
 
     def _determine_optimal_top_k(self, query: str) -> int:
         """Dynamically determine optimal top_k value based on query length."""

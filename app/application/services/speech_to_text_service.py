@@ -1,12 +1,13 @@
 import logging
 import asyncio
+import traceback
 from openai import AsyncOpenAI
 
 from app.config import settings
+from app.application.services.system_error_logger import log_system_error
+from app.infrastructure.repositories.system_settings_repository import SystemSettingsRepository
 
 logger = logging.getLogger(__name__)
-
-from app.infrastructure.repositories.system_settings_repository import SystemSettingsRepository
 
 class SpeechToTextService:
     """Async speech-to-text wrapper utilizing OpenAI Whisper API."""
@@ -54,5 +55,10 @@ class SpeechToTextService:
             return str(response).strip()
 
         except Exception as e:
+            await log_system_error(
+                error_type="API",
+                message="Speech-to-Text transcription provider failed.",
+                details=f"Model: {self.model}\n{traceback.format_exc()}"
+            )
             logger.error(f"Transcription failed entirely: {e}", exc_info=True)
             raise ValueError(f"OpenAI Whisper crashed trying to convert audio: {str(e)}")

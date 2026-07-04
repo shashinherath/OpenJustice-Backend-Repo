@@ -5,6 +5,8 @@ from fastapi.responses import JSONResponse
 from app.application.exceptions import AppError
 from app.domain.exceptions import AuthenticationFailure, UserAlreadyExistsError
 from app.presentation.schemas.response_schema import ErrorDetail, ErrorResponse
+import traceback
+from app.application.services.system_error_logger import log_system_error
 
 
 def setup_error_handlers(app: FastAPI) -> None:
@@ -30,6 +32,11 @@ def setup_error_handlers(app: FastAPI) -> None:
     async def authentication_failure_handler(
         request: Request, exc: AuthenticationFailure
     ) -> JSONResponse:
+        await log_system_error(
+            error_type="AUTH",
+            message=exc.message,
+            details=f"Path: {request.url.path}\n{traceback.format_exc()}"
+        )
         content = ErrorResponse(
             error=ErrorDetail(code="AUTHENTICATION_ERROR", message=exc.message)
         ).model_dump(mode="json")
@@ -39,6 +46,11 @@ def setup_error_handlers(app: FastAPI) -> None:
     async def unhandled_exception_handler(
         request: Request, exc: Exception
     ) -> JSONResponse:
+        await log_system_error(
+            error_type="SYSTEM",
+            message=str(exc) or "Unhandled Server Exception",
+            details=f"Path: {request.url.path}\n{traceback.format_exc()}"
+        )
         content = ErrorResponse(
             error=ErrorDetail(
                 code="INTERNAL_SERVER_ERROR",

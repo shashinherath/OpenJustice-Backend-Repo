@@ -11,6 +11,7 @@ from app.infrastructure.db.base import get_db
 from app.infrastructure.models.llm_request import LLMRequest
 from app.infrastructure.models.llm_response import LLMResponse
 from app.infrastructure.models.ai_evaluation import AIEvaluation
+from app.infrastructure.models.research import ExperimentNote
 
 logger = logging.getLogger(__name__)
 

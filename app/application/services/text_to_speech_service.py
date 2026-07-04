@@ -2,13 +2,14 @@ import os
 import uuid
 import asyncio
 import logging
+import traceback
 from openai import AsyncOpenAI
 from app.config import settings
 from app.application.services.temp_file_manager import TempFileManager
+from app.application.services.system_error_logger import log_system_error
+from app.infrastructure.repositories.system_settings_repository import SystemSettingsRepository
 
 logger = logging.getLogger(__name__)
-
-from app.infrastructure.repositories.system_settings_repository import SystemSettingsRepository
 
 class TextToSpeechService:
     """Async text-to-speech wrapper natively utilizing OpenAI TTS bounds."""
@@ -67,5 +68,10 @@ class TextToSpeechService:
             return output_path
 
         except Exception as e:
+            await log_system_error(
+                error_type="API",
+                message="Text-to-Speech synthesis provider failed.",
+                details=f"Model: {self.model}\nVoice: {self.voice}\n{traceback.format_exc()}"
+            )
             logger.error(f"TTS failed completely: {e}", exc_info=True)
             raise ValueError(f"Text-to-speech engine failed dynamically: {str(e)}")
