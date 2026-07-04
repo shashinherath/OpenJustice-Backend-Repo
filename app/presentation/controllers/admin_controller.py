@@ -23,7 +23,8 @@ from app.presentation.schemas.admin_schema import (
     AdminKnowledgeResponse, AdminRetrievalMonitoringResponse,
     AdminLogListResponse, AdminLogStatusUpdate,
     AdminPlatformAnalyticsResponse, AdminUsageAnalyticsResponse,
-    AdminCostAnalyticsResponse, AdminMultilingualAnalyticsResponse
+    AdminCostAnalyticsResponse, AdminMultilingualAnalyticsResponse,
+    SecuritySettingsResponse, SecuritySettingsUpdate
 )
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
@@ -314,5 +315,20 @@ async def update_integration_settings(update_data: IntegrationSettingsUpdate, re
         twilio_auth_token=update_data.twilio_auth_token,
         whatsapp_phone_number=update_data.whatsapp_phone_number,
         web_socket_url=update_data.web_socket_url,
+        current_user_id=current_user_id
+    )
+
+@router.get("/settings/security", response_model=SecuritySettingsResponse)
+async def get_security_settings(request: Request, service: AdminSystemSettingsService = Depends(get_admin_system_settings_service)):
+    return await service.get_security_settings()
+
+@router.patch("/settings/security", response_model=SecuritySettingsResponse)
+async def update_security_settings(update_data: SecuritySettingsUpdate, request: Request, service: AdminSystemSettingsService = Depends(get_admin_system_settings_service)):
+    current_user_id = getattr(request.state, "user", {}).get("sub")
+    return await service.update_security_settings(
+        jwt_expiry_minutes=update_data.jwt_expiry_minutes,
+        rate_limit_per_minute=update_data.rate_limit_per_minute,
+        prompt_validation_enabled=update_data.prompt_validation_enabled,
+        account_lockout_threshold=update_data.account_lockout_threshold,
         current_user_id=current_user_id
     )

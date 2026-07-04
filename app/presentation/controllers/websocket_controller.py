@@ -20,6 +20,7 @@ from app.infrastructure.repositories.pgvector_semantic_cache_repository import P
 from app.infrastructure.repositories.pg_llm_log_repository import PgLLMLogRepository
 from app.infrastructure.repositories.pg_retrieval_log_repository import PgRetrievalLogRepository
 from app.infrastructure.repositories.pg_citation_repository import PgCitationRepository
+from app.infrastructure.repositories.system_settings_repository import SystemSettingsRepository
 
 logger = logging.getLogger(__name__)
 
@@ -87,10 +88,15 @@ async def websocket_chat_endpoint(
             }
         )
 
+        system_settings_repo = SystemSettingsRepository(db)
+
         while True:
             data = await websocket.receive_json()
 
-            if not await rate_limiter.is_allowed(user_id):
+            sys_settings = await system_settings_repo.get_settings()
+            rate_limit = sys_settings.rate_limit_per_minute if sys_settings else None
+
+            if not await rate_limiter.is_allowed(user_id, max_messages_override=rate_limit):
                 await websocket.send_json(
                     {
                         "type": "error",
