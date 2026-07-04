@@ -76,6 +76,49 @@ class PgLLMLogRepository(ILLMLogRepository):
         logs = list(result.scalars().all())
         return total, logs
 
+    async def get_stats(self) -> dict:
+        from sqlalchemy import select, func
+        
+        result = await self.session.execute(
+            select(
+                LLMRequest.status,
+                func.count(LLMRequest.id),
+                func.sum(LLMRequest.prompt_tokens),
+                func.sum(LLMRequest.completion_tokens),
+                func.avg(LLMRequest.latency_ms)
+            ).group_by(LLMRequest.status)
+        )
+        
+        stats = {
+            "completed": 0,
+            "reviewed": 0,
+            "pending": 0,
+            "failed": 0,
+            "total_tokens": 0,
+            "total_latency": 0,
+            "latency_count": 0
+        }
+        
+        for row in result:
+            status, count, p_tokens, c_tokens, avg_lat = row
+            status_lower = status.lower() if status else "pending"
+            if status_lower == "success" or status_lower == "completed":
+                stats["completed"] += int(count)
+            elif status_lower == "reviewed":
+                stats["reviewed"] += int(count)
+            elif status_lower == "error" or status_lower == "failed":
+                stats["failed"] += int(count)
+            else:
+                stats["pending"] += int(count)
+                
+            stats["total_tokens"] += int(p_tokens or 0) + int(c_tokens or 0)
+            if avg_lat is not None:
+                stats["total_latency"] += float(avg_lat) * int(count)
+                stats["latency_count"] += int(count)
+                
+        stats["avg_latency"] = float(stats["total_latency"]) / int(stats["latency_count"]) if stats["latency_count"] > 0 else 0.0
+        return stats
+
     async def update_log_status(self, log_id: uuid.UUID, status: str) -> bool:
         from sqlalchemy import select
         result = await self.session.execute(select(LLMRequest).where(LLMRequest.id == log_id))

@@ -21,3 +21,13 @@ class IRetrievalLogRepository(ABC):
         Returns the retrieval_log_id.
         """
         pass
+
+    @abstractmethod
+    async def get_logs(self, skip: int = 0, limit: int = 100) -> tuple[int, list]:
+        """Returns total count and list of RetrievalLog objects for traceability."""
+        pass
+
+    @abstractmethod
+    async def get_stats(self) -> dict:
+        """Returns total count and avg latency for retrieval logs."""
+        pass

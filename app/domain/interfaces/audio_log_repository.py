@@ -16,3 +16,13 @@ class IAudioLogRepository(ABC):
     ) -> uuid.UUID:
         """Logs STT or TTS processing details."""
         pass
+
+    @abstractmethod
+    async def get_logs(self, skip: int = 0, limit: int = 100) -> tuple[int, list]:
+        """Returns total count and list of AudioRequest objects for traceability."""
+        pass
+
+    @abstractmethod
+    async def get_stats(self) -> dict:
+        """Returns total count and avg latency for audio logs."""
+        pass

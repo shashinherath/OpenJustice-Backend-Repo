@@ -28,3 +28,32 @@ class PgAudioLogRepository(IAudioLogRepository):
         self.session.add(audio_log)
         await self.session.flush() # flush to get the ID
         return audio_log.id
+
+    async def get_logs(self, skip: int = 0, limit: int = 100) -> tuple[int, list]:
+        from sqlalchemy import select, func
+        total_result = await self.session.execute(select(func.count(AudioRequest.id)))
+        total = total_result.scalar_one_or_none() or 0
+        
+        result = await self.session.execute(
+            select(AudioRequest).order_by(AudioRequest.created_at.desc()).offset(skip).limit(limit)
+        )
+        logs = list(result.scalars().all())
+        return total, logs
+
+    async def get_stats(self) -> dict:
+        from sqlalchemy import select, func
+        
+        result = await self.session.execute(
+            select(
+                func.count(AudioRequest.id),
+                func.avg(AudioRequest.duration_seconds)
+            )
+        )
+        
+        count, avg_duration = result.first() or (0, 0)
+        return {
+            "completed": int(count or 0),
+            "avg_latency": float(avg_duration or 0) * 1000.0,
+            "total_latency": float(avg_duration or 0) * 1000.0 * int(count or 0),
+            "latency_count": int(count or 0)
+        }

@@ -39,7 +39,13 @@ def get_admin_knowledge_service(db: AsyncSession = Depends(get_db)) -> AdminKnow
     return AdminKnowledgeService(DocumentRepository(db))
 
 def get_admin_logs_service(db: AsyncSession = Depends(get_db)) -> AdminLogsService:
-    return AdminLogsService(PgLLMLogRepository(db))
+    from app.infrastructure.repositories.pg_audio_log_repository import PgAudioLogRepository
+    from app.infrastructure.repositories.pg_retrieval_log_repository import PgRetrievalLogRepository
+    return AdminLogsService(
+        PgLLMLogRepository(db),
+        PgAudioLogRepository(db),
+        PgRetrievalLogRepository(db)
+    )
 
 def get_admin_retrieval_service(db: AsyncSession = Depends(get_db)) -> AdminRetrievalService:
     from app.infrastructure.repositories.system_settings_repository import SystemSettingsRepository

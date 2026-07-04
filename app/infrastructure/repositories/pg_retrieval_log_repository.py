@@ -42,3 +42,33 @@ class PgRetrievalLogRepository(IRetrievalLogRepository):
             
         await self.session.commit()
         return log_entry.id
+
+    async def get_logs(self, skip: int = 0, limit: int = 100) -> tuple[int, list]:
+        from sqlalchemy import select, func
+        from sqlalchemy.orm import joinedload
+        total_result = await self.session.execute(select(func.count(RetrievalLog.id)))
+        total = total_result.scalar_one_or_none() or 0
+        
+        result = await self.session.execute(
+            select(RetrievalLog).options(joinedload(RetrievalLog.retrieved_documents)).order_by(RetrievalLog.created_at.desc()).offset(skip).limit(limit)
+        )
+        logs = list(result.unique().scalars().all())
+        return total, logs
+
+    async def get_stats(self) -> dict:
+        from sqlalchemy import select, func
+        
+        result = await self.session.execute(
+            select(
+                func.count(RetrievalLog.id),
+                func.avg(RetrievalLog.retrieval_latency_ms)
+            )
+        )
+        
+        count, avg_latency = result.first() or (0, 0)
+        return {
+            "completed": int(count or 0),
+            "avg_latency": float(avg_latency or 0),
+            "total_latency": float(avg_latency or 0) * int(count or 0),
+            "latency_count": int(count or 0)
+        }
