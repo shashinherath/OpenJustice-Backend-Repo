@@ -130,18 +130,29 @@ class AdminPlatformAnalyticsService:
         
         lang_map = {"en": "English", "si": "Sinhala", "ta": "Tamil"}
         
-        language_detection = []
+        aggregated_langs = {}
         for row in lang_data:
-            code = row.language or "en"
+            code = (row.language or "en").lower()
+            if code == "english":
+                code = "en"
+            elif code == "sinhala":
+                code = "si"
+            elif code == "tamil":
+                code = "ta"
+                
             name = lang_map.get(code, code.capitalize())
             count = row.count or 0
             if count > 0:
-                language_detection.append({
-                    "language": name,
-                    "confidence": "98.0%",
-                    "detectedRequests": f"{count:,}",
-                    "fallbackRate": "1.0%",
-                })
+                aggregated_langs[name] = aggregated_langs.get(name, 0) + count
+                
+        language_detection = []
+        for name, count in aggregated_langs.items():
+            language_detection.append({
+                "language": name,
+                "confidence": "98.0%",
+                "detectedRequests": f"{count:,}",
+                "fallbackRate": "1.0%",
+            })
                 
         if not language_detection:
             language_detection = [

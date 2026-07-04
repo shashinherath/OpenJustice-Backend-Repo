@@ -42,10 +42,12 @@ class WhatsAppService:
         
         repo_to_use = system_settings_repository or SystemSettingsRepository(db)
         
+        from app.infrastructure.repositories.pg_llm_log_repository import PgLLMLogRepository
         self.retrieval_service = RetrievalService(
             DocumentRepository(db), 
             log_repository=self.retrieval_log_repo,
-            system_settings_repository=repo_to_use
+            system_settings_repository=repo_to_use,
+            llm_log_repository=PgLLMLogRepository(db)
         )
 
     async def handle_incoming_message(self, from_number: str, body: str = None, media_url: str = None) -> None:

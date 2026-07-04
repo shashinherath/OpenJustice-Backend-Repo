@@ -192,10 +192,18 @@ class DailyCostPoint(BaseModel):
     openAi: float
     twilio: float
 
+class DailyModelCostPoint(BaseModel):
+    day: str
+    llm: float
+    embedding: float
+    stt: float
+    tts: float
+
 class AdminCostAnalyticsResponse(BaseModel):
     cost_drivers: List[CostDriver]
     twilio_items: List[TwilioItem]
     daily_costs: List[DailyCostPoint]
+    daily_model_costs: List[DailyModelCostPoint]
 
 class LanguageStat(BaseModel):
     code: str
@@ -372,10 +380,18 @@ class DailyCostPoint(BaseModel):
     openAi: float
     twilio: float
 
+class DailyModelCostPoint(BaseModel):
+    day: str
+    llm: float
+    embedding: float
+    stt: float
+    tts: float
+
 class AdminCostAnalyticsResponse(BaseModel):
     cost_drivers: List[CostDriver]
     twilio_items: List[TwilioItem]
     daily_costs: List[DailyCostPoint]
+    daily_model_costs: List[DailyModelCostPoint]
 
 class LanguageStat(BaseModel):
     code: str

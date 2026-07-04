@@ -66,7 +66,8 @@ class DatasetEvaluationService:
         self.sys_repo = SystemSettingsRepository(session)
         self.doc_repo = DocumentRepository(session)
         self.retrieval_log_repo = PgRetrievalLogRepository(session)
-        self.retrieval_service = RetrievalService(self.doc_repo, self.retrieval_log_repo, self.sys_repo)
+        from app.infrastructure.repositories.pg_llm_log_repository import PgLLMLogRepository
+        self.retrieval_service = RetrievalService(self.doc_repo, self.retrieval_log_repo, self.sys_repo, PgLLMLogRepository(session))
         self.openai_client = OpenAIClient(self.sys_repo)
         self.judge_service = LLMAsAJudgeService(self.openai_client)
 

@@ -141,7 +141,31 @@ class LLMService:
                             api_key=sys_settings.openai_api_key
                         )
                 
+                # Measure latency for embedding
+                emb_start = time.perf_counter()
                 query_embedding = await self.embeddings.aembed_query(query)
+                emb_latency = int((time.perf_counter() - emb_start) * 1000)
+                
+                # Log Embedding Telemetry
+                if self.llm_log_repository:
+                    try:
+                        emb_tokens = self._count_tokens(query)
+                        await self.llm_log_repository.log_request(
+                            user_id=user_id,
+                            model_name=self.embeddings.model,
+                            query=query,
+                            context="Semantic Cache Generation",
+                            prompt_version="v1",
+                            temperature=0.0,
+                            prompt_tokens=emb_tokens,
+                            completion_tokens=0,
+                            total_tokens=emb_tokens,
+                            latency_ms=emb_latency,
+                            status="success",
+                            error_message=None
+                        )
+                    except Exception as e:
+                        logger.error(f"Embedding telemetry failed: {e}")
                 cached_response = await self.semantic_cache.get_similar_response(
                     query_embedding, 
                     similarity_threshold=settings.CACHE_SIMILARITY_THRESHOLD
@@ -245,7 +269,31 @@ class LLMService:
         query_embedding = None
         if self.semantic_cache:
             try:
+                # Measure latency for embedding
+                emb_start = time.perf_counter()
                 query_embedding = await self.embeddings.aembed_query(query)
+                emb_latency = int((time.perf_counter() - emb_start) * 1000)
+                
+                # Log Embedding Telemetry
+                if self.llm_log_repository:
+                    try:
+                        emb_tokens = self._count_tokens(query)
+                        await self.llm_log_repository.log_request(
+                            user_id=user_id,
+                            model_name=self.embeddings.model,
+                            query=query,
+                            context="Semantic Cache Streaming",
+                            prompt_version="v1",
+                            temperature=0.0,
+                            prompt_tokens=emb_tokens,
+                            completion_tokens=0,
+                            total_tokens=emb_tokens,
+                            latency_ms=emb_latency,
+                            status="success",
+                            error_message=None
+                        )
+                    except Exception as e:
+                        logger.error(f"Embedding telemetry failed: {e}")
                 cached_response = await self.semantic_cache.get_similar_response(
                     query_embedding, 
                     similarity_threshold=settings.CACHE_SIMILARITY_THRESHOLD

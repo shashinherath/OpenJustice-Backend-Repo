@@ -114,7 +114,8 @@ async def websocket_chat_endpoint(
                 retrieval_service = RetrievalService(
                     doc_repo, 
                     log_repository=retrieval_log_repo,
-                    system_settings_repository=SystemSettingsRepository(db)
+                    system_settings_repository=SystemSettingsRepository(db),
+                    llm_log_repository=PgLLMLogRepository(db)
                 )
                 
                 semantic_cache = PgVectorSemanticCacheRepository(db)

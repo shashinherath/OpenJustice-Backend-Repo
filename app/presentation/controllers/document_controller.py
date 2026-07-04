@@ -28,8 +28,13 @@ def get_document_service(db: AsyncSession = Depends(get_db)) -> DocumentService:
 
 def get_rag_service(db: AsyncSession = Depends(get_db)) -> RAGService:
     from app.infrastructure.repositories.system_settings_repository import SystemSettingsRepository
+    from app.infrastructure.repositories.pg_llm_log_repository import PgLLMLogRepository
     repository = DocumentRepository(db)
-    return RAGService(repository=repository, system_settings_repository=SystemSettingsRepository(db))
+    return RAGService(
+        repository=repository, 
+        system_settings_repository=SystemSettingsRepository(db),
+        llm_log_repository=PgLLMLogRepository(db)
+    )
 
 @router.post(
     "/{document_id}/process",

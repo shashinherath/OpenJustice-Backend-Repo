@@ -1,6 +1,9 @@
 import logging
 from typing import List, Tuple
+import time
+import tiktoken
 from langchain_openai import OpenAIEmbeddings
+from app.domain.interfaces.llm_log_repository import ILLMLogRepository
 
 from app.config import settings
 from app.domain.interfaces.document_repository import IDocumentRepository
@@ -20,11 +23,13 @@ class RetrievalService:
         self, 
         repository: IDocumentRepository, 
         log_repository: IRetrievalLogRepository = None,
-        system_settings_repository: SystemSettingsRepository = None
+        system_settings_repository: SystemSettingsRepository = None,
+        llm_log_repository: ILLMLogRepository = None
     ):
         self.repository = repository
         self.log_repository = log_repository
         self.system_settings_repository = system_settings_repository
+        self.llm_log_repository = llm_log_repository
         
         # We still initialize a default embedding model here, but it will be overridden 
         # inside retrieve() if dynamic settings are fetched.
@@ -69,7 +74,30 @@ class RetrievalService:
         logger.info(f"Retrieving Top-K: {top_k}, Threshold: {sim_threshold}, Model: {embedding_model}")
 
         try:
+            emb_start = time.perf_counter()
             query_vector = await self.embeddings.aembed_query(query)
+            emb_latency = int((time.perf_counter() - emb_start) * 1000)
+            
+            if self.llm_log_repository:
+                try:
+                    encoding = tiktoken.encoding_for_model(embedding_model)
+                    tokens = len(encoding.encode(query))
+                    await self.llm_log_repository.log_request(
+                        user_id=None,
+                        model_name=embedding_model,
+                        query=query,
+                        context="RAG Retrieval",
+                        prompt_version="v1",
+                        temperature=0.0,
+                        prompt_tokens=tokens,
+                        completion_tokens=0,
+                        total_tokens=tokens,
+                        latency_ms=emb_latency,
+                        status="success",
+                        error_message=None
+                    )
+                except Exception as e:
+                    logger.error(f"Embedding telemetry failed: {e}")
             
             start_time = time.perf_counter()
             all_chunks = await self.repository.search_similar_chunks(
