@@ -93,6 +93,12 @@ class AdminTraceLog(BaseModel):
 class AdminLogListResponse(BaseModel):
     logs: List[AdminTraceLog]
     total: int
+    total_completed: int = 0
+    total_reviewed: int = 0
+    total_pending: int = 0
+    total_failed: int = 0
+    total_tokens: int = 0
+    avg_latency: int = 0
 
 class AdminLogStatusUpdate(BaseModel):
     status: str
@@ -281,6 +287,12 @@ class AdminTraceLog(BaseModel):
 class AdminLogListResponse(BaseModel):
     logs: List[AdminTraceLog]
     total: int
+    total_completed: int = 0
+    total_reviewed: int = 0
+    total_pending: int = 0
+    total_failed: int = 0
+    total_tokens: int = 0
+    avg_latency: int = 0
 
 class AdminLogStatusUpdate(BaseModel):
     status: str

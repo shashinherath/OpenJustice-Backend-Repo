@@ -45,6 +45,11 @@ class ILLMLogRepository(ABC):
         pass
 
     @abstractmethod
+    async def get_stats(self) -> dict:
+        """Returns total counts by status, sum of tokens, and avg latency."""
+        pass
+
+    @abstractmethod
     async def update_log_status(self, log_id: uuid.UUID, status: str) -> bool:
         """Updates the status of a specific log."""
         pass
