@@ -10,6 +10,7 @@ from app.presentation.controllers.websocket_controller import router as websocke
 
 from app.presentation.controllers.admin_controller import router as admin_router
 from app.presentation.controllers.library_controller import router as library_router
+from app.presentation.controllers.document_analyzer_controller import router as analyzer_router
 
 api_router = APIRouter(prefix="/api")
 api_router.include_router(auth_router)
@@ -19,3 +20,4 @@ api_router.include_router(document_router)
 api_router.include_router(websocket_router)
 api_router.include_router(admin_router)
 api_router.include_router(library_router)
+api_router.include_router(analyzer_router)

@@ -89,8 +89,14 @@ class LLMService:
         
         messages = [{"role": "system", "content": system_prompt}]
         
-        # 1. Fetch recent conversation history limit to last 6 messages to save context windows
-        history = await self.chat_service.get_messages(conversation_id, user_id, skip=0, limit=6)
+        # 1. Fetch conversation history. We fetch up to 1000 messages.
+        all_history = await self.chat_service.get_messages(conversation_id, user_id, skip=0, limit=1000)
+        
+        # Keep the first message (for document context/initial prompt) and the last 5 messages
+        if len(all_history) > 6:
+            history = [all_history[0]] + all_history[-5:]
+        else:
+            history = all_history
         
         for msg in sorted(history, key=lambda x: x.created_at):
             # Skip the specific query we are answering if it's already in history
