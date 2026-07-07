@@ -36,7 +36,6 @@ from app.infrastructure.repositories.document_repository import DocumentReposito
 from app.infrastructure.repositories.pgvector_semantic_cache_repository import PgVectorSemanticCacheRepository
 from app.infrastructure.repositories.pg_llm_log_repository import PgLLMLogRepository
 from app.infrastructure.repositories.pg_retrieval_log_repository import PgRetrievalLogRepository
-from app.infrastructure.repositories.pg_citation_repository import PgCitationRepository
 from app.infrastructure.repositories.system_settings_repository import SystemSettingsRepository
 
 # Services for AI Response
@@ -52,7 +51,6 @@ from app.infrastructure.repositories.document_repository import DocumentReposito
 from app.infrastructure.repositories.pgvector_semantic_cache_repository import PgVectorSemanticCacheRepository
 from app.infrastructure.repositories.pg_llm_log_repository import PgLLMLogRepository
 from app.infrastructure.repositories.pg_retrieval_log_repository import PgRetrievalLogRepository
-from app.infrastructure.repositories.pg_citation_repository import PgCitationRepository
 
 router = APIRouter(prefix="/chats", tags=["Chats"])
 
@@ -265,14 +263,12 @@ async def complete_message(
     
     semantic_cache = PgVectorSemanticCacheRepository(db)
     llm_log_repo = PgLLMLogRepository(db)
-    citation_repo = PgCitationRepository(db)
     
     llm_service = LLMService(
         service, 
         OpenAIClient(system_settings_repository=SystemSettingsRepository(db)), 
         semantic_cache=semantic_cache, 
         llm_log_repository=llm_log_repo,
-        citation_repository=citation_repo,
         system_settings_repository=SystemSettingsRepository(db)
     )
 
@@ -345,14 +341,12 @@ async def voice_message(
     # 4. Generate LLM Response
     semantic_cache = PgVectorSemanticCacheRepository(db)
     llm_log_repo = PgLLMLogRepository(db)
-    citation_repo = PgCitationRepository(db)
     
     llm_service = LLMService(
         service, 
         OpenAIClient(system_settings_repository=SystemSettingsRepository(db)), 
         semantic_cache=semantic_cache, 
         llm_log_repository=llm_log_repo,
-        citation_repository=citation_repo,
         system_settings_repository=SystemSettingsRepository(db)
     )
     

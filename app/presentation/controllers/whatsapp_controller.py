@@ -13,7 +13,6 @@ from app.infrastructure.external.openai_client import OpenAIClient
 from app.infrastructure.repositories.document_repository import DocumentRepository
 from app.infrastructure.repositories.pgvector_semantic_cache_repository import PgVectorSemanticCacheRepository
 from app.infrastructure.repositories.pg_llm_log_repository import PgLLMLogRepository
-from app.infrastructure.repositories.pg_citation_repository import PgCitationRepository
 from app.infrastructure.repositories.pg_audio_log_repository import PgAudioLogRepository
 from app.infrastructure.repositories.system_settings_repository import SystemSettingsRepository
 
@@ -30,14 +29,12 @@ def get_whatsapp_service(db: AsyncSession = Depends(get_db)) -> WhatsAppService:
     chat_svc = ChatService(db)
     semantic_cache = PgVectorSemanticCacheRepository(db)
     llm_log_repo = PgLLMLogRepository(db)
-    citation_repo = PgCitationRepository(db)
     
     llm_service = LLMService(
         chat_svc, 
         OpenAIClient(system_settings_repository=settings_repo), 
         semantic_cache=semantic_cache, 
         llm_log_repository=llm_log_repo,
-        citation_repository=citation_repo,
         system_settings_repository=settings_repo
     )
     audio_log_repo = PgAudioLogRepository(db)

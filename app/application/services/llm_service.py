@@ -18,7 +18,6 @@ from app.infrastructure.security.prompt_security import PromptSecurityValidator
 from app.application.prompts.multilingual import MultilingualPromptBuilder
 from app.domain.interfaces.semantic_cache_repository import ISemanticCacheRepository
 from app.domain.interfaces.llm_log_repository import ILLMLogRepository
-from app.domain.interfaces.citation_repository import ICitationRepository
 from app.infrastructure.repositories.system_settings_repository import SystemSettingsRepository
 from langchain_openai import OpenAIEmbeddings
 from app.config import settings
@@ -30,12 +29,11 @@ class LLMService:
 
     # Disclaimers are now natively handled by the MultilingualPromptBuilder.
 
-    def __init__(self, chat_service: ChatService, llm_client: ILLMClient, semantic_cache: ISemanticCacheRepository = None, llm_log_repository: ILLMLogRepository = None, citation_repository: ICitationRepository = None, system_settings_repository: SystemSettingsRepository = None):
+    def __init__(self, chat_service: ChatService, llm_client: ILLMClient, semantic_cache: ISemanticCacheRepository = None, llm_log_repository: ILLMLogRepository = None, system_settings_repository: SystemSettingsRepository = None):
         self.chat_service = chat_service
         self.llm_client = llm_client
         self.semantic_cache = semantic_cache
         self.llm_log_repository = llm_log_repository
-        self.citation_repository = citation_repository
         self.system_settings_repository = system_settings_repository
         self.embeddings = OpenAIEmbeddings(
             model=settings.OPENAI_EMBEDDING_MODEL, 

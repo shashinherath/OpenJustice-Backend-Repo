@@ -32,7 +32,6 @@ class Document(Base):
 
     # Relationships
     chunks: Mapped[list["DocumentChunk"]] = relationship("DocumentChunk", back_populates="document", cascade="all, delete-orphan")  # type: ignore[name-defined]
-    citations: Mapped[list["Citation"]] = relationship("Citation", back_populates="document")  # type: ignore[name-defined]
 
     def __repr__(self) -> str:
         return f"<Document id={self.id} title={self.title!r}>"
