@@ -8,7 +8,6 @@ class AdminMultilingualAnalyticsService:
 
     async def get_multilingual_analytics(self) -> AdminMultilingualAnalyticsResponse:
         from app.infrastructure.models.message import Message
-        from app.infrastructure.models.translation_log import TranslationLog
 
         session = getattr(self.chat_repo, 'db', None)
         if not session:
@@ -63,9 +62,7 @@ class AdminMultilingualAnalyticsService:
         languages.sort(key=lambda x: x.count, reverse=True)
 
         # 2. Translation Requests
-        trans_query = select(func.count(TranslationLog.id))
-        trans_res = await session.execute(trans_query)
-        translation_requests = trans_res.scalar() or 0
+        translation_requests = 0
 
         # If completely empty, provide fallback defaults based on typical data
         if not languages:

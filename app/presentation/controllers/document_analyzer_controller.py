@@ -15,7 +15,6 @@ from app.infrastructure.repositories.document_repository import DocumentReposito
 from app.infrastructure.repositories.pgvector_semantic_cache_repository import PgVectorSemanticCacheRepository
 from app.infrastructure.repositories.pg_llm_log_repository import PgLLMLogRepository
 from app.infrastructure.repositories.pg_retrieval_log_repository import PgRetrievalLogRepository
-from app.infrastructure.repositories.pg_citation_repository import PgCitationRepository
 from app.infrastructure.repositories.system_settings_repository import SystemSettingsRepository
 
 router = APIRouter(prefix="/analyzer", tags=["Analyzer"])
@@ -40,7 +39,6 @@ async def analyze_document(
     sys_settings_repo = SystemSettingsRepository(db)
     llm_log_repo = PgLLMLogRepository(db)
     semantic_cache = PgVectorSemanticCacheRepository(db)
-    citation_repo = PgCitationRepository(db)
     
     # Initialize services
     retrieval_service = RetrievalService(
@@ -55,7 +53,6 @@ async def analyze_document(
         OpenAIClient(system_settings_repository=sys_settings_repo), 
         semantic_cache=semantic_cache, 
         llm_log_repository=llm_log_repo,
-        citation_repository=citation_repo,
         system_settings_repository=sys_settings_repo
     )
     

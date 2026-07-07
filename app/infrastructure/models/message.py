@@ -32,7 +32,6 @@ class Message(Base):
 
     # Relationships
     conversation: Mapped[Optional["Conversation"]] = relationship("Conversation", back_populates="messages")  # type: ignore[name-defined]
-    citations: Mapped[list["Citation"]] = relationship("Citation", back_populates="message", cascade="all, delete-orphan")  # type: ignore[name-defined]
 
     def __repr__(self) -> str:
         return f"<Message id={self.id} sender={self.sender}>"

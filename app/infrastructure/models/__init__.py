@@ -25,15 +25,11 @@ from app.infrastructure.models.retrieval_evaluation import RetrievalEvaluation  
 from app.infrastructure.models.semantic_cache import SemanticCache  # noqa: F401
 from app.infrastructure.models.research import ResearchMetric, EvaluationDataset, ExperimentNote  # noqa: F401
 
-# Citations
-from app.infrastructure.models.citation import Citation  # noqa: F401
-
 # LLM Traceability
 from app.infrastructure.models.llm_request import LLMRequest  # noqa: F401
 from app.infrastructure.models.llm_response import LLMResponse  # noqa: F401
 
 # Multilingual Support
-from app.infrastructure.models.translation_log import TranslationLog  # noqa: F401
 
 # Audio Processing
 from app.infrastructure.models.audio_request import AudioRequest  # noqa: F401
