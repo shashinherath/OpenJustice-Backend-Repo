@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List
 from uuid import UUID
 
@@ -71,7 +71,7 @@ class WebSocketRateLimiter:
     async def is_allowed(self, user_id: UUID, max_messages_override: int = None) -> bool:
         """Check if user is allowed to send message"""
         async with self._lock:
-            now = datetime.utcnow()
+            now = datetime.now(timezone.utc)
             cutoff = now - timedelta(seconds=self.window_seconds)
 
             # Remove old timestamps

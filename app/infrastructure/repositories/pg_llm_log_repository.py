@@ -95,7 +95,7 @@ class PgLLMLogRepository(ILLMLogRepository):
             "pending": 0,
             "failed": 0,
             "total_tokens": 0,
-            "total_latency": 0,
+            "total_latency": 0.0,
             "latency_count": 0
         }
         
@@ -141,8 +141,8 @@ class PgLLMLogRepository(ILLMLogRepository):
 
     async def get_responses_today_count(self) -> int:
         from sqlalchemy import select, func, text
-        from datetime import datetime, timedelta
-        cutoff = datetime.utcnow() - timedelta(days=1)
+        from datetime import datetime, timedelta, timezone
+        cutoff = datetime.now(timezone.utc) - timedelta(days=1)
         result = await self.session.execute(
             select(func.count(LLMRequest.id)).where(LLMRequest.created_at >= cutoff)
         )

@@ -1,6 +1,6 @@
 import uuid
 from typing import Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.domain.interfaces.user_session_repository import IUserSessionRepository
 from app.infrastructure.models.user_session import UserSession
@@ -19,14 +19,14 @@ class PgUserSessionRepository(IUserSessionRepository):
         ip_address: str | None,
         user_agent: str | None
     ) -> uuid.UUID:
-        expires = datetime.utcnow() + timedelta(days=7) # 7 day session
+        expires = datetime.now(timezone.utc) + timedelta(days=7) # 7 day session
         session_record = UserSession(
             user_id=user_id,
             session_token=session_token,
             channel=channel,
             ip_address=ip_address,
             user_agent=user_agent,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
             expires_at=expires
         )
         self.session.add(session_record)

@@ -121,10 +121,10 @@ class AdminOverviewService:
         # Queries Per Day
         qpd_data = await self.chat_repo.get_queries_per_day(7)
         
-        from datetime import datetime, timedelta
+        from datetime import datetime, timedelta, timezone
         days_dict = {}
         for i in range(6, -1, -1):
-            d = datetime.utcnow() - timedelta(days=i)
+            d = datetime.now(timezone.utc) - timedelta(days=i)
             day_str = d.strftime("%a")
             days_dict[day_str] = 0
             
