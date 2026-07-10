@@ -1,6 +1,6 @@
 from sqlalchemy import Column, String, Float, Integer, DateTime
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.infrastructure.db.base import Base
 
@@ -12,7 +12,7 @@ class ResearchMetric(Base):
     value = Column(String(50), nullable=False)
     note = Column(String(255), nullable=True)
     trend = Column(String(20), nullable=False) # 'up', 'down', 'neutral'
-    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
 class EvaluationDataset(Base):
     __tablename__ = "evaluation_datasets"
@@ -24,7 +24,7 @@ class EvaluationDataset(Base):
     split = Column(String(50), nullable=False)
     last_run = Column(String(50), nullable=False)
     status = Column(String(50), nullable=False) # 'Ready', 'Running', 'Needs Refresh'
-    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
 class EvaluationDatasetItem(Base):
     __tablename__ = "evaluation_dataset_items"
@@ -35,7 +35,7 @@ class EvaluationDatasetItem(Base):
     ground_truth_answer = Column(String(5000), nullable=False)
     golden_context = Column(String(5000), nullable=True)
     metadata_json = Column(String(2000), nullable=True)
-    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
 class ExperimentNote(Base):
     __tablename__ = "experiment_notes"
@@ -43,4 +43,4 @@ class ExperimentNote(Base):
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     title = Column(String(200), nullable=False)
     description = Column(String(1000), nullable=False)
-    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))

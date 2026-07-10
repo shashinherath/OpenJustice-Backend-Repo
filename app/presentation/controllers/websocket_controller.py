@@ -1,6 +1,6 @@
 from uuid import UUID
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect, status
 from jose import JWTError, jwt
@@ -83,7 +83,7 @@ async def websocket_chat_endpoint(
                 "type": "connection_established",
                 "user_id": user_id,
                 "conversation_id": conversation_id,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
         )
 
@@ -144,7 +144,7 @@ async def websocket_chat_endpoint(
                             {
                                 "type": "chat_chunk",
                                 "chunk": chunk,
-                                "timestamp": datetime.utcnow().isoformat(),
+                                "timestamp": datetime.now(timezone.utc).isoformat(),
                             }
                         )
                     
@@ -153,7 +153,7 @@ async def websocket_chat_endpoint(
                         {
                             "type": "chat_completion",
                             "status": "complete",
-                            "timestamp": datetime.utcnow().isoformat(),
+                            "timestamp": datetime.now(timezone.utc).isoformat(),
                         }
                     )
                 except Exception as e:

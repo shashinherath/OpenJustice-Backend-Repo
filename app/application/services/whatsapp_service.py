@@ -156,9 +156,26 @@ class WhatsAppService:
                             provider="OpenAI TTS"
                         )
                     
-                    # Serve via the /temp static mount using PUBLIC_BASE_URL
-                    filename = out_audio_path.split("/")[-1].split("\\")[-1]
-                    public_media_url = f"{settings.PUBLIC_BASE_URL}/temp/{filename}"
+                    # Upload TTS audio to durable storage and give Twilio the public URL.
+                    # Azure configured → Blob Storage URL (persistent, public).
+                    # Local dev        → serve via /temp static mount using PUBLIC_BASE_URL.
+                    blob_handler = None
+                    if settings.AZURE_STORAGE_CONNECTION_STRING or settings.AZURE_STORAGE_ACCOUNT_NAME:
+                        from app.infrastructure.storage.azure_blob_storage import AzureBlobStorageHandler
+                        blob_handler = AzureBlobStorageHandler()
+
+                    if blob_handler:
+                        filename = out_audio_path.split("/")[-1].split("\\")[-1]
+                        with open(out_audio_path, "rb") as f:
+                            audio_bytes = f.read()
+                        public_media_url = await blob_handler.upload_file(
+                            file_stream=audio_bytes,
+                            file_name=filename,
+                            content_type="audio/ogg",
+                        )
+                    else:
+                        filename = out_audio_path.split("/")[-1].split("\\")[-1]
+                        public_media_url = f"{settings.PUBLIC_BASE_URL}/temp/{filename}"
                     
                     await self.whatsapp_client.send_message(
                         to=from_number,

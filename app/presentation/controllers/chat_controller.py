@@ -6,9 +6,8 @@ import os
 import shutil
 
 from fastapi import APIRouter, Depends, Request, status, File, UploadFile
+from fastapi.responses import RedirectResponse, StreamingResponse, FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from fastapi.responses import StreamingResponse, FileResponse
 
 from app.application.dtos.chat_dto import ConversationCreateDto, MessageCreateDto, ConversationUpdateDto
 from app.application.services.chat_service import ChatService
@@ -69,8 +68,33 @@ def get_current_user_id(request: Request) -> UUID:
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
 
 
-def _persist_audio_file(source_path: str, prefix: str) -> str:
-    """Copy an audio file into the persistent media directory and return its path."""
+def _get_blob_handler():
+    """Return AzureBlobStorageHandler if Azure is configured, else None."""
+    if settings.AZURE_STORAGE_CONNECTION_STRING or settings.AZURE_STORAGE_ACCOUNT_NAME:
+        from app.infrastructure.storage.azure_blob_storage import AzureBlobStorageHandler
+        return AzureBlobStorageHandler()
+    return None
+
+
+async def _persist_audio(source_path: str, prefix: str) -> str:
+    """
+    Persist an audio file to durable storage.
+
+    - Azure configured → uploads to Blob Storage, returns the public Blob URL.
+    - Local dev        → copies to media/audio/ on disk, returns the local path.
+    """
+    blob_handler = _get_blob_handler()
+    if blob_handler:
+        suffix = Path(source_path).suffix or ".ogg"
+        blob_name = f"{prefix}_{uuid.uuid4().hex}{suffix}"
+        with open(source_path, "rb") as f:
+            audio_bytes = f.read()
+        return await blob_handler.upload_file(
+            file_stream=audio_bytes,
+            file_name=blob_name,
+            content_type="audio/ogg",
+        )
+    # Fallback: local disk copy
     os.makedirs(settings.AUDIO_MEDIA_DIR, exist_ok=True)
     suffix = Path(source_path).suffix or ".ogg"
     target_path = Path(settings.AUDIO_MEDIA_DIR) / f"{prefix}_{uuid.uuid4().hex}{suffix}"
@@ -160,12 +184,17 @@ async def get_message_audio(
     if not message or message.message_type != "voice":
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Voice message not found")
 
-    if getattr(message, "audio_path", None) and os.path.exists(message.audio_path):
-        return FileResponse(
-            path=message.audio_path,
-            media_type="audio/ogg",
-            filename="voice-note.ogg",
-        )
+    if getattr(message, "audio_path", None):
+        # Blob URL → redirect the browser/client directly to Blob Storage
+        if message.audio_path.startswith("https://"):
+            return RedirectResponse(url=message.audio_path, status_code=302)
+        # Local disk path (development fallback)
+        if os.path.exists(message.audio_path):
+            return FileResponse(
+                path=message.audio_path,
+                media_type="audio/ogg",
+                filename="voice-note.ogg",
+            )
 
     from starlette.background import BackgroundTask
     tts_service = TextToSpeechService(system_settings_repository=SystemSettingsRepository(db))
@@ -301,7 +330,7 @@ async def voice_message(
     
     # 1. Save uploaded file
     in_audio_path = await TempFileManager.save_upload_file(file)
-    user_audio_path = _persist_audio_file(in_audio_path, "voice_user")
+    user_audio_path = await _persist_audio(in_audio_path, "voice_user")
     
     # We no longer need the temp input audio
     TempFileManager.delete_file_immediately(in_audio_path)
@@ -374,9 +403,9 @@ async def voice_message(
         duration_seconds=tts_latency,
         provider="OpenAI TTS"
     )
-    ai_audio_path = _persist_audio_file(out_audio_path, "voice_ai")
-    
-    # We no longer need the temp TTS output audio since it's persisted in media/audio
+    ai_audio_path = await _persist_audio(out_audio_path, "voice_ai")
+
+    # We no longer need the temp TTS output audio since it's persisted in durable storage
     TempFileManager.delete_file_immediately(out_audio_path)
 
     await service.add_message(
@@ -389,8 +418,10 @@ async def voice_message(
             audio_path=ai_audio_path,
         ),
     )
-    
-    # 6. Return audio natively
+
+    # 6. Return audio — redirect to Blob URL, or serve directly in local dev
+    if ai_audio_path.startswith("https://"):
+        return RedirectResponse(url=ai_audio_path, status_code=302)
     return FileResponse(
         path=ai_audio_path,
         media_type="audio/ogg",

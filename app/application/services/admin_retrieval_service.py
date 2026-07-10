@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from app.domain.interfaces.document_repository import IDocumentRepository
 from app.presentation.schemas.admin_schema import AdminRetrievalMonitoringResponse
 from app.infrastructure.repositories.system_settings_repository import SystemSettingsRepository
@@ -24,7 +24,7 @@ class AdminRetrievalService:
                 metrics=[], trend_points=[], health_targets={"latencyP95": "0ms", "citationMismatchRate": "0%", "topKHitConfidence": "N/A"}, retrieval_checks=[]
             )
 
-        seven_days_ago = datetime.utcnow() - timedelta(days=7)
+        seven_days_ago = datetime.now(timezone.utc) - timedelta(days=7)
 
         # Fetch the configured similarity threshold from system settings
         sim_threshold = 0.7
@@ -209,7 +209,7 @@ class AdminRetrievalService:
 
         day_sims = {}
         for i in range(6, -1, -1):
-            d = (datetime.utcnow() - timedelta(days=i)).date()
+            d = (datetime.now(timezone.utc) - timedelta(days=i)).date()
             day_sims[d] = 0.0 # true empty day filling
 
         for row in trend_data:

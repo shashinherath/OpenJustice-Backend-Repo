@@ -1,5 +1,6 @@
 """Application configuration settings."""
 from typing import Optional
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -10,6 +11,7 @@ class Settings(BaseSettings):
     APP_NAME: str = "OpenJustice Backend"
     APP_VERSION: str = "0.1.0"
     DEBUG: bool = False
+    ENVIRONMENT: str = "development"  # "development" | "production"
     
     # Database
     DATABASE_URL: str = "postgresql+asyncpg://user:password@localhost:5432/openjustice"
@@ -60,6 +62,13 @@ class Settings(BaseSettings):
     MINIO_SECRET_KEY: Optional[str] = None
     MINIO_BUCKET_NAME: str = "openjustice"
     MINIO_SECURE: bool = False
+
+    # Azure Blob Storage
+    # Use connection string OR (account name + managed identity).
+    # Set AZURE_STORAGE_CONNECTION_STRING in Azure Container App secrets.
+    AZURE_STORAGE_CONNECTION_STRING: Optional[str] = None
+    AZURE_STORAGE_ACCOUNT_NAME: Optional[str] = None
+    AZURE_STORAGE_CONTAINER_NAME: str = "openjustice"
     
     # WhatsApp (Twilio)
     TWILIO_ACCOUNT_SID: Optional[str] = None
@@ -91,6 +100,22 @@ class Settings(BaseSettings):
     VECTOR_SEARCH_TOP_K: int = 5
     CACHE_SIMILARITY_THRESHOLD: float = 0.95
     
+    @model_validator(mode="after")
+    def _validate_production_settings(self) -> "Settings":
+        """Refuse to start in production with unsafe default values."""
+        if self.ENVIRONMENT == "production":
+            if self.PUBLIC_BASE_URL == "http://localhost:8000":
+                raise ValueError(
+                    "PUBLIC_BASE_URL must be set to your Azure Container App URL in production. "
+                    "Set it via the Azure Container App environment variables."
+                )
+            if self.SECRET_KEY == "your-secret-key-change-this-in-production":
+                raise ValueError(
+                    "SECRET_KEY must be changed from the default value in production. "
+                    "Generate one with: openssl rand -hex 32"
+                )
+        return self
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

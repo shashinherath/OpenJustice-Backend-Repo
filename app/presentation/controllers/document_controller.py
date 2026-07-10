@@ -9,6 +9,7 @@ from app.application.services.rag_service import RAGService
 
 from app.application.dtos.document_dto import DocumentCreateDto
 from app.application.services.document_service import DocumentService
+from app.config import settings
 from app.infrastructure.db.base import get_db
 from app.infrastructure.repositories.document_repository import DocumentRepository
 from app.infrastructure.storage.local_storage import LocalStorageHandler
@@ -19,9 +20,17 @@ from app.presentation.schemas.response_schema import SuccessResponse
 router = APIRouter(prefix="/documents", tags=["Documents"])
 
 
+def _get_storage_handler():
+    """Return AzureBlobStorageHandler when Azure is configured, else LocalStorageHandler."""
+    if settings.AZURE_STORAGE_CONNECTION_STRING or settings.AZURE_STORAGE_ACCOUNT_NAME:
+        from app.infrastructure.storage.azure_blob_storage import AzureBlobStorageHandler
+        return AzureBlobStorageHandler()
+    return LocalStorageHandler(upload_dir="uploads")
+
+
 def get_document_service(db: AsyncSession = Depends(get_db)) -> DocumentService:
     repository = DocumentRepository(db)
-    storage = LocalStorageHandler(upload_dir="uploads")
+    storage = _get_storage_handler()
     return DocumentService(repository=repository, storage=storage)
 
 

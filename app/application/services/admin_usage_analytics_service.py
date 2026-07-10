@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from app.domain.interfaces.chat_repository import IChatRepository
 from app.domain.interfaces.user_repository import IUserRepository
 from app.presentation.schemas.admin_schema import AdminUsageAnalyticsResponse, UsageDailyStat
@@ -23,7 +23,7 @@ class AdminUsageAnalyticsService:
             )
 
         # 1. Queries per day for the last 7 days
-        seven_days_ago = datetime.utcnow() - timedelta(days=7)
+        seven_days_ago = datetime.now(timezone.utc) - timedelta(days=7)
         daily_query = select(
             cast(Message.created_at, Date).label("date"),
             func.count(Message.id).label("count")
@@ -50,7 +50,7 @@ class AdminUsageAnalyticsService:
 
         # Fill missing days with 0 to ensure we always return 7 days
         # We'll just generate the last 7 days and match them
-        last_7_days = [(datetime.utcnow() - timedelta(days=i)).date() for i in range(6, -1, -1)]
+        last_7_days = [(datetime.now(timezone.utc) - timedelta(days=i)).date() for i in range(6, -1, -1)]
         day_map = {row.date: row.count for row in daily_stats if row.date}
         
         filled_queries_per_day = []

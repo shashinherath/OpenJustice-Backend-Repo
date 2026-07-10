@@ -1,7 +1,7 @@
 """Service for running the AI Evaluation pipeline."""
 import logging
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import random
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -25,7 +25,7 @@ class AIEvaluationPipelineService:
             logger.info("Starting AI Evaluation Pipeline...")
             
             # Fetch models that have had requests in the last hour
-            time_threshold = datetime.utcnow() - timedelta(hours=1)
+            time_threshold = datetime.now(timezone.utc) - timedelta(hours=1)
             
             result = await self.session.execute(
                 select(

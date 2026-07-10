@@ -116,8 +116,8 @@ class ChatRepository(IChatRepository):
 
     async def get_queries_per_day(self, days: int = 7) -> list[dict]:
         from sqlalchemy import func, cast, Date
-        from datetime import datetime, timedelta
-        now = datetime.utcnow()
+        from datetime import datetime, timedelta, timezone
+        now = datetime.now(timezone.utc)
         cutoff = now - timedelta(days=days - 1)
         result = await self.db.execute(
             select(

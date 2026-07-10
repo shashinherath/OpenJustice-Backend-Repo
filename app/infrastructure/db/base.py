@@ -8,6 +8,9 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.orm import DeclarativeBase
 from app.config import settings
 
+# Enable SSL for Azure Database for PostgreSQL (Flexible Server requires it).
+# In local development (DEBUG=True) SSL is skipped to avoid cert issues.
+_connect_args = {"ssl": "require"} if not settings.DEBUG else {}
 
 # Create async engine
 engine = create_async_engine(
@@ -16,6 +19,11 @@ engine = create_async_engine(
     pool_size=settings.DB_POOL_SIZE,
     max_overflow=settings.DB_MAX_OVERFLOW,
     pool_pre_ping=True,
+    # Recycle connections every 30 min — prevents silent drops by Azure firewall
+    pool_recycle=1800,
+    # Fail fast if no connection is available rather than blocking indefinitely
+    pool_timeout=30,
+    connect_args=_connect_args,
 )
 
 # Create async session factory

@@ -1,7 +1,7 @@
 import logging
 import asyncio
 from typing import List, Tuple
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.infrastructure.repositories.research_repository import ResearchRepository
@@ -79,7 +79,7 @@ class DatasetEvaluationService:
             items = await self.research_repo.get_dataset_items(dataset_id)
             if not items:
                 logger.warning(f"No items found for dataset {dataset_id}")
-                await self.research_repo.update_dataset_status(dataset_id, "Ready", last_run=datetime.utcnow().strftime("%Y-%m-%d"))
+                await self.research_repo.update_dataset_status(dataset_id, "Ready", last_run=datetime.now(timezone.utc).strftime("%Y-%m-%d"))
                 return
             
             total_bleu = 0.0
@@ -133,7 +133,7 @@ class DatasetEvaluationService:
             for m in metrics:
                 await self.research_repo.add_metric(m)
                 
-            await self.research_repo.update_dataset_status(dataset_id, "Ready", last_run=datetime.utcnow().strftime("%Y-%m-%d"))
+            await self.research_repo.update_dataset_status(dataset_id, "Ready", last_run=datetime.now(timezone.utc).strftime("%Y-%m-%d"))
             logger.info(f"Finished evaluation for dataset {dataset_id}")
             
         except Exception as e:

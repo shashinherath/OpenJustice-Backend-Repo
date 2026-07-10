@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from app.domain.interfaces.chat_repository import IChatRepository
 from app.domain.interfaces.llm_log_repository import ILLMLogRepository
 from app.presentation.schemas.admin_schema import AdminCostAnalyticsResponse, CostDriver, TwilioItem, DailyCostPoint, DailyModelCostPoint
@@ -19,7 +19,7 @@ class AdminCostAnalyticsService:
         if not session:
             return AdminCostAnalyticsResponse(cost_drivers=[], twilio_items=[], daily_costs=[], daily_model_costs=[])
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         thirty_days_ago = now - timedelta(days=30)
         sixty_days_ago = now - timedelta(days=60)
 
