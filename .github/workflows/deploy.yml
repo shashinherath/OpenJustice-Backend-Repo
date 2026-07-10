@@ -9,9 +9,6 @@ permissions:
   contents: read
   packages: write
 
-env:
-  IMAGE_NAME: ghcr.io/${{ github.repository }}/openjustice-api
-
 jobs:
   deploy:
 
@@ -20,6 +17,12 @@ jobs:
     steps:
 
       - uses: actions/checkout@v4
+
+      - name: Set lowercase image name
+        id: image
+        run: |
+          REPO="${{ github.repository }}"
+          echo "name=ghcr.io/${REPO,,}/openjustice-api" >> $GITHUB_OUTPUT
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
@@ -31,13 +34,13 @@ jobs:
       - name: Build Docker Image
         run: |
           docker build \
-            -t $IMAGE_NAME:${{ github.sha }} \
-            -t $IMAGE_NAME:latest .
+            -t ${{ steps.image.outputs.name }}:${{ github.sha }} \
+            -t ${{ steps.image.outputs.name }}:latest .
 
       - name: Push Docker Image
         run: |
-          docker push $IMAGE_NAME:${{ github.sha }}
-          docker push $IMAGE_NAME:latest
+          docker push ${{ steps.image.outputs.name }}:${{ github.sha }}
+          docker push ${{ steps.image.outputs.name }}:latest
 
       - name: Login to Azure
         uses: azure/login@v2
@@ -47,6 +50,6 @@ jobs:
       - name: Deploy to Azure Container Apps
         uses: azure/container-apps-deploy-action@v2
         with:
-          imageToDeploy: ${{ env.IMAGE_NAME }}:${{ github.sha }}
+          imageToDeploy: ${{ steps.image.outputs.name }}:${{ github.sha }}
           containerAppName: openjustice-api
           resourceGroup: OpenJustice
