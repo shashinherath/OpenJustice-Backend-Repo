@@ -52,4 +52,5 @@ jobs:
         with:
           imageToDeploy: ${{ steps.image.outputs.name }}:${{ github.sha }}
           containerAppName: openjustice-api
-          resourceGroup: OpenJustice
+          resourceGroup: OpenJustice-RG
+          containerAppEnvironment: managedEnvironment-OpenJusticeRG-855d
