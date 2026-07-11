@@ -54,15 +54,24 @@ class AzureBlobStorageHandler(IStorageHandler):
         except Exception as exc:
             logger.warning(f"Could not verify blob container existence: {exc}")
 
-    async def upload_file(self, file_stream: bytes, file_name: str, content_type: str) -> str:
+    async def upload_file(
+        self,
+        file_stream: bytes,
+        file_name: str,
+        content_type: str,
+        folder: str = "",
+    ) -> str:
         """
         Upload bytes to Azure Blob Storage.
 
-        Returns the public blob URL (e.g. https://<account>.blob.core.windows.net/<container>/<blob>).
-        The blob name includes a UUID prefix to guarantee uniqueness.
+        Blobs are stored as "<folder>/<uuid><ext>" creating a virtual directory
+        structure visible in the Azure Portal and Storage Explorer.
+
+        Returns the public blob URL.
         """
         ext = Path(file_name).suffix or ""
-        blob_name = f"{uuid.uuid4().hex}{ext}"
+        unique_name = f"{uuid.uuid4().hex}{ext}"
+        blob_name = f"{folder.strip('/')}/{unique_name}" if folder else unique_name
 
         blob_client = self._client.get_blob_client(
             container=self.container_name,
