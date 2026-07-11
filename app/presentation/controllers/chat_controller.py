@@ -76,11 +76,11 @@ def _get_blob_handler():
     return None
 
 
-async def _persist_audio(source_path: str, prefix: str) -> str:
+async def _persist_audio(source_path: str, prefix: str, folder: str = "audio/media") -> str:
     """
     Persist an audio file to durable storage.
 
-    - Azure configured → uploads to Blob Storage, returns the public Blob URL.
+    - Azure configured → uploads to Blob Storage under <folder>/, returns the public Blob URL.
     - Local dev        → copies to media/audio/ on disk, returns the local path.
     """
     blob_handler = _get_blob_handler()
@@ -93,6 +93,7 @@ async def _persist_audio(source_path: str, prefix: str) -> str:
             file_stream=audio_bytes,
             file_name=blob_name,
             content_type="audio/ogg",
+            folder=folder,
         )
     # Fallback: local disk copy
     os.makedirs(settings.AUDIO_MEDIA_DIR, exist_ok=True)
@@ -330,7 +331,7 @@ async def voice_message(
     
     # 1. Save uploaded file
     in_audio_path = await TempFileManager.save_upload_file(file)
-    user_audio_path = await _persist_audio(in_audio_path, "voice_user")
+    user_audio_path = await _persist_audio(in_audio_path, "voice_user", folder="audio/media")
     
     # We no longer need the temp input audio
     TempFileManager.delete_file_immediately(in_audio_path)
@@ -403,7 +404,7 @@ async def voice_message(
         duration_seconds=tts_latency,
         provider="OpenAI TTS"
     )
-    ai_audio_path = await _persist_audio(out_audio_path, "voice_ai")
+    ai_audio_path = await _persist_audio(out_audio_path, "voice_ai", folder="audio/media")
 
     # We no longer need the temp TTS output audio since it's persisted in durable storage
     TempFileManager.delete_file_immediately(out_audio_path)

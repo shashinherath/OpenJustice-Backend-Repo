@@ -57,7 +57,8 @@ class DocumentService:
         storage_path = await self.storage.upload_file(
             file_stream=file_bytes,
             file_name=file.filename,
-            content_type=file.content_type or "application/octet-stream"
+            content_type=file.content_type or "application/octet-stream",
+            folder="documents",
         )
 
         # 4. Save metadata to DB

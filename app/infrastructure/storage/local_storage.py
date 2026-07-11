@@ -12,13 +12,20 @@ class LocalStorageHandler(IStorageHandler):
         self.upload_dir = Path(upload_dir)
         self.upload_dir.mkdir(parents=True, exist_ok=True)
 
-    async def upload_file(self, file_stream: bytes, file_name: str, content_type: str) -> str:
+    async def upload_file(
+        self,
+        file_stream: bytes,
+        file_name: str,
+        content_type: str,
+        folder: str = "",
+    ) -> str:
         unique_filename = f"{uuid.uuid4().hex}_{file_name}"
+        # In local dev the folder param is ignored; all files go under upload_dir.
         file_path = self.upload_dir / unique_filename
 
         async with aiofiles.open(file_path, 'wb') as out_file:
             await out_file.write(file_stream)
-            
+
         return str(file_path)
 
     async def delete_file(self, storage_path: str) -> bool:

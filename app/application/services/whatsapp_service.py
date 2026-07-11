@@ -172,6 +172,7 @@ class WhatsAppService:
                             file_stream=audio_bytes,
                             file_name=filename,
                             content_type="audio/ogg",
+                            folder="audio/whatsapp",
                         )
                     else:
                         filename = out_audio_path.split("/")[-1].split("\\")[-1]
