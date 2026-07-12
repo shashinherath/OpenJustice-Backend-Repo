@@ -168,12 +168,13 @@ class WhatsAppService:
                         filename = out_audio_path.split("/")[-1].split("\\")[-1]
                         with open(out_audio_path, "rb") as f:
                             audio_bytes = f.read()
-                        public_media_url = await blob_handler.upload_file(
+                        uploaded_url = await blob_handler.upload_file(
                             file_stream=audio_bytes,
                             file_name=filename,
                             content_type="audio/ogg",
                             folder="audio/whatsapp",
                         )
+                        public_media_url = await blob_handler.generate_sas_url(uploaded_url, expiry_minutes=60)
                     else:
                         filename = out_audio_path.split("/")[-1].split("\\")[-1]
                         public_media_url = f"{settings.PUBLIC_BASE_URL}/temp/{filename}"
