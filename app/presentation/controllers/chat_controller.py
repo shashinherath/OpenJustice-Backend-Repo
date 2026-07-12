@@ -337,7 +337,10 @@ async def voice_message(
     TempFileManager.delete_file_immediately(in_audio_path)
     
     # 2. Transcribe
-    stt_service = SpeechToTextService(system_settings_repository=SystemSettingsRepository(db))
+    stt_service = SpeechToTextService(
+        system_settings_repository=SystemSettingsRepository(db),
+        storage_handler=_get_blob_handler()
+    )
     
     start_time = time.perf_counter()
     query = await stt_service.transcribe_audio(user_audio_path)
