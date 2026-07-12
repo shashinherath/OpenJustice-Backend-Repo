@@ -117,3 +117,27 @@ class AzureBlobStorageHandler(IStorageHandler):
         except Exception as exc:
             logger.error(f"Failed to delete blob {blob_name}: {exc}")
             return False
+
+    async def download_file(self, storage_path: str, destination_path: str) -> bool:
+        """Download a blob given its full URL or blob name to a local path."""
+        import aiofiles
+        if storage_path.startswith("https://"):
+            blob_name = storage_path.split(f"/{self.container_name}/", 1)[-1]
+        else:
+            blob_name = storage_path
+
+        try:
+            blob_client = self._client.get_blob_client(
+                container=self.container_name,
+                blob=blob_name,
+            )
+            download_stream = blob_client.download_blob()
+            async with aiofiles.open(destination_path, 'wb') as dst:
+                await dst.write(download_stream.readall())
+            return True
+        except ResourceNotFoundError:
+            logger.warning(f"Blob not found for download: {blob_name}")
+            return False
+        except Exception as exc:
+            logger.error(f"Failed to download blob {blob_name}: {exc}")
+            return False

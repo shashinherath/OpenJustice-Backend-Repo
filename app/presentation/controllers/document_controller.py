@@ -39,10 +39,12 @@ def get_rag_service(db: AsyncSession = Depends(get_db)) -> RAGService:
     from app.infrastructure.repositories.system_settings_repository import SystemSettingsRepository
     from app.infrastructure.repositories.pg_llm_log_repository import PgLLMLogRepository
     repository = DocumentRepository(db)
+    storage = _get_storage_handler()
     return RAGService(
         repository=repository, 
         system_settings_repository=SystemSettingsRepository(db),
-        llm_log_repository=PgLLMLogRepository(db)
+        llm_log_repository=PgLLMLogRepository(db),
+        storage_handler=storage
     )
 
 @router.post(

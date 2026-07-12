@@ -34,3 +34,13 @@ class LocalStorageHandler(IStorageHandler):
             file_path.unlink()
             return True
         return False
+
+    async def download_file(self, storage_path: str, destination_path: str) -> bool:
+        source_path = Path(storage_path)
+        if source_path.exists():
+            async with aiofiles.open(source_path, 'rb') as src:
+                content = await src.read()
+                async with aiofiles.open(destination_path, 'wb') as dst:
+                    await dst.write(content)
+            return True
+        return False

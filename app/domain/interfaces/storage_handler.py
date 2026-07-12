@@ -28,3 +28,8 @@ class IStorageHandler(ABC):
     async def delete_file(self, storage_path: str) -> bool:
         """Delete a file from storage."""
         pass
+
+    @abstractmethod
+    async def download_file(self, storage_path: str, destination_path: str) -> bool:
+        """Download a file from storage to a local destination path."""
+        pass
