@@ -15,6 +15,7 @@ class LoginRequest(BaseModel):
     email: Optional[EmailStr] = None
     phone_number: Optional[str] = None
     password: str = Field(min_length=8, max_length=128)
+    recaptcha_token: Optional[str] = None
 
     model_config = ConfigDict(extra="forbid")
 
@@ -58,6 +59,7 @@ class RegisterRequest(BaseModel):
     phone_number: Optional[str] = None
     password: str = Field(min_length=8, max_length=128)
     preferred_language: str = Field(default="en", max_length=10)
+    recaptcha_token: Optional[str] = None
 
     model_config = ConfigDict(extra="forbid")
 

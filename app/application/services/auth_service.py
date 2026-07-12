@@ -13,6 +13,7 @@ from app.domain.interfaces.user_repository import IUserRepository
 from app.infrastructure.models.user import User
 from app.domain.interfaces.user_session_repository import IUserSessionRepository
 from app.domain.interfaces.audit_log_repository import IAuditLogRepository
+from app.domain.interfaces.recaptcha_verifier import IRecaptchaVerifier
 from app.infrastructure.repositories.system_settings_repository import SystemSettingsRepository
 from datetime import datetime, timezone, timedelta
 import uuid
@@ -29,6 +30,7 @@ class AuthService:
         user_session_repo: IUserSessionRepository = None,
         audit_log_repo: IAuditLogRepository = None,
         system_settings_repo: SystemSettingsRepository = None,
+        recaptcha_verifier: IRecaptchaVerifier = None,
     ) -> None:
         self.repository = repository
         self.password_hasher = password_hasher
@@ -36,9 +38,18 @@ class AuthService:
         self.user_session_repo = user_session_repo
         self.audit_log_repo = audit_log_repo
         self.system_settings_repo = system_settings_repo
+        self.recaptcha_verifier = recaptcha_verifier
 
     async def login(self, dto: LoginDto) -> LoginResultDto:
         """Authenticate a user and return a login result."""
+        if self.recaptcha_verifier:
+            is_human = await self.recaptcha_verifier.verify(
+                token=dto.recaptcha_token,
+                ip_address=dto.ip_address
+            )
+            if not is_human:
+                raise InvalidCredentialsError("Bot activity detected or invalid captcha.")
+
         user = None
         if dto.email:
             user = await self.repository.get_by_email(dto.email)
@@ -116,6 +127,14 @@ class AuthService:
 
     async def register(self, dto: RegisterDto) -> RegisterResultDto:
         """Register a new user and return a login result (auto-login)."""
+        if self.recaptcha_verifier:
+            is_human = await self.recaptcha_verifier.verify(
+                token=dto.recaptcha_token,
+                ip_address=dto.ip_address
+            )
+            if not is_human:
+                raise InvalidCredentialsError("Bot activity detected or invalid captcha.")
+
         # Check for existing user
         if dto.email:
             existing = await self.repository.get_by_email(dto.email)
