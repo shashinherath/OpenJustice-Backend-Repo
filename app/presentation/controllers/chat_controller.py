@@ -186,8 +186,12 @@ async def get_message_audio(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Voice message not found")
 
     if getattr(message, "audio_path", None):
-        # Blob URL → redirect the browser/client directly to Blob Storage
+        # Blob URL → redirect the browser/client directly to Blob Storage with SAS token
         if message.audio_path.startswith("https://"):
+            blob_handler = _get_blob_handler()
+            if blob_handler and hasattr(blob_handler, 'generate_sas_url'):
+                sas_url = await blob_handler.generate_sas_url(message.audio_path, expiry_minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+                return RedirectResponse(url=sas_url, status_code=302)
             return RedirectResponse(url=message.audio_path, status_code=302)
         # Local disk path (development fallback)
         if os.path.exists(message.audio_path):

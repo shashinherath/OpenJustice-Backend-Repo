@@ -55,6 +55,10 @@ class AuthMiddleware:
         if not token and settings.AUTH_COOKIE_NAME:
             token = request.cookies.get(settings.AUTH_COOKIE_NAME)
 
+        # Support token as a query parameter (e.g. for audio/document direct links)
+        if not token:
+            token = request.query_params.get("token")
+
         # Return 401 if no token found
         if not token:
             response = JSONResponse(
