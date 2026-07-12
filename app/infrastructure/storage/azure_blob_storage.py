@@ -2,8 +2,9 @@
 import logging
 import uuid
 from pathlib import Path
+from datetime import datetime, timedelta, timezone
 
-from azure.storage.blob import BlobServiceClient, ContentSettings
+from azure.storage.blob import BlobServiceClient, ContentSettings, generate_blob_sas, BlobSasPermissions
 from azure.core.exceptions import ResourceNotFoundError
 
 from app.config import settings
@@ -141,3 +142,40 @@ class AzureBlobStorageHandler(IStorageHandler):
         except Exception as exc:
             logger.error(f"Failed to download blob {blob_name}: {exc}")
             return False
+
+    async def generate_sas_url(self, storage_path: str, expiry_minutes: int = 60) -> str:
+        """Generate a short-lived SAS URL for a blob."""
+        if storage_path.startswith("https://"):
+            blob_name = storage_path.split(f"/{self.container_name}/", 1)[-1]
+        else:
+            blob_name = storage_path
+
+        expiry = datetime.now(timezone.utc) + timedelta(minutes=expiry_minutes)
+
+        if settings.AZURE_STORAGE_CONNECTION_STRING:
+            sas_token = generate_blob_sas(
+                account_name=self._client.account_name,
+                container_name=self.container_name,
+                blob_name=blob_name,
+                account_key=self._client.credential.account_key,
+                permission=BlobSasPermissions(read=True),
+                expiry=expiry,
+            )
+        elif settings.AZURE_STORAGE_ACCOUNT_NAME:
+            user_delegation_key = self._client.get_user_delegation_key(
+                key_start_time=datetime.now(timezone.utc) - timedelta(minutes=1),
+                key_expiry_time=expiry
+            )
+            sas_token = generate_blob_sas(
+                account_name=self._client.account_name,
+                container_name=self.container_name,
+                blob_name=blob_name,
+                user_delegation_key=user_delegation_key,
+                permission=BlobSasPermissions(read=True),
+                expiry=expiry,
+            )
+        else:
+            return storage_path
+            
+        base_url = f"https://{self._client.account_name}.blob.core.windows.net/{self.container_name}/{blob_name}"
+        return f"{base_url}?{sas_token}"

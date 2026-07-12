@@ -1,5 +1,6 @@
 from typing import List, Optional
 from uuid import UUID
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile, status, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -158,6 +159,39 @@ async def get_document(
     response_data = DocumentResponse.model_validate(result)
     
     return SuccessResponse(data=response_data, message="Document retrieved successfully")
+
+
+from fastapi.responses import RedirectResponse, FileResponse
+import os
+
+@router.get("/{document_id}/access")
+async def get_document_access(
+    document_id: UUID, 
+    service: DocumentService = Depends(get_document_service)
+):
+    """Get a secure URL to access the document (e.g., SAS token for Azure)."""
+    doc = await service.get_document(document_id)
+    if not doc.storage_path:
+        raise AppError("Document has no physical storage path", status_code=400, error_code="NO_STORAGE_PATH")
+
+    storage_handler = _get_storage_handler()
+    
+    if hasattr(storage_handler, 'generate_sas_url') and "azure_blob_storage" in str(type(storage_handler)):
+        # Generate SAS URL with same expiry as JWT token
+        sas_url = await storage_handler.generate_sas_url(doc.storage_path, expiry_minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        return RedirectResponse(url=sas_url, status_code=302)
+    elif "local_storage" in str(type(storage_handler)):
+        if os.path.exists(doc.storage_path):
+            return FileResponse(path=doc.storage_path, filename=os.path.basename(doc.storage_path))
+        
+        # Fallback if doc.storage_path is just a filename
+        upload_dir = Path("uploads")
+        if (upload_dir / doc.storage_path).exists():
+            return FileResponse(path=str(upload_dir / doc.storage_path), filename=doc.storage_path)
+
+    # Fallback to direct redirect (though if it's private, this will 404)
+    return RedirectResponse(url=doc.storage_path, status_code=302)
+
 
 
 @router.get(

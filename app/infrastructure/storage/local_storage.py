@@ -44,3 +44,7 @@ class LocalStorageHandler(IStorageHandler):
                     await dst.write(content)
             return True
         return False
+
+    async def generate_sas_url(self, storage_path: str, expiry_minutes: int = 60) -> str:
+        """For local storage, just return the relative path to be served statically."""
+        return f"/{Path(storage_path).as_posix()}"

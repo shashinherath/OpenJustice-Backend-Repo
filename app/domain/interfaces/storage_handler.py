@@ -33,3 +33,8 @@ class IStorageHandler(ABC):
     async def download_file(self, storage_path: str, destination_path: str) -> bool:
         """Download a file from storage to a local destination path."""
         pass
+
+    @abstractmethod
+    async def generate_sas_url(self, storage_path: str, expiry_minutes: int = 60) -> str:
+        """Generate a short-lived secure URL for the file."""
+        pass
