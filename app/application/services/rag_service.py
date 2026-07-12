@@ -18,10 +18,11 @@ logger = logging.getLogger(__name__)
 class RAGService:
     """Orchestrates LangChain text splitting and OpenAI Vector Embedding."""
 
-    def __init__(self, repository: IDocumentRepository, system_settings_repository: SystemSettingsRepository = None, llm_log_repository: ILLMLogRepository = None):
+    def __init__(self, repository: IDocumentRepository, system_settings_repository: SystemSettingsRepository | None = None, llm_log_repository: ILLMLogRepository | None = None, storage_handler=None):
         self.repository = repository
         self.system_settings_repository = system_settings_repository
         self.llm_log_repository = llm_log_repository
+        self.storage_handler = storage_handler
         
         # We still initialize a default embedding model here, but it will be overridden 
         # inside process_and_store_document() if dynamic settings are fetched.
@@ -60,16 +61,36 @@ class RAGService:
 
         # 1. Select the loader based on extension
         ext = storage_path.split('.')[-1].lower()
-        if ext == 'pdf':
-            loader = PyPDFLoader(storage_path)
-        elif ext == 'txt':
-            loader = TextLoader(storage_path, encoding="utf-8")
-        else:
-            logger.error(f"Unsupported extraction format for Document {document_id}")
-            return
         
+        local_file_path = storage_path
+        temp_file = None
         
         try:
+            import tempfile
+            import os
+            
+            # If storage_handler is provided, download to a temporary file
+            if self.storage_handler:
+                temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=f".{ext}")
+                local_file_path = temp_file.name
+                temp_file.close() # Close so loader can read it
+                download_success = await self.storage_handler.download_file(storage_path, local_file_path)
+                if not download_success:
+                    logger.error(f"Failed to download Document {document_id} for processing")
+                    if os.path.exists(local_file_path):
+                        os.unlink(local_file_path)
+                    return
+
+            if ext == 'pdf':
+                loader = PyPDFLoader(local_file_path)
+            elif ext == 'txt':
+                loader = TextLoader(local_file_path, encoding="utf-8")
+            else:
+                logger.error(f"Unsupported extraction format for Document {document_id}")
+                if temp_file and os.path.exists(local_file_path):
+                    os.unlink(local_file_path)
+                return
+            
             # 2. Extract Document (usually synchronous IO)
             docs = loader.load()
             
@@ -155,4 +176,10 @@ class RAGService:
         except Exception as e:
             await self.repository.update_status(document_id, "Failed")
             logger.error(f"Failed to process and embed document {document_id}: {str(e)}", exc_info=True)
+        finally:
+            if temp_file and 'os' in locals() and os.path.exists(local_file_path):
+                try:
+                    os.unlink(local_file_path)
+                except Exception as cleanup_err:
+                    logger.error(f"Failed to clean up temp file {local_file_path}: {cleanup_err}")
 
