@@ -14,6 +14,7 @@ from app.infrastructure.models.user import User
 from app.domain.interfaces.user_session_repository import IUserSessionRepository
 from app.domain.interfaces.audit_log_repository import IAuditLogRepository
 from app.domain.interfaces.recaptcha_verifier import IRecaptchaVerifier
+from app.domain.interfaces.email_client import IEmailClient
 from app.infrastructure.repositories.system_settings_repository import SystemSettingsRepository
 from datetime import datetime, timezone, timedelta
 import uuid
@@ -31,6 +32,7 @@ class AuthService:
         audit_log_repo: IAuditLogRepository = None,
         system_settings_repo: SystemSettingsRepository = None,
         recaptcha_verifier: IRecaptchaVerifier = None,
+        email_client: IEmailClient = None,
     ) -> None:
         self.repository = repository
         self.password_hasher = password_hasher
@@ -39,6 +41,7 @@ class AuthService:
         self.audit_log_repo = audit_log_repo
         self.system_settings_repo = system_settings_repo
         self.recaptcha_verifier = recaptcha_verifier
+        self.email_client = email_client
 
     async def login(self, dto: LoginDto) -> LoginResultDto:
         """Authenticate a user and return a login result."""
@@ -58,6 +61,9 @@ class AuthService:
 
         if not user or not user.hashed_password:
             raise InvalidCredentialsError()
+
+        if not user.is_email_verified:
+            raise InvalidCredentialsError("Please verify your email address before logging in.")
 
         # Check Lockout
         sys_settings = None
@@ -159,6 +165,15 @@ class AuthService:
         # Persist
         user = await self.repository.create(user)
         
+        if self.email_client and dto.email:
+            verification_token = str(uuid.uuid4())
+            user.email_verification_token = verification_token
+            user.email_verification_expires_at = datetime.now(timezone.utc) + timedelta(hours=24)
+            if hasattr(self.repository, 'db'):
+                await self.repository.db.commit()
+            
+            await self.email_client.send_verification_email(dto.email, verification_token)
+        
         if self.audit_log_repo:
             await self.audit_log_repo.log_action(
                 user_id=user.id,
@@ -173,6 +188,44 @@ class AuthService:
             role=user.role,
             preferred_language=user.preferred_language,
         )
+
+    async def verify_email(self, dto: 'VerifyEmailDto') -> bool:
+        """Verify user's email using a token."""
+        user = await self.repository.get_by_verification_token(dto.token)
+        if not user:
+            raise ValueError("Invalid verification token.")
+        
+        now = datetime.now(timezone.utc)
+        if user.email_verification_expires_at and user.email_verification_expires_at < now:
+            raise ValueError("Verification token has expired.")
+            
+        user.is_email_verified = True
+        user.email_verification_token = None
+        user.email_verification_expires_at = None
+        if hasattr(self.repository, 'db'):
+            await self.repository.db.commit()
+            
+        return True
+
+    async def resend_verification_email(self, dto: 'ResendVerificationDto') -> bool:
+        """Resend the email verification link."""
+        user = await self.repository.get_by_email(dto.email)
+        if not user:
+            return True # Pretend it succeeded to prevent email enumeration
+            
+        if user.is_email_verified:
+            raise ValueError("Email is already verified.")
+            
+        if self.email_client:
+            verification_token = str(uuid.uuid4())
+            user.email_verification_token = verification_token
+            user.email_verification_expires_at = datetime.now(timezone.utc) + timedelta(hours=24)
+            if hasattr(self.repository, 'db'):
+                await self.repository.db.commit()
+                
+            return await self.email_client.send_verification_email(user.email, verification_token)
+        
+        return False
 
     async def logout(self, dto: LogoutDto) -> None:
         """Log out a user and clean up session data."""
