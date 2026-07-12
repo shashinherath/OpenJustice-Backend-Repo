@@ -28,6 +28,8 @@ class Settings(BaseSettings):
     AUTH_COOKIE_NAME: str = "access_token"
     AUTH_COOKIE_SAMESITE: str = "strict"
     AUTH_COOKIE_SECURE: Optional[bool] = None
+    RECAPTCHA_SECRET_KEY: Optional[str] = None
+    RECAPTCHA_SITE_KEY: Optional[str] = None
     
     # OpenAI
     OPENAI_API_KEY: str

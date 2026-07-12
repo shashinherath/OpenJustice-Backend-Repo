@@ -19,6 +19,7 @@ from app.infrastructure.security.password_hasher import BcryptPasswordHasher
 from app.infrastructure.repositories.pg_user_session_repository import PgUserSessionRepository
 from app.infrastructure.repositories.pg_audit_log_repository import PgAuditLogRepository
 from app.infrastructure.repositories.system_settings_repository import SystemSettingsRepository
+from app.infrastructure.security.recaptcha_verifier import GoogleRecaptchaVerifier
 from app.presentation.schemas.auth_schema import (
     LoginRequest,
     LoginResponseData,
@@ -56,6 +57,7 @@ async def login(
         user_session_repo=PgUserSessionRepository(db),
         audit_log_repo=PgAuditLogRepository(db),
         system_settings_repo=SystemSettingsRepository(db),
+        recaptcha_verifier=GoogleRecaptchaVerifier(secret_key=settings.RECAPTCHA_SECRET_KEY) if settings.RECAPTCHA_SECRET_KEY else None,
     )
 
     result = await auth_service.login(
@@ -66,6 +68,7 @@ async def login(
             ip_address=request.client.host if request.client else None,
             user_agent=request.headers.get("user-agent"),
             channel="web",
+            recaptcha_token=payload.recaptcha_token,
         )
     )
 
@@ -108,6 +111,7 @@ async def login(
 )
 async def register(
     payload: RegisterRequest,
+    request: Request,
     response: Response,
     db: AsyncSession = Depends(get_db),
 ) -> SuccessResponse[RegisterResponseData]:
@@ -117,6 +121,7 @@ async def register(
         password_hasher=BcryptPasswordHasher(),
         token_issuer=jwt_handler,
         audit_log_repo=PgAuditLogRepository(db),
+        recaptcha_verifier=GoogleRecaptchaVerifier(secret_key=settings.RECAPTCHA_SECRET_KEY) if settings.RECAPTCHA_SECRET_KEY else None,
     )
     result = await service.register(
         RegisterDto(
@@ -126,6 +131,8 @@ async def register(
             phone_number=payload.phone_number,
             password=payload.password,
             preferred_language=payload.preferred_language,
+            recaptcha_token=payload.recaptcha_token,
+            ip_address=request.client.host if request.client else None,
         )
     )
 

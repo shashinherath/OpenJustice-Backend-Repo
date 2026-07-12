@@ -12,6 +12,7 @@ class LoginDto:
     ip_address: Optional[str] = None
     user_agent: Optional[str] = None
     channel: str = "web"
+    recaptcha_token: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -32,6 +33,8 @@ class RegisterDto:
     phone_number: Optional[str]
     password: str
     preferred_language: str = "en"
+    recaptcha_token: Optional[str] = None
+    ip_address: Optional[str] = None
 
 
 @dataclass(frozen=True)
