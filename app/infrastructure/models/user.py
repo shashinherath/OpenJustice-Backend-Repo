@@ -39,6 +39,15 @@ class User(Base):
     is_active: Mapped[bool] = mapped_column(
         nullable=False, default=True
     )
+    is_email_verified: Mapped[bool] = mapped_column(
+        nullable=False, default=False
+    )
+    email_verification_token: Mapped[Optional[str]] = mapped_column(
+        String(255), nullable=True
+    )
+    email_verification_expires_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     failed_login_attempts: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0
     )

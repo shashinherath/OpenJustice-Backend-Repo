@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, Response, Request, status, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 
-from app.application.dtos.auth_dto import LoginDto, RegisterDto, LogoutDto
+from app.application.dtos.auth_dto import LoginDto, RegisterDto, LogoutDto, VerifyEmailDto, ResendVerificationDto
 from app.application.dtos.user_dto import (
     GetProfileDto,
     UpdateProfileDto,
@@ -25,6 +25,8 @@ from app.presentation.schemas.auth_schema import (
     LoginResponseData,
     RegisterRequest,
     RegisterResponseData,
+    VerifyEmailRequest,
+    ResendVerificationRequest,
 )
 from app.presentation.schemas.user_schema import (
     UserProfileResponse,
@@ -32,7 +34,8 @@ from app.presentation.schemas.user_schema import (
     ChangePasswordRequest,
 )
 from app.presentation.schemas.response_schema import SuccessResponse
-from app.domain.exceptions import InvalidCredentialsError
+from app.domain.exceptions import InvalidCredentialsError, UserAlreadyExistsError
+from app.infrastructure.external.azure_email_client import AzureEmailClient
 
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -115,13 +118,14 @@ async def register(
     response: Response,
     db: AsyncSession = Depends(get_db),
 ) -> SuccessResponse[RegisterResponseData]:
-    """Register a new user and set an access token cookie."""
+    """Register a new user (requires email verification)."""
     service = AuthService(
         repository=UserRepository(db),
         password_hasher=BcryptPasswordHasher(),
         token_issuer=jwt_handler,
         audit_log_repo=PgAuditLogRepository(db),
         recaptcha_verifier=GoogleRecaptchaVerifier(secret_key=settings.RECAPTCHA_SECRET_KEY) if settings.RECAPTCHA_SECRET_KEY else None,
+        email_client=AzureEmailClient(),
     )
     result = await service.register(
         RegisterDto(
@@ -144,7 +148,56 @@ async def register(
         preferred_language=result.preferred_language,
     )
 
-    return SuccessResponse(data=data, message="Registration successful")
+    return SuccessResponse(data=data, message="Registration successful. Please check your email to verify your account.")
+
+
+@router.post(
+    "/verify-email",
+    response_model=SuccessResponse[dict],
+    status_code=status.HTTP_200_OK,
+)
+async def verify_email(
+    payload: VerifyEmailRequest,
+    db: AsyncSession = Depends(get_db),
+) -> SuccessResponse[dict]:
+    """Verify user's email."""
+    service = AuthService(
+        repository=UserRepository(db),
+        password_hasher=BcryptPasswordHasher(),
+        token_issuer=jwt_handler,
+    )
+    
+    try:
+        await service.verify_email(VerifyEmailDto(token=payload.token))
+        return SuccessResponse(data={}, message="Email verified successfully")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post(
+    "/resend-verification",
+    response_model=SuccessResponse[dict],
+    status_code=status.HTTP_200_OK,
+)
+async def resend_verification(
+    payload: ResendVerificationRequest,
+    db: AsyncSession = Depends(get_db),
+) -> SuccessResponse[dict]:
+    """Resend email verification link."""
+    service = AuthService(
+        repository=UserRepository(db),
+        password_hasher=BcryptPasswordHasher(),
+        token_issuer=jwt_handler,
+        email_client=AzureEmailClient(),
+    )
+    
+    try:
+        await service.resend_verification_email(ResendVerificationDto(email=payload.email))
+        # Always return success to prevent email enumeration
+        return SuccessResponse(data={}, message="If your email is registered, a verification link has been sent.")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 
 
 @router.post(

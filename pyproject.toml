@@ -46,6 +46,7 @@ dependencies = [
     "python-docx>=1.2.0",
     # Structured logging for Azure Monitor / Log Analytics
     "python-json-logger>=2.0.0",
+    "azure-communication-email>=1.1.0",
 ]
 
 [project.optional-dependencies]

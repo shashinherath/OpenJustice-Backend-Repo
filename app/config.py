@@ -72,6 +72,10 @@ class Settings(BaseSettings):
     AZURE_STORAGE_ACCOUNT_NAME: Optional[str] = None
     AZURE_STORAGE_CONTAINER_NAME: str = "openjustice"
     
+    # Azure Communication Services
+    AZURE_COMMUNICATION_CONNECTION_STRING: Optional[str] = None
+    AZURE_SENDER_EMAIL: Optional[str] = None
+    
     # WhatsApp (Twilio)
     TWILIO_ACCOUNT_SID: Optional[str] = None
     TWILIO_AUTH_TOKEN: Optional[str] = None

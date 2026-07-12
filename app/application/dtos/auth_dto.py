@@ -52,3 +52,13 @@ class LogoutDto:
     ip_address: Optional[str] = None
     user_agent: Optional[str] = None
     channel: str = "web"
+
+
+@dataclass(frozen=True)
+class VerifyEmailDto:
+    token: str
+
+
+@dataclass(frozen=True)
+class ResendVerificationDto:
+    email: str

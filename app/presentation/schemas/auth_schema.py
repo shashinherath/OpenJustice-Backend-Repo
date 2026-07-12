@@ -91,3 +91,15 @@ class RegisterResponseData(BaseModel):
     preferred_language: str
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class VerifyEmailRequest(BaseModel):
+    """Verify email request payload."""
+
+    token: str
+
+
+class ResendVerificationRequest(BaseModel):
+    """Resend verification request payload."""
+
+    email: EmailStr

@@ -22,6 +22,10 @@ class IUserRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    async def get_by_verification_token(self, token: str) -> Optional[User]:
+        raise NotImplementedError
+
+    @abstractmethod
     async def create(self, user: User) -> User:
         raise NotImplementedError
 

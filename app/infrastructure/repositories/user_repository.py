@@ -29,6 +29,10 @@ class UserRepository(IUserRepository):
         result = await self.db.execute(select(User).where(User.id == user_uuid))
         return result.scalars().first()
 
+    async def get_by_verification_token(self, token: str) -> Optional[User]:
+        result = await self.db.execute(select(User).where(User.email_verification_token == token))
+        return result.scalars().first()
+
     async def create(self, user: User) -> User:
         self.db.add(user)
         await self.db.commit()
