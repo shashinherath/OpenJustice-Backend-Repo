@@ -16,6 +16,8 @@ PUBLIC_PATHS = [
     "/redoc",
     "/api/auth/login",
     "/api/auth/register",
+    "/api/auth/verify-email",
+    "/api/auth/resend-verification",
     "/api/whatsapp/webhook",
     "/media",
     "/temp",
