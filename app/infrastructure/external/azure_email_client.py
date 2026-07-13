@@ -34,7 +34,7 @@ class AzureEmailClient(IEmailClient):
             logger.info(f"SIMULATED EMAIL TO {to_email}: Verification Token is {token}")
             return True
 
-        verification_url = f"{settings.PUBLIC_BASE_URL}/verify-email?token={token}"
+        verification_url = f"{settings.FRONTEND_BASE_URL}/verify-email?token={token}"
         
         message = {
             "senderAddress": self.sender_email,

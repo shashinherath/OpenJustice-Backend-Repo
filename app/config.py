@@ -84,6 +84,9 @@ class Settings(BaseSettings):
     # Public URL (your ngrok / production domain — Twilio needs this to fetch audio files)
     PUBLIC_BASE_URL: str = "http://localhost:8000"
     
+    # Frontend URL (for email links, etc)
+    FRONTEND_BASE_URL: str = "http://localhost:5173"
+    
     # WhatsApp (Meta Cloud API)
     META_WHATSAPP_TOKEN: Optional[str] = None
     META_WHATSAPP_PHONE_NUMBER_ID: Optional[str] = None
