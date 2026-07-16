@@ -10,6 +10,7 @@ from app.domain.interfaces.user_repository import IUserRepository
 from app.domain.interfaces.storage_handler import IStorageHandler
 from app.presentation.schemas.user_schema import UserProfileResponse
 from pathlib import Path
+from typing import Optional
 
 
 class UserService:
@@ -19,15 +20,21 @@ class UserService:
         self,
         repository: IUserRepository,
         password_hasher: PasswordHasher,
+        storage_handler: Optional[IStorageHandler] = None,
     ) -> None:
         self.repository = repository
         self.password_hasher = password_hasher
+        self.storage_handler = storage_handler
 
     async def get_profile(self, dto: GetProfileDto) -> UserProfileResponse:
         """Retrieve user profile."""
         user = await self.repository.get_by_uuid(dto.user_id)
         if not user:
             raise ValueError(f"User with ID {dto.user_id} not found")
+
+        avatar_url = user.avatar_url
+        if avatar_url and avatar_url.startswith("https://") and self.storage_handler and hasattr(self.storage_handler, 'generate_sas_url'):
+            avatar_url = await self.storage_handler.generate_sas_url(avatar_url, expiry_minutes=60)
 
         return UserProfileResponse(
             uuid=user.id,
@@ -36,7 +43,7 @@ class UserService:
             email=user.email,
             role=user.role,
             preferred_language=user.preferred_language,
-            avatar_url=user.avatar_url,
+            avatar_url=avatar_url,
         )
 
     async def update_profile(self, dto: UpdateProfileDto) -> UserProfileResponse:
@@ -53,6 +60,10 @@ class UserService:
         if not updated_user:
             raise ValueError(f"User with ID {dto.user_id} not found")
 
+        avatar_url = updated_user.avatar_url
+        if avatar_url and avatar_url.startswith("https://") and self.storage_handler and hasattr(self.storage_handler, 'generate_sas_url'):
+            avatar_url = await self.storage_handler.generate_sas_url(avatar_url, expiry_minutes=60)
+
         return UserProfileResponse(
             uuid=updated_user.id,
             first_name=updated_user.first_name,
@@ -60,7 +71,7 @@ class UserService:
             email=updated_user.email,
             role=updated_user.role,
             preferred_language=updated_user.preferred_language,
-            avatar_url=updated_user.avatar_url,
+            avatar_url=avatar_url,
         )
 
     async def change_password(self, dto: ChangePasswordDto) -> None:
@@ -115,6 +126,10 @@ class UserService:
         if not updated_user:
             raise ValueError(f"User with ID {user_id} not found")
 
+        avatar_url = updated_user.avatar_url
+        if avatar_url and avatar_url.startswith("https://") and hasattr(storage_handler, 'generate_sas_url'):
+            avatar_url = await storage_handler.generate_sas_url(avatar_url, expiry_minutes=60)
+
         return UserProfileResponse(
             uuid=updated_user.id,
             first_name=updated_user.first_name,
@@ -122,5 +137,5 @@ class UserService:
             email=updated_user.email,
             role=updated_user.role,
             preferred_language=updated_user.preferred_language,
-            avatar_url=updated_user.avatar_url,
+            avatar_url=avatar_url,
         )

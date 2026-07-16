@@ -279,6 +279,7 @@ async def get_current_user_profile(
     service = UserService(
         repository=UserRepository(db),
         password_hasher=BcryptPasswordHasher(),
+        storage_handler=_get_storage_handler(),
     )
 
     try:
@@ -308,6 +309,7 @@ async def update_current_user_profile(
     service = UserService(
         repository=UserRepository(db),
         password_hasher=BcryptPasswordHasher(),
+        storage_handler=_get_storage_handler(),
     )
 
     try:
@@ -348,6 +350,7 @@ async def upload_current_user_avatar(
     service = UserService(
         repository=UserRepository(db),
         password_hasher=BcryptPasswordHasher(),
+        storage_handler=_get_storage_handler(),
     )
     
     storage_handler = _get_storage_handler()
@@ -389,6 +392,7 @@ async def change_user_password(
     service = UserService(
         repository=UserRepository(db),
         password_hasher=BcryptPasswordHasher(),
+        storage_handler=_get_storage_handler(),
     )
 
     try:
