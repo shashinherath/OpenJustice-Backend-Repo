@@ -55,6 +55,7 @@ class AdminUserItem(BaseModel):
     role: str
     status: str
     createdDate: str
+    avatar_url: Optional[str] = None
 
 class AdminUserListResponse(BaseModel):
     users: List[AdminUserItem]

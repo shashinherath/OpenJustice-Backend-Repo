@@ -1,5 +1,5 @@
 """Authentication API controller."""
-from fastapi import APIRouter, Depends, Response, Request, status, HTTPException
+from fastapi import APIRouter, Depends, Response, Request, status, HTTPException, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 
@@ -39,6 +39,13 @@ from app.infrastructure.external.azure_email_client import AzureEmailClient
 
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+def _get_storage_handler():
+    if settings.AZURE_STORAGE_CONNECTION_STRING or settings.AZURE_STORAGE_ACCOUNT_NAME:
+        from app.infrastructure.storage.azure_blob_storage import AzureBlobStorageHandler
+        return AzureBlobStorageHandler()
+    from app.infrastructure.storage.local_storage import LocalStorageHandler
+    return LocalStorageHandler(upload_dir="uploads")
 
 
 @router.post(
@@ -319,6 +326,47 @@ async def update_current_user_profile(
         )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.post(
+    "/users/me/avatar",
+    response_model=SuccessResponse[UserProfileResponse],
+    status_code=status.HTTP_200_OK,
+)
+async def upload_current_user_avatar(
+    request: Request,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+) -> SuccessResponse[UserProfileResponse]:
+    """Upload current authenticated user's avatar."""
+    user_data = getattr(request.state, "user", None)
+    if not user_data or "sub" not in user_data:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    user_id = UUID(user_data["sub"])
+
+    service = UserService(
+        repository=UserRepository(db),
+        password_hasher=BcryptPasswordHasher(),
+    )
+    
+    storage_handler = _get_storage_handler()
+
+    try:
+        content = await file.read()
+        updated_profile = await service.upload_avatar(
+            user_id=user_id,
+            file_stream=content,
+            file_name=file.filename,
+            content_type=file.content_type,
+            storage_handler=storage_handler,
+        )
+        return SuccessResponse(
+            data=updated_profile, message="Avatar uploaded successfully"
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 
 
 @router.post(
