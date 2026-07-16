@@ -49,7 +49,8 @@ class AdminUsersService:
             "phone_number": user.phone_number,
             "role": user.role,
             "status": "Active" if user.is_active else "Blocked",
-            "createdDate": user.created_at.strftime("%Y-%m-%d") if user.created_at else ""
+            "createdDate": user.created_at.strftime("%Y-%m-%d") if user.created_at else "",
+            "avatar_url": user.avatar_url
         }
 
     async def get_users(self, skip: int = 0, limit: int = 100, search_query: str = None, role: str = None, status: str = None) -> dict:
@@ -72,7 +73,8 @@ class AdminUsersService:
                 "phone_number": user.phone_number,
                 "role": user.role,
                 "status": "Active" if user.is_active else "Blocked",
-                "createdDate": user.created_at.strftime("%Y-%m-%d") if user.created_at else ""
+                "createdDate": user.created_at.strftime("%Y-%m-%d") if user.created_at else "",
+                "avatar_url": user.avatar_url
             })
 
         return {
@@ -104,5 +106,6 @@ class AdminUsersService:
             "phone_number": updated_user.phone_number,
             "role": updated_user.role,
             "status": "Active" if updated_user.is_active else "Blocked",
-            "createdDate": updated_user.created_at.strftime("%Y-%m-%d") if updated_user.created_at else ""
+            "createdDate": updated_user.created_at.strftime("%Y-%m-%d") if updated_user.created_at else "",
+            "avatar_url": updated_user.avatar_url
         }
