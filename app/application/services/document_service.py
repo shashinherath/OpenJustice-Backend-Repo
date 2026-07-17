@@ -32,38 +32,32 @@ class DocumentService:
             created_at=doc.created_at,
         )
 
-    async def ingest_document(
-        self, file: UploadFile, dto: DocumentCreateDto
+    async def ingest_document_from_bytes(
+        self, file_bytes: bytes, filename: str, content_type: str, dto: DocumentCreateDto
     ) -> DocumentResultDto:
-        """Validate, store physically, and record document metadata."""
+        """Validate, store physically, and record document metadata from raw bytes."""
         # 1. Validation
-        if not file.filename:
+        if not filename:
             raise AppError("Missing filename", status_code=400, error_code="MISSING_FILENAME")
             
-        ext = file.filename.split('.')[-1].lower()
+        ext = filename.split('.')[-1].lower()
         if ext not in settings.ALLOWED_DOCUMENT_FORMATS:
             raise AppError(f"Unsupported file format: {ext}. Allowed: {settings.ALLOWED_DOCUMENT_FORMATS}", status_code=400, error_code="UNSUPPORTED_FORMAT")
 
-        # Optional: In a highly robust environment, we'd check byte size, 
-        # but FastAPI limits can also be handled natively via middlewares.
-
-        # 2. Extract bytes
-        file_bytes = await file.read()
-        
         if len(file_bytes) > settings.MAX_UPLOAD_SIZE:
             raise AppError(f"File size exceeds limit of {settings.MAX_UPLOAD_SIZE} bytes", status_code=413, error_code="FILE_TOO_LARGE")
 
-        # 3. Store the file physically
+        # 2. Store the file physically
         storage_path = await self.storage.upload_file(
             file_stream=file_bytes,
-            file_name=file.filename,
-            content_type=file.content_type or "application/octet-stream",
+            file_name=filename,
+            content_type=content_type or "application/octet-stream",
             folder="documents",
         )
 
-        # 4. Save metadata to DB
+        # 3. Save metadata to DB
         doc_model = Document(
-            title=dto.title or file.filename,
+            title=dto.title or filename,
             document_type=dto.document_type,
             language=dto.language or "en",
             storage_path=storage_path,
@@ -74,6 +68,18 @@ class DocumentService:
         doc_saved = await self.repository.create(doc_model)
 
         return self._map_to_dto(doc_saved)
+
+    async def ingest_document(
+        self, file: UploadFile, dto: DocumentCreateDto
+    ) -> DocumentResultDto:
+        """Validate, store physically, and record document metadata from an UploadFile."""
+        file_bytes = await file.read()
+        return await self.ingest_document_from_bytes(
+            file_bytes=file_bytes,
+            filename=file.filename or "unknown",
+            content_type=file.content_type or "application/octet-stream",
+            dto=dto
+        )
 
     async def list_documents(
         self,

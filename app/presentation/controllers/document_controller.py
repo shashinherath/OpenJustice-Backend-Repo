@@ -1,5 +1,7 @@
 from typing import List, Optional
-from uuid import UUID
+import uuid
+import os
+import shutil
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile, status, BackgroundTasks
@@ -54,7 +56,7 @@ def get_rag_service(db: AsyncSession = Depends(get_db)) -> RAGService:
     status_code=status.HTTP_202_ACCEPTED
 )
 async def process_document(
-    document_id: UUID,
+    document_id: uuid.UUID,
     background_tasks: BackgroundTasks,
     doc_service: DocumentService = Depends(get_document_service),
     rag_service: RAGService = Depends(get_rag_service)
@@ -114,6 +116,98 @@ async def upload_document(
     return SuccessResponse(data=response_data, message="Document uploaded successfully")
 
 
+@router.post(
+    "/chunked/initialize",
+    response_model=SuccessResponse[dict],
+    status_code=status.HTTP_201_CREATED,
+)
+async def initialize_chunked_upload():
+    """Initialize a chunked upload and return an upload ID."""
+    upload_id = uuid.uuid4().hex
+    temp_dir = Path("uploads") / f"temp_{upload_id}"
+    temp_dir.mkdir(parents=True, exist_ok=True)
+    return SuccessResponse(data={"upload_id": upload_id}, message="Chunked upload initialized")
+
+
+@router.post(
+    "/chunked/upload",
+    response_model=SuccessResponse[dict],
+    status_code=status.HTTP_200_OK,
+)
+async def upload_chunk(
+    upload_id: str = Form(...),
+    chunk_index: int = Form(...),
+    file: UploadFile = File(...)
+):
+    """Upload a single chunk of a file."""
+    temp_dir = Path("uploads") / f"temp_{upload_id}"
+    if not temp_dir.exists():
+        raise AppError("Upload session not found", status_code=404, error_code="UPLOAD_NOT_FOUND")
+
+    chunk_path = temp_dir / f"chunk_{chunk_index}"
+    chunk_data = await file.read()
+    with open(chunk_path, "wb") as f:
+        f.write(chunk_data)
+
+    return SuccessResponse(data={"chunk_index": chunk_index}, message="Chunk uploaded successfully")
+
+
+@router.post(
+    "/chunked/complete",
+    response_model=SuccessResponse[DocumentResponse],
+    status_code=status.HTTP_201_CREATED,
+)
+async def complete_chunked_upload(
+    upload_id: str = Form(...),
+    filename: str = Form(...),
+    total_chunks: int = Form(...),
+    title: Optional[str] = Form(None),
+    document_type: Optional[str] = Form(None),
+    language: Optional[str] = Form(None),
+    published_year: Optional[int] = Form(None),
+    collection_id: Optional[str] = Form(None),
+    service: DocumentService = Depends(get_document_service),
+):
+    """Complete a chunked upload, merge chunks, and process the file."""
+    temp_dir = Path("uploads") / f"temp_{upload_id}"
+    if not temp_dir.exists():
+        raise AppError("Upload session not found", status_code=404, error_code="UPLOAD_NOT_FOUND")
+
+    # Verify all chunks are present
+    merged_bytes = bytearray()
+    for i in range(total_chunks):
+        chunk_path = temp_dir / f"chunk_{i}"
+        if not chunk_path.exists():
+            shutil.rmtree(temp_dir, ignore_errors=True)
+            raise AppError(f"Missing chunk {i}", status_code=400, error_code="MISSING_CHUNK")
+        
+        with open(chunk_path, "rb") as f:
+            merged_bytes.extend(f.read())
+
+    # Cleanup temp directory
+    shutil.rmtree(temp_dir, ignore_errors=True)
+
+    dto = DocumentCreateDto(
+        title=title,
+        document_type=document_type,
+        language=language,
+        published_year=published_year,
+        collection_id=collection_id,
+    )
+
+    # Ingest document from the merged bytes
+    result = await service.ingest_document_from_bytes(
+        file_bytes=bytes(merged_bytes),
+        filename=filename,
+        content_type="application/pdf",  # We can infer this or pass from frontend
+        dto=dto
+    )
+    
+    response_data = DocumentResponse.model_validate(result)
+    
+    return SuccessResponse(data=response_data, message="Chunked upload completed successfully")
+
+
 @router.get(
     "",
     response_model=SuccessResponse[List[DocumentResponse]],
@@ -151,7 +245,7 @@ async def get_document_stats(
     response_model=SuccessResponse[DocumentResponse],
 )
 async def get_document(
-    document_id: UUID, 
+    document_id: uuid.UUID, 
     service: DocumentService = Depends(get_document_service)
 ):
     """Retrieve a specific document's metadata."""
@@ -162,11 +256,10 @@ async def get_document(
 
 
 from fastapi.responses import RedirectResponse, FileResponse
-import os
 
 @router.get("/{document_id}/access")
 async def get_document_access(
-    document_id: UUID, 
+    document_id: uuid.UUID, 
     service: DocumentService = Depends(get_document_service)
 ):
     """Get a secure URL to access the document (e.g., SAS token for Azure)."""
@@ -199,7 +292,7 @@ async def get_document_access(
     response_model=SuccessResponse[List[DocumentChunkResponse]],
 )
 async def get_document_chunks(
-    document_id: UUID,
+    document_id: uuid.UUID,
     service: DocumentService = Depends(get_document_service)
 ):
     """Retrieve all chunks for a specific document."""
@@ -213,7 +306,7 @@ async def get_document_chunks(
     status_code=status.HTTP_200_OK,
 )
 async def delete_document(
-    document_id: UUID, 
+    document_id: uuid.UUID, 
     service: DocumentService = Depends(get_document_service)
 ):
     """Remove a document physically and from the database."""
