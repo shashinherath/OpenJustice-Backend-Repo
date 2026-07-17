@@ -34,7 +34,13 @@ def get_admin_overview_service(db: AsyncSession = Depends(get_db)) -> AdminOverv
 
 def get_admin_users_service(db: AsyncSession = Depends(get_db)) -> AdminUsersService:
     from app.infrastructure.security.password_hasher import BcryptPasswordHasher
-    return AdminUsersService(UserRepository(db), password_hasher=BcryptPasswordHasher(), audit_log_repo=PgAuditLogRepository(db))
+    from app.presentation.controllers.auth_controller import _get_storage_handler
+    return AdminUsersService(
+        UserRepository(db),
+        password_hasher=BcryptPasswordHasher(),
+        audit_log_repo=PgAuditLogRepository(db),
+        storage_handler=_get_storage_handler()
+    )
 
 def get_admin_knowledge_service(db: AsyncSession = Depends(get_db)) -> AdminKnowledgeService:
     return AdminKnowledgeService(DocumentRepository(db))

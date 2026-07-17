@@ -1,14 +1,22 @@
 from app.domain.interfaces.user_repository import IUserRepository
 from app.domain.interfaces.audit_log_repository import IAuditLogRepository
 from app.domain.interfaces.password_hasher import PasswordHasher
+from app.domain.interfaces.storage_handler import IStorageHandler
 from app.infrastructure.models.user import User
 from app.domain.exceptions import UserAlreadyExistsError
+from typing import Optional
 
 class AdminUsersService:
-    def __init__(self, user_repo: IUserRepository, password_hasher: PasswordHasher = None, audit_log_repo: IAuditLogRepository = None):
+    def __init__(self, user_repo: IUserRepository, password_hasher: PasswordHasher = None, audit_log_repo: IAuditLogRepository = None, storage_handler: Optional[IStorageHandler] = None):
         self.user_repo = user_repo
         self.password_hasher = password_hasher
         self.audit_log_repo = audit_log_repo
+        self.storage_handler = storage_handler
+
+    async def _get_sas_avatar_url(self, avatar_url: str) -> str:
+        if avatar_url and avatar_url.startswith("https://") and self.storage_handler and hasattr(self.storage_handler, 'generate_sas_url'):
+            return await self.storage_handler.generate_sas_url(avatar_url, expiry_minutes=60)
+        return avatar_url
 
     async def create_admin_user(self, first_name: str, last_name: str, phone_number: str, email: str, password: str, current_user_id: str = None) -> dict:
         if not self.password_hasher:
@@ -41,6 +49,8 @@ class AdminUsersService:
                 metadata={"email": email}
             )
 
+        avatar_url = await self._get_sas_avatar_url(user.avatar_url)
+
         return {
             "id": str(user.id),
             "first_name": user.first_name,
@@ -50,7 +60,7 @@ class AdminUsersService:
             "role": user.role,
             "status": "Active" if user.is_active else "Blocked",
             "createdDate": user.created_at.strftime("%Y-%m-%d") if user.created_at else "",
-            "avatar_url": user.avatar_url
+            "avatar_url": avatar_url
         }
 
     async def get_users(self, skip: int = 0, limit: int = 100, search_query: str = None, role: str = None, status: str = None) -> dict:
@@ -65,6 +75,8 @@ class AdminUsersService:
             else:
                 total_blocked += 1
 
+            avatar_url = await self._get_sas_avatar_url(user.avatar_url)
+
             user_items.append({
                 "id": str(user.id),
                 "first_name": user.first_name,
@@ -74,7 +86,7 @@ class AdminUsersService:
                 "role": user.role,
                 "status": "Active" if user.is_active else "Blocked",
                 "createdDate": user.created_at.strftime("%Y-%m-%d") if user.created_at else "",
-                "avatar_url": user.avatar_url
+                "avatar_url": avatar_url
             })
 
         return {
@@ -98,6 +110,8 @@ class AdminUsersService:
                 metadata={"is_active": is_active, "target_email": updated_user.email}
             )
             
+        avatar_url = await self._get_sas_avatar_url(updated_user.avatar_url)
+
         return {
             "id": str(updated_user.id),
             "first_name": updated_user.first_name,
@@ -107,5 +121,5 @@ class AdminUsersService:
             "role": updated_user.role,
             "status": "Active" if updated_user.is_active else "Blocked",
             "createdDate": updated_user.created_at.strftime("%Y-%m-%d") if updated_user.created_at else "",
-            "avatar_url": updated_user.avatar_url
+            "avatar_url": avatar_url
         }
