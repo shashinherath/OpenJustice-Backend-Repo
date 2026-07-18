@@ -130,6 +130,9 @@ class LLMService:
         
         detected_lang = LanguageDetectionService.detect_language(query)
         
+        # Fetch history before saving the new message to get pure context
+        all_history = await self.chat_service.get_messages(conversation_id, user_id, skip=0, limit=1000)
+        
         # Save User Message First
         user_msg = MessageCreateDto(
             sender="user",
@@ -139,6 +142,13 @@ class LLMService:
             language=detected_lang,
         )
         await self.chat_service.add_message(conversation_id, user_id, user_msg)
+        
+        # Build contextual cache query
+        cache_query = query
+        sorted_history = sorted(all_history, key=lambda x: x.created_at)
+        if sorted_history:
+            recent_context = " | ".join([f"{msg.sender}: {msg.content}" for msg in sorted_history[-2:]])
+            cache_query = f"Context: {recent_context} | Query: {query}"
         
         # Check Semantic Cache
         query_embedding = None
@@ -155,13 +165,13 @@ class LLMService:
                 
                 # Measure latency for embedding
                 emb_start = time.perf_counter()
-                query_embedding = await self.embeddings.aembed_query(query)
+                query_embedding = await self.embeddings.aembed_query(cache_query)
                 emb_latency = int((time.perf_counter() - emb_start) * 1000)
                 
                 # Log Embedding Telemetry
                 if self.llm_log_repository:
                     try:
-                        emb_tokens = self._count_tokens(query)
+                        emb_tokens = self._count_tokens(cache_query)
                         await self.llm_log_repository.log_request(
                             user_id=user_id,
                             model_name=self.embeddings.model,
@@ -266,7 +276,7 @@ class LLMService:
         # Save to Semantic Cache
         if self.semantic_cache and query_embedding:
             try:
-                await self.semantic_cache.set_response(query, query_embedding, response)
+                await self.semantic_cache.set_response(cache_query, query_embedding, response)
             except Exception as e:
                 logger.error(f"Semantic Cache save failed: {e}", exc_info=True)
         
@@ -281,9 +291,19 @@ class LLMService:
         
         detected_lang = LanguageDetectionService.detect_language(query)
         
+        # Fetch history before saving the new message to get pure context
+        all_history = await self.chat_service.get_messages(conversation_id, user_id, skip=0, limit=1000)
+        
         # Save User Message First
         user_msg = MessageCreateDto(sender="user", content=query, message_type=message_type, language=detected_lang)
         await self.chat_service.add_message(conversation_id, user_id, user_msg)
+        
+        # Build contextual cache query
+        cache_query = query
+        sorted_history = sorted(all_history, key=lambda x: x.created_at)
+        if sorted_history:
+            recent_context = " | ".join([f"{msg.sender}: {msg.content}" for msg in sorted_history[-2:]])
+            cache_query = f"Context: {recent_context} | Query: {query}"
         
         # Check Semantic Cache
         query_embedding = None
@@ -291,13 +311,13 @@ class LLMService:
             try:
                 # Measure latency for embedding
                 emb_start = time.perf_counter()
-                query_embedding = await self.embeddings.aembed_query(query)
+                query_embedding = await self.embeddings.aembed_query(cache_query)
                 emb_latency = int((time.perf_counter() - emb_start) * 1000)
                 
                 # Log Embedding Telemetry
                 if self.llm_log_repository:
                     try:
-                        emb_tokens = self._count_tokens(query)
+                        emb_tokens = self._count_tokens(cache_query)
                         await self.llm_log_repository.log_request(
                             user_id=user_id,
                             model_name=self.embeddings.model,
@@ -411,6 +431,6 @@ class LLMService:
                 # Save to Semantic Cache
                 if self.semantic_cache and query_embedding:
                     try:
-                        await self.semantic_cache.set_response(query, query_embedding, full_response)
+                        await self.semantic_cache.set_response(cache_query, query_embedding, full_response)
                     except Exception as e:
                         logger.error(f"Semantic Cache save failed: {e}", exc_info=True)
