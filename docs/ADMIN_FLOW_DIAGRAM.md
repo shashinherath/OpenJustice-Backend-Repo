@@ -171,6 +171,29 @@ flowchart TD
 
 ---
 
+## ⚠️ System Error Monitoring Flow
+
+Monitor system-wide exceptions, unhandled errors, and API integration failures.
+
+```mermaid
+flowchart TD
+    A["Admin navigates to /admin/error-monitoring"] --> B["GET /api/admin/system-errors"]
+    B --> C["AdminErrorMonitoringService.get_system_errors()"]
+    C --> D["PgSystemErrorRepository — query system_errors"]
+    D --> E["Aggregate error data"]
+
+    E --> F["Total unhandled exceptions"]
+    E --> G["Errors by category & severity"]
+    E --> H["Recent system failures"]
+
+    F & G & H --> I["Render error monitoring dashboard"]
+
+    style A fill:#1a1a2e,color:#e0e0ff
+    style I fill:#0f3460,color:#e0e0ff
+```
+
+---
+
 ## 📊 Analytics Flow
 
 The analytics section provides multiple views into platform performance, usage, costs, and research metrics.
@@ -237,6 +260,8 @@ flowchart TD
     F --> J["/admin/settings/security — Security config"]
     F --> K["/admin/settings/privacy — Privacy settings"]
     F --> L["/admin/settings/integration — Integration config"]
+    F --> M["AdminSystemSettingsService — Update configuration"]
+    M --> N["SystemSettingsRepository — Persist in DB"]
 
     style A fill:#1a1a2e,color:#e0e0ff
     style E fill:#0f3460,color:#e0e0ff
@@ -301,6 +326,8 @@ flowchart TD
 | `/api/admin/analytics/retrieval-evaluation` | GET | `AdminRetrievalEvaluationService` | RAG evaluation |
 | `/api/admin/analytics/ai-evaluation` | GET | `AdminAIEvaluationService` | AI quality metrics |
 | `/api/admin/analytics/research-metrics` | GET | `AdminResearchService` | Research metrics |
+| `/api/admin/system-errors` | GET | `AdminErrorMonitoringService` | System error logs |
+| `/api/admin/system-settings` | GET, PATCH | `AdminSystemSettingsService` | System configuration |
 
 ---
 

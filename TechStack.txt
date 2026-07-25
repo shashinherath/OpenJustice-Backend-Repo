@@ -14,7 +14,7 @@ Used to reduce hallucinations & ensure legally grounded answers.
 • Vector Store: PostgreSQL + pgvector extension
 • Chunking: LangChain RecursiveCharacterTextSplitter
 • Search: Cosine similarity using pgvector
-• Document Storage: Local filesystem (with AWS S3 / MinIO optional)
+• Document Storage: Local filesystem (with Azure Blob Storage)
 ________________________________________
 
 🔉 3. Speech & Voice Interface
@@ -62,7 +62,7 @@ ________________________________________
 • Vector Extension: pgvector
 • ORM: SQLAlchemy 2+ (async via asyncpg)
 • Migrations: Alembic (async-aware)
-• Object Storage: Local filesystem (with AWS S3 / MinIO optional)
+• Object Storage: Local filesystem (with Azure Blob Storage)
 ________________________________________
 
 🔐 8. Security Stack
