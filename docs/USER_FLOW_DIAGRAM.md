@@ -16,7 +16,9 @@ flowchart TD
     D --> E["POST /api/auth/register"]
     E --> F["AuthService.register()"]
     F --> G["Create User + Hash Password"]
-    G --> H["Generate JWT Token"]
+    G --> G1["Send Verification Email (AzureEmailClient)"]
+    G1 --> G2["User clicks link → VerifyEmailPage"]
+    G2 --> H["Generate JWT Token"]
     H --> I["Set httpOnly Cookie"]
     I --> J["Redirect to /chat"]
 
@@ -244,6 +246,9 @@ flowchart TD
     MAIN --> WA["WhatsApp Message"]
     MAIN --> TOPICS["Browse Topics /topics"]
     MAIN --> RESEARCH["Research /research"]
+    MAIN --> LIBRARY["Legal Library /library"]
+    MAIN --> LAWYERS["Lawyer Directory /lawyers"]
+    MAIN --> ANALYZER["Document Analyzer /analyzer"]
 
     WEB --> TEXT["Type question"]
     WEB --> VOICE["Record voice note"]
