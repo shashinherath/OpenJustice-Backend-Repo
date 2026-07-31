@@ -97,6 +97,8 @@ class DatasetEvaluationService:
                 prompt = f"Answer the query based on context.\nQuery: {item.query}\nContext: {retrieved_context}"
                 messages = [{"role": "user", "content": prompt}]
                 response_text = await self.openai_client.generate_response(messages)
+                if not response_text or response_text.startswith("I'm currently unable to connect"):
+                    raise RuntimeError("OpenAI API unavailable during evaluation — check API key and quota.")
                 
                 # 3. Evaluate Metrics
                 total_bleu += compute_lightweight_bleu(item.ground_truth_answer, response_text)
@@ -123,7 +125,7 @@ class DatasetEvaluationService:
                 
             metrics = [
                 generate_metric("Faithfulness", avg_faithfulness, "Groundedness against retrieved context"),
-                generate_metric("Context Precision", avg_relevance, "Relevant chunks among retrieved context"),
+                generate_metric("Answer Relevance", avg_relevance, "Relevance of response to the query"),
                 generate_metric("RAGAS Score", ragas_score, "Composite retrieval-generation score"),
                 generate_metric("Context Recall", avg_context_recall, "Coverage of required evidence"),
                 generate_metric("BLEU", avg_bleu, "n-gram overlap with references"),

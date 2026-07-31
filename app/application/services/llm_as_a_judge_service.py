@@ -32,12 +32,12 @@ class LLMAsAJudgeService:
         ]
 
         try:
-            score_text = await self.llm_client.generate_response(messages)
+            score_text = await self.llm_client.generate_response(messages, temperature=0.0)
             score = float(score_text.strip())
             return min(max(score, 0.0), 1.0)
         except Exception as e:
             logger.error(f"Failed to evaluate faithfulness: {e}")
-            return 0.85  # Fallback
+            return 0.0
 
     async def evaluate_answer_relevance(self, query: str, response: str) -> float:
         """Evaluates how relevant the response is to the user's query."""
@@ -59,9 +59,9 @@ class LLMAsAJudgeService:
         ]
 
         try:
-            score_text = await self.llm_client.generate_response(messages)
+            score_text = await self.llm_client.generate_response(messages, temperature=0.0)
             score = float(score_text.strip())
             return min(max(score, 0.0), 1.0)
         except Exception as e:
             logger.error(f"Failed to evaluate answer relevance: {e}")
-            return 0.85  # Fallback
+            return 0.0
