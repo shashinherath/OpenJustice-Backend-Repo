@@ -427,8 +427,21 @@ async def voice_message(
         ),
     )
 
-    # 6. Return audio — redirect to Blob URL, or serve directly in local dev
+    # 6. Return audio — stream through backend to avoid CORS cross-origin redirect
+    # issues caused by axios withCredentials on cross-domain blob storage redirects.
+    from starlette.background import BackgroundTask
     if ai_audio_path.startswith("https://"):
+        blob_handler = _get_blob_handler()
+        if blob_handler:
+            os.makedirs(settings.AUDIO_TEMP_DIR, exist_ok=True)
+            tmp_path = os.path.join(settings.AUDIO_TEMP_DIR, f"voice_reply_{uuid.uuid4().hex}.ogg")
+            await blob_handler.download_file(ai_audio_path, tmp_path)
+            return FileResponse(
+                path=tmp_path,
+                media_type="audio/ogg",
+                filename="response.ogg",
+                background=BackgroundTask(TempFileManager.delete_file_immediately, tmp_path),
+            )
         return RedirectResponse(url=ai_audio_path, status_code=302)
     return FileResponse(
         path=ai_audio_path,
