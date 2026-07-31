@@ -1,7 +1,7 @@
 """add_semantic_cache_ttl_to_system_settings
 
 Revision ID: e1a2b3c4d5e6
-Revises: cc749f2705de
+Revises: 9906f84aea5f
 Create Date: 2026-08-01 00:00:00.000000
 
 """
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 revision: str = 'e1a2b3c4d5e6'
-down_revision: Union[str, None] = 'cc749f2705de'
+down_revision: Union[str, None] = '9906f84aea5f'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
