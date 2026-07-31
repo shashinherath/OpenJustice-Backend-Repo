@@ -59,6 +59,7 @@ class AdminSystemSettingsService:
         retrieval_embedding_model: str,
         retrieval_chunk_size: int,
         retrieval_chunk_overlap: int,
+        semantic_cache_ttl_hours: int = 0,
         current_user_id: str = None
     ) -> SystemSettings:
         settings = await self.settings_repository.update_retrieval_settings(
@@ -66,7 +67,8 @@ class AdminSystemSettingsService:
             retrieval_similarity_threshold=retrieval_similarity_threshold,
             retrieval_embedding_model=retrieval_embedding_model,
             retrieval_chunk_size=retrieval_chunk_size,
-            retrieval_chunk_overlap=retrieval_chunk_overlap
+            retrieval_chunk_overlap=retrieval_chunk_overlap,
+            semantic_cache_ttl_hours=semantic_cache_ttl_hours
         )
         if self.audit_log_repo:
             from uuid import UUID
