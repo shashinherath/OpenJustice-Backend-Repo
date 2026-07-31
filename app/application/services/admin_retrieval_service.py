@@ -251,13 +251,13 @@ class AdminRetrievalService:
             doc_count = row.doc_count or 0
             
             if doc_count == 0:
-                status = "Empty"
+                status = "Fail"
             elif log_sim >= sim_threshold:
-                status = "Healthy"
+                status = "Pass"
             elif log_sim >= sim_threshold * 0.8:
-                status = "Review"
+                status = "Warn"
             else:
-                status = "Degraded"
+                status = "Fail"
 
             query_text = log.query or "General Query"
             if len(query_text) > 30:
