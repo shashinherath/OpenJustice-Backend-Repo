@@ -76,11 +76,22 @@ async def get_overview(request: Request, service: AdminOverviewService = Depends
     return await service.get_overview_stats()
 
 from app.infrastructure.models.semantic_cache import SemanticCache
+from app.infrastructure.repositories.system_settings_repository import SystemSettingsRepository
 from sqlalchemy import delete
+from datetime import datetime, timezone, timedelta
 
 @router.post("/clear-semantic-cache")
 async def clear_semantic_cache(request: Request, db: AsyncSession = Depends(get_db)):
-    await db.execute(delete(SemanticCache))
+    settings_repo = SystemSettingsRepository(db)
+    settings = await settings_repo.get_settings()
+    ttl_hours = settings.semantic_cache_ttl_hours
+
+    if ttl_hours and ttl_hours > 0:
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=ttl_hours)
+        await db.execute(delete(SemanticCache).where(SemanticCache.created_at < cutoff))
+    else:
+        await db.execute(delete(SemanticCache))
+
     await db.commit()
     return {"message": "Semantic cache cleared successfully"}
 
@@ -305,6 +316,7 @@ async def update_retrieval_settings(update_data: RetrievalSettingsUpdate, reques
         retrieval_embedding_model=update_data.retrieval_embedding_model,
         retrieval_chunk_size=update_data.retrieval_chunk_size,
         retrieval_chunk_overlap=update_data.retrieval_chunk_overlap,
+        semantic_cache_ttl_hours=update_data.semantic_cache_ttl_hours,
         current_user_id=current_user_id
     )
 

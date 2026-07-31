@@ -58,16 +58,18 @@ class SystemSettingsRepository:
         retrieval_similarity_threshold: float,
         retrieval_embedding_model: str,
         retrieval_chunk_size: int,
-        retrieval_chunk_overlap: int
+        retrieval_chunk_overlap: int,
+        semantic_cache_ttl_hours: int = 0
     ) -> SystemSettings:
         settings = await self.get_settings()
-        
+
         settings.retrieval_top_k = retrieval_top_k
         settings.retrieval_similarity_threshold = retrieval_similarity_threshold
         settings.retrieval_embedding_model = retrieval_embedding_model
         settings.retrieval_chunk_size = retrieval_chunk_size
         settings.retrieval_chunk_overlap = retrieval_chunk_overlap
-        
+        settings.semantic_cache_ttl_hours = semantic_cache_ttl_hours
+
         await self.db.commit()
         await self.db.refresh(settings)
         return settings

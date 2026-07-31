@@ -26,6 +26,7 @@ class SystemSettings(Base):
     retrieval_embedding_model: Mapped[str] = mapped_column(String(50), default="text-embedding-3-large", nullable=False)
     retrieval_chunk_size: Mapped[int] = mapped_column(Integer, default=1000, nullable=False)
     retrieval_chunk_overlap: Mapped[int] = mapped_column(Integer, default=200, nullable=False)
+    semantic_cache_ttl_hours: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
     # Security Configuration Fields
     jwt_expiry_minutes: Mapped[int] = mapped_column(Integer, default=60, nullable=False)

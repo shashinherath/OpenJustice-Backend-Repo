@@ -549,6 +549,7 @@ class RetrievalSettingsResponse(BaseModel):
     retrieval_embedding_model: str
     retrieval_chunk_size: int
     retrieval_chunk_overlap: int
+    semantic_cache_ttl_hours: int
 
 class RetrievalSettingsUpdate(BaseModel):
     retrieval_top_k: int
@@ -556,6 +557,7 @@ class RetrievalSettingsUpdate(BaseModel):
     retrieval_embedding_model: str
     retrieval_chunk_size: int
     retrieval_chunk_overlap: int
+    semantic_cache_ttl_hours: int
 
 class IntegrationSettingsResponse(BaseModel):
     openai_api_key: Optional[str]
