@@ -287,3 +287,16 @@ uv add --dev package-name
 - **OpenAI API**: https://platform.openai.com/docs/
 - **pgvector**: https://github.com/pgvector/pgvector
 - **uv**: https://docs.astral.sh/uv/
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE).
+
+## 🤝 Contributing
+
+Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md) before getting started.
+
+## 🛡️ Security
+
+To report a security vulnerability, please see our [Security Policy](SECURITY.md).
+
